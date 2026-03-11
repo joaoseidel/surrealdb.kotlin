@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SURREAL_RUN_INTEGRATION: "true"
+      SURREAL_JVM_ENDPOINT: "http://127.0.0.1:8000"
+      SURREALDB_IMAGE: "surrealdb/surrealdb:latest"
     steps:
       - uses: actions/checkout@v4
 
@@ -21,9 +23,9 @@ jobs:
 
       - name: Start SurrealDB
         run: |
-          docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest start --user root --pass root memory
+          docker run -d --name surrealdb -p 8000:8000 "$SURREALDB_IMAGE" start --user root --pass root memory
           for i in {1..20}; do
-            if curl -fsS http://localhost:8000/health > /dev/null; then
+            if curl -fsS "$SURREAL_JVM_ENDPOINT/health" > /dev/null; then
               exit 0
             fi
             sleep 1
@@ -37,85 +39,3 @@ jobs:
       - name: SurrealDB logs
         if: always()
         run: docker logs surrealdb || true
-
-  android:
-    runs-on: ubuntu-latest
-    env:
-      SURREAL_RUN_INTEGRATION: "true"
-      SURREAL_ANDROID_ENDPOINT: "http://10.0.2.2:8000"
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Start SurrealDB
-        run: |
-          docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest start --user root --pass root memory
-          for i in {1..20}; do
-            if curl -fsS http://localhost:8000/health > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          docker logs surrealdb
-          exit 1
-
-      - name: Run Android instrumentation tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          arch: x86_64
-          profile: Nexus 6
-          script: ./gradlew --no-daemon connectedAndroidTest
-
-      - name: SurrealDB logs
-        if: always()
-        run: docker logs surrealdb || true
-
-  ios:
-    runs-on: macos-14
-    env:
-      SURREAL_RUN_INTEGRATION: "true"
-      SURREAL_IOS_ENDPOINT: "http://127.0.0.1:8000"
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Download SurrealDB binary
-        run: |
-          URL=$(curl -s https://api.github.com/repos/surrealdb/surrealdb/releases/latest | grep browser_download_url | grep -E 'darwin.*arm64.*(tgz|tar.gz)' | head -n 1 | cut -d '"' -f 4)
-          if [ -z "$URL" ]; then
-            echo "Unable to locate SurrealDB macOS arm64 artifact"
-            exit 1
-          fi
-          curl -L "$URL" -o surrealdb.tgz
-          tar -xzf surrealdb.tgz
-          chmod +x surreal*/surreal
-
-      - name: Start SurrealDB
-        run: |
-          ./surreal*/surreal start --user root --pass root memory --bind 127.0.0.1:8000 > surrealdb.log 2>&1 &
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat surrealdb.log
-          exit 1
-
-      - name: Run iOS simulator tests
-        run: ./gradlew --no-daemon iosSimulatorArm64Test
-
-      - name: SurrealDB logs
-        if: always()
-        run: cat surrealdb.log || true

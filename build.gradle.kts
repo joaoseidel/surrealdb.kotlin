@@ -15,7 +15,6 @@ val ktorVersion = "2.3.13"
 val coroutinesVersion = "1.10.1"
 val serializationVersion = "1.8.0"
 val junitVersion = "5.11.4"
-val testcontainersVersion = "1.20.4"
 
 kotlin {
     explicitApi()
@@ -66,8 +65,6 @@ kotlin {
 
         jvmTest.dependencies {
             implementation("org.junit.jupiter:junit-jupiter:$junitVersion")
-            implementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-            implementation("org.testcontainers:testcontainers:$testcontainersVersion")
         }
 
         androidInstrumentedTest.dependencies {

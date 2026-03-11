@@ -63,10 +63,17 @@ Unit tests:
 ./gradlew test
 ```
 
-Run JVM integration tests with Docker:
+Run JVM integration tests with a running SurrealDB instance:
 
 ```bash
-SURREAL_RUN_INTEGRATION=true ./gradlew jvmTest
+docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest start --user root --pass root memory
+SURREAL_RUN_INTEGRATION=true SURREAL_JVM_ENDPOINT=http://127.0.0.1:8000 ./gradlew jvmTest
+```
+
+Enable live-query assertions in the JVM integration test:
+
+```bash
+SURREAL_RUN_INTEGRATION=true SURREAL_RUN_LIVE_INTEGRATION=true SURREAL_JVM_ENDPOINT=http://127.0.0.1:8000 ./gradlew jvmTest
 ```
 
 Mobile integration tests are opt-in and expect a reachable SurrealDB endpoint:
