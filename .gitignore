@@ -1,0 +1,10 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# Kotlin/Native caches
+.konan/
+.kotlin
