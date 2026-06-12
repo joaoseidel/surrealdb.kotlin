@@ -19,6 +19,7 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD method inside the block is automatically scoped to that transaction.
 - Coroutines `Flow` API for live query notifications.
 - Fluent query builder DSL: `client.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation compiles to local SurrealQL with bound parameters and dispatches via the `query` RPC, mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
+- [Spectron](#spectron) client bundled under `com.surrealdb.kotlin.spectron` for memory and knowledge management.
 
 ## Supported RPC methods
 
@@ -185,6 +186,256 @@ if (client.supports(SurrealFeature.LiveQueries)) {
 ```
 
 `HttpEngine` only advertises `ExportImport` and `SurrealML`. `WebSocketEngine` additionally advertises `LiveQueries`, `Sessions`, `Transactions`, and `RefreshTokens`. Calling an unsupported method throws `SurrealFeatureNotSupportedException`.
+
+## Spectron
+
+The `com.surrealdb.kotlin.spectron` package ships a client for [Spectron](https://surrealdb.com/platform/spectron), the agent memory and knowledge service. It speaks the Spectron end-user HTTP API and is independent of the SurrealDB RPC engine.
+
+```kotlin
+import com.surrealdb.kotlin.spectron.Spectron
+
+val memory = Spectron(
+    contextId = "acme-prod",
+    apiKey = "sk-spec-...",
+    endpoint = "https://api.spectron.example",
+)
+memory.remember("I work at Acme as CTO")
+val hits = memory.recall("what do I do at Acme", k = 5)
+memory.close()
+```
+
+All methods are `suspend`. Wrap in `runBlocking { ... }` for synchronous callers.
+
+### Constructor
+
+| Param | Default | |
+|---|---|---|
+| `contextId` | required | Context id, e.g. `"acme-prod"` |
+| `apiKey` | required | Bearer token |
+| `endpoint` | required | Endpoint, e.g. `"https://api.spectron.example"` |
+| `timeout` | `30.seconds` | Per-request timeout |
+| `maxRetries` | `3` | GET-only retries on 5xx and connect errors |
+| `httpClient` | platform default | Inject your own Ktor `HttpClient` for tests |
+| `json` | lenient | `kotlinx.serialization` Json instance |
+
+`apiKey` and `endpoint` are mutable and take effect on the next request.
+
+The client exposes top-level verbs (`remember`, `rememberMany`, `recall`, `forget`, `chat`, `consolidate`, `audit`, `reflect`, `elaborate`, `inspect`, `queryContext`, `state`, `profile`, `whoami`, `health`) plus the namespaced surface: `documents`, `sessions`, `entities`, `lifecycle`, `traces`, `principals`, `scopes`, and `keys`. This mirrors the method placement of the [surrealdb.py](https://github.com/surrealdb/surrealdb.py) Spectron client.
+
+Scopes are slash-path strings passed as a `List<String>`, for example `listOf("team/eng", "org/acme")`. The `scopePaths(...)` helper normalises a map or `(key, value)` pairs into the same `key/value` paths, de-duplicating and preserving order; an empty list targets the caller's default write region.
+
+```kotlin
+import com.surrealdb.kotlin.spectron.scopePaths
+
+scopePaths(mapOf("org" to "acme"))            // ["org/acme"]
+scopePaths("team" to "eng", "org" to "acme")  // ["team/eng", "org/acme"]
+scopePaths(listOf("org/acme", "org/acme"))    // ["org/acme"]  (deduped)
+```
+
+Every call accepts an optional `onBehalfOf` argument. When set, the request carries the `X-Spectron-On-Behalf-Of` header so a privileged caller can act as another principal:
+
+```kotlin
+memory.recall("open incidents", onBehalfOf = "alpha-bot")
+memory.documents.list(status = "ready", onBehalfOf = "alpha-bot")
+```
+
+### Memory verbs
+
+```kotlin
+import com.surrealdb.kotlin.spectron.model.InferMode
+import com.surrealdb.kotlin.spectron.model.Triple
+import com.surrealdb.kotlin.spectron.model.TripleEntity
+
+// Free-form fact, extracted server-side.
+memory.remember("Christian was promoted to CTO", infer = InferMode.FULL)
+
+// Caller-supplied triples, no LLM.
+memory.remember(
+    triples = listOf(
+        Triple(entity = TripleEntity("christian", "Person"), key = "role", value = "CTO"),
+    ),
+    infer = InferMode.TRIPLES,
+)
+
+// Retrieval over facts and document passages.
+val result = memory.recall("What role does Christian have?", k = 10, mode = "hybrid")
+result.hits.forEach { println("${it.source} ${it.score} ${it.text}") }
+
+memory.queryContext("brief on tobie", k = 10)
+memory.state()
+memory.profile()
+memory.reflect("patterns in customer complaints this month?", persist = true)
+memory.forget("anything about my old job", purge = false)
+```
+
+`chat` runs a server-driven turn that retrieves, generates, and persists memory updates in one call:
+
+```kotlin
+val reply = memory.chat("What do you know about me?", sessionId = session.id)
+println(reply.reply)
+println(reply.memoryUpdates?.entities)
+```
+
+### Documents
+
+```kotlin
+val doc = memory.documents.upload(
+    file = bytes,
+    filename = "returns.pdf",
+    contentType = "application/pdf",
+    title = "Returns Policy",
+    source = "support-portal",
+)
+
+memory.documents.get(doc.id)
+memory.documents.chunks(doc.id, page = 0, pageSize = 50)
+memory.documents.list(status = "ready", mimeType = "application/pdf")
+memory.documents.fetchRaw(doc.id)
+memory.documents.reprocess(doc.id)        // re-run the ingestion pipeline
+memory.documents.recomputeLinks()
+memory.documents.delete(doc.id)
+```
+
+Uploads accept a `ByteArray`. On JVM and Android, read a file with `file.readBytes()`. On iOS, use `NSData.bytes` via the appropriate interop.
+
+#### Query
+
+```kotlin
+import com.surrealdb.kotlin.spectron.model.GraphEdgeKind
+import com.surrealdb.kotlin.spectron.model.QueryMode
+import com.surrealdb.kotlin.spectron.model.QueryFilter
+
+val hits = memory.documents.query(
+    "what is the return window for unopened items?",
+    mode = QueryMode.HYBRID_GRAPH,
+    k = 10,
+    threshold = 0.5,
+    vectorWeight = 0.5,
+    rrfK = 60.0,
+    graphAlpha = 0.3,
+    graphEdges = listOf(GraphEdgeKind.KNOWLEDGE_HAS_KEYWORD, GraphEdgeKind.DOCUMENT_LINK),
+    graphDepth = 2,
+    expandGraph = true,
+    filter = QueryFilter(mimeType = listOf("application/pdf")),
+)
+```
+
+#### Keywords
+
+```kotlin
+memory.documents.keywords.list(minDocumentCount = 2, sort = "-documentCount", q = "return")
+memory.documents.keywords.search("refund policies", k = 10, threshold = 0.6)
+memory.documents.keywords.get("return-window")
+memory.documents.keywords.forDocument(doc.id)
+```
+
+### Sessions
+
+`create` returns a `SpectronSession` handle with `chat`, `remember`, `context`, `turns`, and `close`:
+
+```kotlin
+val session = memory.sessions.create(scope = listOf("user/tobie"))
+
+// Server-driven turn scoped to the session.
+val reply = session.chat("What do you know about me?")
+
+// Or drive the turns yourself.
+session.remember("I just got promoted to CTO", role = TurnRole.USER)
+val ctx = session.context("What is Tobie's role?")
+val answer = myLlm.chat(system = ctx.context, user = userMessage)
+session.remember(answer, role = TurnRole.ASSISTANT)
+session.turns(limit = 50)
+session.close()
+```
+
+The same operations are available as flat namespace calls keyed by session id, matching the Python client:
+
+```kotlin
+memory.sessions.context("sess-1", "What is Tobie's role?")
+memory.sessions.turns("sess-1", limit = 50, offset = 0)
+memory.sessions.delete("sess-1")
+```
+
+### Entities, lifecycle, traces
+
+```kotlin
+memory.entities.list(type = "Person")
+memory.entities.get("Person", "christian_battaglia")
+memory.entities.history("Person", "christian_battaglia", key = "role")
+memory.entities.delete("Person", "christian_battaglia")
+
+memory.lifecycle.expire()
+memory.lifecycle.decay()
+memory.lifecycle.fsck(check = "contradictions")
+
+memory.traces.list(limit = 50)
+memory.traces.get("decision_trace:abc123")
+memory.traces.stats()
+```
+
+### Maintenance and introspection
+
+```kotlin
+memory.consolidate(dryRun = true)
+memory.elaborate(entityRef = "Person/christian", sweep = false)
+memory.inspect(ref = "entity:Person/christian", asOf = "2026-01-01T00:00:00Z")
+memory.audit(principal = "alpha-bot", limit = 100)
+
+memory.whoami()                 // caller identity and resolved grants
+memory.health()                 // liveness probe, not context-scoped
+```
+
+### Governance
+
+```kotlin
+memory.principals.list()
+memory.principals.effective("alpha-bot", path = "org/apple/")
+memory.principals.grant("alpha-bot", path = "org/apple/*", verbs = listOf("read", "write"))
+memory.principals.revoke("alpha-bot", path = "org/apple/*", verbs = listOf("write"))
+
+memory.scopes.list()
+memory.scopes.register("org/apple/product/ipad/", displayName = "iPad")
+memory.scopes.forget("org/apple/product/ipad/")
+memory.scopes.delete("org/apple/product/ipad/")
+
+// Self-service API keys. The full secret is returned only once, on create or rotate.
+val minted = memory.keys.create(name = "ci", ttlSeconds = 3600)
+memory.keys.list()
+memory.keys.rotate("ci", ttlSeconds = 7200)
+memory.keys.delete("ci")
+```
+
+Audit lives at the top level as `memory.audit(...)` (see the previous section), mirroring the Python client.
+
+### Errors
+
+```kotlin
+try {
+    memory.documents.get("doc:missing")
+} catch (e: SpectronNotFoundException) {
+    println("${e.status}: ${e.title}")
+} catch (e: SpectronRateLimitException) {
+    println("retry after ${e.retryAfter}")
+}
+```
+
+| Exception | HTTP |
+|---|---|
+| `SpectronException` | sealed base |
+| `SpectronAuthException` | 401 |
+| `SpectronScopeException` | 403 |
+| `SpectronNotFoundException` | 404 |
+| `SpectronValidationException` | 400, 422 |
+| `SpectronRateLimitException` | 429 (with `retryAfter: Duration?`) |
+| `SpectronServerException` | 5xx |
+| `SpectronTransportException` | connect or parse failure |
+
+Each carries `status`, `title`, `detail`, `typeUri`, `instance`, and `extensions: Map<String, JsonElement>`. The Spectron API returns a `{ "message": "..." }` error envelope, surfaced as `title`.
+
+### Retries and scope
+
+- GETs retry on connection errors and 5xx with 250 ms, 500 ms, and 1 s backoff, capped to `maxRetries` (default 3). Writes never retry.
+- Scopes are sent as a `List<String>` of hierarchical `key=value/` paths, matching the Spectron scope model.
 
 ## Tests
 
