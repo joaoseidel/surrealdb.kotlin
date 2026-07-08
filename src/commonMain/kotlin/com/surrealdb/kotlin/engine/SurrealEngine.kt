@@ -1,6 +1,10 @@
 package com.surrealdb.kotlin.engine
 
+import com.surrealdb.kotlin.error.SurrealAlreadyExistsException
 import com.surrealdb.kotlin.error.SurrealAuthenticationException
+import com.surrealdb.kotlin.error.SurrealErrorKind
+import com.surrealdb.kotlin.error.SurrealNotFoundException
+import com.surrealdb.kotlin.error.SurrealQueryException
 import com.surrealdb.kotlin.error.SurrealRpcException
 import com.surrealdb.kotlin.model.SurrealRpcError
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,20 +24,33 @@ internal interface SurrealEngine : SurrealProtocol, AutoCloseable {
     suspend fun start()
 }
 
+/**
+ * Maps a wire-level [SurrealRpcError] to a typed [SurrealRpcException].
+ *
+ * The server attaches a structured `kind` (and, for most kinds, nested
+ * `details`) to every error it returns — see `surrealdb_types::Error` /
+ * `ErrorDetails` server-side. We parse that structured data via
+ * [SurrealErrorKind] and use it to pick the most specific exception subtype,
+ * rather than guessing from the free-text `message` (JSON-RPC code -32000 is
+ * the generic SurrealDB server error used for *every* RPC failure, so it was
+ * never a useful signal either).
+ *
+ * A missing `kind` (e.g. a very old server) falls back to
+ * [SurrealErrorKind.Internal], so unrecognised errors still surface as a
+ * plain [SurrealRpcException] rather than failing to parse.
+ */
 internal fun mapRpcError(error: SurrealRpcError): SurrealRpcException {
-    // We classify by message keywords only — JSON-RPC code -32000 is the
-    // generic SurrealDB server error and is used for *every* RPC failure, so
-    // it's not a useful signal on its own.
-    val message = error.message.lowercase()
-    val isAuth = message.contains("authentication") ||
-        message.contains("not enough permission") ||
-        message.contains("invalid jwt") ||
-        message.contains("token") ||
-        message.contains("signin") ||
-        message.contains("signup")
-    return if (isAuth) {
-        SurrealAuthenticationException(code = error.code, message = error.message, data = error.data)
-    } else {
-        SurrealRpcException(code = error.code, message = error.message, data = error.data)
+    val kind = SurrealErrorKind.parse(error.kind, error.details)
+    return when {
+        kind is SurrealErrorKind.NotAllowed && kind.detail is SurrealErrorKind.NotAllowed.Detail.Auth ->
+            SurrealAuthenticationException(code = error.code, message = error.message, data = error.data, kind = kind)
+        kind is SurrealErrorKind.NotFound ->
+            SurrealNotFoundException(code = error.code, message = error.message, data = error.data, kind = kind)
+        kind is SurrealErrorKind.AlreadyExists ->
+            SurrealAlreadyExistsException(code = error.code, message = error.message, data = error.data, kind = kind)
+        kind is SurrealErrorKind.Query ->
+            SurrealQueryException(code = error.code, message = error.message, data = error.data, kind = kind)
+        else ->
+            SurrealRpcException(code = error.code, message = error.message, data = error.data, kind = kind)
     }
 }

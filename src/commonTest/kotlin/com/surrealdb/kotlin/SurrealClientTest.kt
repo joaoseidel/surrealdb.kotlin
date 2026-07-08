@@ -59,7 +59,8 @@ class SurrealClientTest {
                     queryCalls += 1
                     if (queryCalls == 1) {
                         respond(
-                            content = """{"id":"1","error":{"code":-32000,"message":"authentication required"}}""",
+                            content = """{"id":"1","error":{"code":-32000,"message":"authentication required",""" +
+                                """"kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}}""",
                             status = HttpStatusCode.OK,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                         )
@@ -107,7 +108,8 @@ class SurrealClientTest {
     fun `throws auth error when auto mode disabled`() = runTest {
         val engine = MockEngine {
             respond(
-                content = """{"id":"1","error":{"code":-32000,"message":"authentication required"}}""",
+                content = """{"id":"1","error":{"code":-32000,"message":"authentication required",""" +
+                    """"kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
