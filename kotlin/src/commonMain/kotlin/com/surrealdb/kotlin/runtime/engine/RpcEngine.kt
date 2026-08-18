@@ -5,6 +5,7 @@ import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.SurrealRpcRequest
 import com.surrealdb.kotlin.runtime.SurrealRpcResponse
 import com.surrealdb.kotlin.runtime.codec.SurrealCodec
@@ -30,17 +31,20 @@ internal abstract class RpcEngine(
     protected val httpClient: HttpClient,
     protected val codec: SurrealCodec,
 ) : SurrealEngine {
-
     // replay=1 so a subscriber that joins after the connection has already been
     // established still sees the most recent connection state. extraBufferCapacity
     // absorbs bursts (e.g. a quick Connecting → Connected → Disconnected sequence)
     // without dropping events.
-    private val _events = MutableSharedFlow<SurrealConnectionEvent>(
-        replay = 1,
-        extraBufferCapacity = 16,
-    )
+    private val _events =
+        MutableSharedFlow<SurrealConnectionEvent>(
+            replay = 1,
+            extraBufferCapacity = 16,
+        )
 
     final override val events: SharedFlow<SurrealConnectionEvent> = _events.asSharedFlow()
+
+    override val liveNotifications: SharedFlow<SurrealLiveNotification> =
+        MutableSharedFlow<SurrealLiveNotification>().asSharedFlow()
 
     protected fun publishEvent(event: SurrealConnectionEvent) {
         _events.tryEmit(event)
@@ -50,8 +54,7 @@ internal abstract class RpcEngine(
         method: String,
         params: List<JsonElement>,
         txn: String? = null,
-    ): SurrealRpcRequest =
-        SurrealRpcRequest(id = randomRequestId(), method = method, params = params, txn = txn)
+    ): SurrealRpcRequest = SurrealRpcRequest(id = randomRequestId(), method = method, params = params, txn = txn)
 
     protected fun unwrap(response: SurrealRpcResponse): JsonElement {
         response.error?.let { throw mapRpcError(it) }
@@ -70,47 +73,58 @@ internal abstract class RpcEngine(
 
     // ── Protocol methods ─────────────────────────────────────────────────────
 
-    override suspend fun health(session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("ping", emptyList()), session))
+    override suspend fun health(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("ping", emptyList()), session))
 
-    override suspend fun version(session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("version", emptyList()), session))
+    override suspend fun version(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("version", emptyList()), session))
 
     override suspend fun use(
         namespace: String,
         database: String,
         session: SessionSnapshot,
-    ): JsonElement = unwrap(dispatch(
-        newRequest("use", listOf(JsonPrimitive(namespace), JsonPrimitive(database))),
-        session,
-    ))
+    ): JsonElement =
+        unwrap(
+            dispatch(
+                newRequest("use", listOf(JsonPrimitive(namespace), JsonPrimitive(database))),
+                session,
+            ),
+        )
 
-    override suspend fun signup(params: JsonObject, session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("signup", listOf(params)), session))
+    override suspend fun signup(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement = unwrap(dispatch(newRequest("signup", listOf(params)), session))
 
-    override suspend fun signin(params: JsonObject, session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("signin", listOf(params)), session))
+    override suspend fun signin(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement = unwrap(dispatch(newRequest("signin", listOf(params)), session))
 
-    override suspend fun authenticate(token: String, session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("authenticate", listOf(JsonPrimitive(token))), session))
+    override suspend fun authenticate(
+        token: String,
+        session: SessionSnapshot,
+    ): JsonElement = unwrap(dispatch(newRequest("authenticate", listOf(JsonPrimitive(token))), session))
 
     override suspend fun invalidate(session: SessionSnapshot): JsonElement =
         unwrap(dispatch(newRequest("invalidate", emptyList()), session))
 
-    override suspend fun reset(session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("reset", emptyList()), session))
+    override suspend fun reset(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("reset", emptyList()), session))
 
     override suspend fun set(
         name: String,
         value: JsonElement,
         session: SessionSnapshot,
-    ): JsonElement = unwrap(dispatch(
-        newRequest("let", listOf(JsonPrimitive(name), value)),
-        session,
-    ))
+    ): JsonElement =
+        unwrap(
+            dispatch(
+                newRequest("let", listOf(JsonPrimitive(name), value)),
+                session,
+            ),
+        )
 
-    override suspend fun unset(name: String, session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("unset", listOf(JsonPrimitive(name))), session))
+    override suspend fun unset(
+        name: String,
+        session: SessionSnapshot,
+    ): JsonElement = unwrap(dispatch(newRequest("unset", listOf(JsonPrimitive(name))), session))
 
     override suspend fun begin(session: SessionSnapshot): String {
         val result = unwrap(dispatch(newRequest("begin", emptyList()), session))
@@ -122,11 +136,17 @@ internal abstract class RpcEngine(
         }
     }
 
-    override suspend fun commit(txnId: String, session: SessionSnapshot) {
+    override suspend fun commit(
+        txnId: String,
+        session: SessionSnapshot,
+    ) {
         unwrap(dispatch(newRequest("commit", listOf(JsonPrimitive(txnId))), session))
     }
 
-    override suspend fun cancel(txnId: String, session: SessionSnapshot) {
+    override suspend fun cancel(
+        txnId: String,
+        session: SessionSnapshot,
+    ) {
         unwrap(dispatch(newRequest("cancel", listOf(JsonPrimitive(txnId))), session))
     }
 
@@ -135,17 +155,21 @@ internal abstract class RpcEngine(
         vars: JsonObject?,
         session: SessionSnapshot,
         txn: String?,
-    ): JsonElement = unwrap(dispatch(
-        newRequest(
-            method = "query",
-            params = buildList {
-                add(JsonPrimitive(sql))
-                if (vars != null) add(vars)
-            },
-            txn = txn,
-        ),
-        session,
-    ))
+    ): JsonElement =
+        unwrap(
+            dispatch(
+                newRequest(
+                    method = "query",
+                    params =
+                        buildList {
+                            add(JsonPrimitive(sql))
+                            if (vars != null) add(vars)
+                        },
+                    txn = txn,
+                ),
+                session,
+            ),
+        )
 
     /**
      * Default implementation throws — engines that don't support live queries
@@ -155,12 +179,13 @@ internal abstract class RpcEngine(
         table: String,
         diff: Boolean?,
         session: SessionSnapshot,
-    ): LiveQuerySubscription {
+    ): LiveQuerySubscription =
         throw SurrealFeatureNotSupportedException(
-            "Live queries are not supported by ${this::class.simpleName} — use a ws:// or wss:// URL"
+            "Live queries are not supported by ${this::class.simpleName} — use a ws:// or wss:// URL",
         )
-    }
 
-    override suspend fun kill(liveQueryId: String, session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("kill", listOf(JsonPrimitive(liveQueryId))), session))
+    override suspend fun kill(
+        liveQueryId: String,
+        session: SessionSnapshot,
+    ): JsonElement = unwrap(dispatch(newRequest("kill", listOf(JsonPrimitive(liveQueryId))), session))
 }

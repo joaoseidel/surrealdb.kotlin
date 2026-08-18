@@ -20,20 +20,19 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
-import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.concurrent.Volatile
 
 internal class WebSocketEngine(
     config: SurrealClientConfig,
@@ -41,26 +40,30 @@ internal class WebSocketEngine(
     codec: SurrealCodec,
     private val scope: CoroutineScope,
 ) : RpcEngine(config, httpClient, codec) {
-
-    override val features: Set<SurrealFeature> = setOf(
-        SurrealFeature.LiveQueries,
-        SurrealFeature.Sessions,
-        SurrealFeature.Transactions,
-        SurrealFeature.RefreshTokens,
-        SurrealFeature.ExportImport,
-        SurrealFeature.SurrealML,
-    )
+    override val features: Set<SurrealFeature> =
+        setOf(
+            SurrealFeature.LiveQueries,
+            SurrealFeature.Sessions,
+            SurrealFeature.Transactions,
+            SurrealFeature.RefreshTokens,
+            SurrealFeature.ExportImport,
+            SurrealFeature.SurrealML,
+        )
 
     private val reconnect = ReconnectContext(config.reconnect)
     private val stateMutex = Mutex()
     private var wsSession: DefaultClientWebSocketSession? = null
     private var connectLoopJob: Job? = null
+
     @Volatile private var terminated = false
+
     @Volatile private var ready = false
 
     // Pending RPC calls — buffered so they survive reconnects.
     private val pendingRequests = mutableMapOf<String, BufferedCall>()
-    private val liveChannels = mutableMapOf<String, Channel<SurrealLiveNotification>>()
+
+    private val live = LiveNotificationRouter()
+    override val liveNotifications: SharedFlow<SurrealLiveNotification> = live.notifications
 
     // Tracks the session state actually applied to the current socket. Reset on
     // each (re)connect so authenticate/use are re-sent.
@@ -100,22 +103,20 @@ internal class WebSocketEngine(
     ): LiveQuerySubscription {
         awaitReady()
         applyContext(session)
-        val params = buildList {
-            add(JsonPrimitive(table))
-            if (diff != null) add(JsonPrimitive(diff))
-        }
+        val params =
+            buildList {
+                add(JsonPrimitive(table))
+                if (diff != null) add(JsonPrimitive(diff))
+            }
         val response = sendBuffered(newRequest("live", params))
         response.error?.let { throw mapRpcError(it) }
-        val id = response.result?.jsonPrimitive?.content
-            ?: throw SurrealProtocolException("Live query did not return a subscription id")
+        val id =
+            response.result?.jsonPrimitive?.content
+                ?: throw SurrealProtocolException("Live query did not return a subscription id")
 
-        val channel = Channel<SurrealLiveNotification>(capacity = Channel.BUFFERED)
-        stateMutex.withLock { liveChannels[id] = channel }
-
-        return LiveQuerySubscription(id = id, events = channel.receiveAsFlow()) {
+        return LiveQuerySubscription(id = id, events = live.register(id)) {
             runCatching { sendBuffered(newRequest("kill", listOf(JsonPrimitive(id)))) }
-            stateMutex.withLock { liveChannels.remove(id) }
-            channel.close()
+            live.unregister(id)
         }
     }
 
@@ -130,21 +131,22 @@ internal class WebSocketEngine(
         try {
             while (!terminated) {
                 publishEvent(SurrealConnectionEvent.Connecting)
-                val newSession = try {
-                    httpClient.webSocketSession(urlString = deriveWsEndpoint(config.url))
-                } catch (cause: CancellationException) {
-                    throw cause
-                } catch (cause: Throwable) {
-                    publishEvent(SurrealConnectionEvent.Error(cause))
-                    if (!reconnect.allowed) {
-                        failAllPending(SurrealTransportException("Failed to connect", cause))
-                        return
+                val newSession =
+                    try {
+                        httpClient.webSocketSession(urlString = deriveWsEndpoint(config.url))
+                    } catch (cause: CancellationException) {
+                        throw cause
+                    } catch (cause: Throwable) {
+                        publishEvent(SurrealConnectionEvent.Error(cause))
+                        if (!reconnect.allowed) {
+                            failAllPending(SurrealTransportException("Failed to connect", cause))
+                            return
+                        }
+                        val delayMs = reconnect.nextDelay()
+                        publishEvent(SurrealConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
+                        delay(delayMs)
+                        continue
                     }
-                    val delayMs = reconnect.nextDelay()
-                    publishEvent(SurrealConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
-                    delay(delayMs)
-                    continue
-                }
 
                 stateMutex.withLock { wsSession = newSession }
                 resetAppliedContext()
@@ -211,11 +213,7 @@ internal class WebSocketEngine(
             pending?.deferred?.complete(response)
             return
         }
-        val live = parseLiveNotification(response)
-        if (live != null) {
-            val channel = stateMutex.withLock { liveChannels[live.liveQueryId] }
-            channel?.trySend(live)
-        }
+        parseLiveNotification(response)?.let { live.route(it) }
     }
 
     // ── Sending ──────────────────────────────────────────────────────────────
@@ -224,10 +222,11 @@ internal class WebSocketEngine(
         val deferred = CompletableDeferred<SurrealRpcResponse>()
         val call = BufferedCall(request, deferred)
 
-        val socket = stateMutex.withLock {
-            pendingRequests[request.id] = call
-            wsSession
-        }
+        val socket =
+            stateMutex.withLock {
+                pendingRequests[request.id] = call
+                wsSession
+            }
 
         if (socket != null) {
             runCatching { socket.send(Frame.Text(codec.encodeWsText(request))) }
@@ -261,9 +260,16 @@ internal class WebSocketEngine(
             }
             if (snap.namespace != appliedNamespace || snap.database != appliedDatabase) {
                 if (snap.namespace != null && snap.database != null) {
-                    val r = sendBuffered(newRequest("use", listOf(
-                        JsonPrimitive(snap.namespace), JsonPrimitive(snap.database),
-                    )))
+                    val r =
+                        sendBuffered(
+                            newRequest(
+                                "use",
+                                listOf(
+                                    JsonPrimitive(snap.namespace),
+                                    JsonPrimitive(snap.database),
+                                ),
+                            ),
+                        )
                     r.error?.let { throw mapRpcError(it) }
                 }
                 appliedNamespace = snap.namespace
@@ -281,37 +287,32 @@ internal class WebSocketEngine(
     // ── Cleanup ──────────────────────────────────────────────────────────────
 
     private suspend fun failAllPending(cause: SurrealTransportException) {
-        val pending: List<BufferedCall>
-        val channels: List<Channel<SurrealLiveNotification>>
-
-        stateMutex.withLock {
-            pending = pendingRequests.values.toList()
-            channels = liveChannels.values.toList()
-            pendingRequests.clear()
-            liveChannels.clear()
-        }
+        val pending =
+            stateMutex.withLock {
+                val calls = pendingRequests.values.toList()
+                pendingRequests.clear()
+                calls
+            }
 
         pending.forEach { it.deferred.completeExceptionally(cause) }
-        channels.forEach { it.close(cause) }
+        live.closeAll(cause)
     }
 
     private suspend fun teardown() {
         terminated = true
         connectLoopJob?.cancel()
-        val (sessionToClose, channelsToClose) = stateMutex.withLock {
-            val s = wsSession
-            val ch = liveChannels.values.toList()
-            pendingRequests.values.forEach {
-                it.deferred.completeExceptionally(SurrealTransportException("Engine closed"))
+        val sessionToClose =
+            stateMutex.withLock {
+                val s = wsSession
+                pendingRequests.values.forEach {
+                    it.deferred.completeExceptionally(SurrealTransportException("Engine closed"))
+                }
+                pendingRequests.clear()
+                wsSession = null
+                s
             }
-            pendingRequests.clear()
-            liveChannels.clear()
-            wsSession = null
-            s to ch
-        }
-        channelsToClose.forEach { it.close() }
+        live.closeAll()
         sessionToClose?.close(CloseReason(CloseReason.Codes.NORMAL, "Client closed"))
         publishEvent(SurrealConnectionEvent.Disconnected)
     }
 }
-
