@@ -14,6 +14,16 @@ val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
 
+val expectedArtifactSuffixes =
+    listOf(
+        "",
+        "-jvm",
+        "-android",
+        "-iosX64",
+        "-iosArm64",
+        "-iosSimulatorArm64",
+    )
+
 allprojects {
     group = providers.gradleProperty("GROUP").get()
     version = providers.gradleProperty("VERSION_NAME").get()
@@ -134,6 +144,28 @@ fun Project.configurePublishing() {
                         url.set(prop("POM_SCM_URL"))
                         connection.set(prop("POM_SCM_CONNECTION"))
                         developerConnection.set(prop("POM_SCM_DEV_CONNECTION"))
+                    }
+                }
+            }
+
+            val expected = expectedArtifactSuffixes.map { "$artifactBase$it" }.toSortedSet()
+            val actual = publications.withType<MavenPublication>().map { it.artifactId }.toSortedSet()
+
+            tasks.register("verifyPublicationCoordinates") {
+                group = "verification"
+                description = "Fails if this module's published Maven coordinates change."
+                doLast {
+                    check(actual == expected) {
+                        buildString {
+                            appendLine("$path publishes different coordinates than expected.")
+                            appendLine("  missing:   ${(expected - actual).ifEmpty { "-" }}")
+                            appendLine("  unexpected: ${(actual - expected).ifEmpty { "-" }}")
+                            append(
+                                "If the change is intended, update expectedArtifactSuffixes in the " +
+                                    "root build (or POM_ARTIFACT_ID in the module's gradle.properties) " +
+                                    "— but note that a released coordinate cannot be taken back.",
+                            )
+                        }
                     }
                 }
             }
