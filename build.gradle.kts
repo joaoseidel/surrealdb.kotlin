@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.kotest) apply false
 }
 
 val javaVersion = JavaVersion.VERSION_11
@@ -44,6 +45,7 @@ subprojects {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
         apply(plugin = "org.jetbrains.dokka")
+        apply(plugin = "io.kotest.multiplatform")
         apply(plugin = "maven-publish")
 
         configure<KotlinMultiplatformExtension> {
@@ -73,6 +75,7 @@ subprojects {
 
             sourceSets.getByName("jvmTest").dependencies {
                 implementation(libs.junit.jupiter)
+                implementation(libs.kotest.runner.junit5)
             }
         }
 
