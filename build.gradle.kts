@@ -2,6 +2,7 @@ import com.android.build.gradle.LibraryExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -13,6 +14,26 @@ plugins {
 val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
+
+val expectedArtifactSuffixes =
+    listOf(
+        "",
+        "-jvm",
+        "-android",
+    )
+
+val expectedArtifactBases =
+    mapOf(
+        "kotlin" to "kotlin",
+        "spectron" to "kotlin-spectron",
+    )
+
+val appleArtifactSuffixes =
+    listOf(
+        "-iosX64",
+        "-iosArm64",
+        "-iosSimulatorArm64",
+    )
 
 allprojects {
     group = providers.gradleProperty("GROUP").get()
@@ -134,6 +155,40 @@ fun Project.configurePublishing() {
                         url.set(prop("POM_SCM_URL"))
                         connection.set(prop("POM_SCM_CONNECTION"))
                         developerConnection.set(prop("POM_SCM_DEV_CONNECTION"))
+                    }
+                }
+            }
+
+            val onApple = HostManager.hostIsMac
+            val base =
+                expectedArtifactBases[project.name]
+                    ?: error("$path publishes but has no entry in expectedArtifactBases")
+            val expected =
+                (expectedArtifactSuffixes + if (onApple) appleArtifactSuffixes else emptyList())
+                    .map { "$base$it" }
+                    .toSortedSet()
+            val skipped =
+                if (onApple) emptySet() else appleArtifactSuffixes.map { "$base$it" }.toSortedSet()
+            val actual = publications.withType<MavenPublication>().map { it.artifactId }.toSortedSet()
+
+            tasks.register("verifyPublicationCoordinates") {
+                group = "verification"
+                description = "Fails if this module's published Maven coordinates change."
+                doLast {
+                    val missing = expected - actual
+                    val unexpected = actual - expected - skipped
+                    check(missing.isEmpty() && unexpected.isEmpty()) {
+                        buildString {
+                            appendLine("$path publishes different coordinates than expected.")
+                            appendLine("  missing:   ${missing.ifEmpty { "-" }}")
+                            appendLine("  unexpected: ${unexpected.ifEmpty { "-" }}")
+                            appendLine("  not checked on this host: ${skipped.ifEmpty { "-" }}")
+                            append(
+                                "If the change is intended, update expectedArtifactBases or " +
+                                    "expectedArtifactSuffixes in the root build to match — but note " +
+                                    "that a released coordinate cannot be taken back.",
+                            )
+                        }
                     }
                 }
             }
