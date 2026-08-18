@@ -69,6 +69,8 @@ internal class WebSocketEngine(
 
     override val activeLiveQueries: StateFlow<Set<String>> = live.activeQueries
 
+    override suspend fun trackLiveQuery(liveQueryId: String): Unit = live.track(liveQueryId)
+
     // Tracks the session state actually applied to the current socket. Reset on
     // each (re)connect so authenticate/use are re-sent.
     private val contextMutex = Mutex()
@@ -124,12 +126,10 @@ internal class WebSocketEngine(
         }
     }
 
-    /**
-     * `kill` is reachable without the subscription that started the query —
-     * `SurrealSession.kill(id)` calls it with nothing but an id — so this, not
-     * [LiveQuerySubscription.cancel], is where a killed query stops being tracked.
-     */
-    override suspend fun kill(liveQueryId: String, session: SessionSnapshot): JsonElement {
+    override suspend fun kill(
+        liveQueryId: String,
+        session: SessionSnapshot,
+    ): JsonElement {
         val result = super.kill(liveQueryId, session)
         live.untrack(liveQueryId)
         return result

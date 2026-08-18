@@ -45,10 +45,13 @@ internal abstract class RpcEngine(
 
     final override val events: SharedFlow<SurrealConnectionEvent> = _events.asSharedFlow()
 
-    override val liveNotifications: SharedFlow<SurrealLiveNotification> =
-        MutableSharedFlow<SurrealLiveNotification>().asSharedFlow()
+    override val liveNotifications: SharedFlow<SurrealLiveNotification> = MutableSharedFlow<SurrealLiveNotification>().asSharedFlow()
 
-    override val activeLiveQueries: StateFlow<Set<String>> = MutableStateFlow<Set<String>>(emptySet())
+    override val activeLiveQueries: StateFlow<Set<String>> = MutableStateFlow(emptySet())
+
+    // Nothing to track on an engine that cannot receive a notification; overridden
+    // where there is a connection to hold the subscription.
+    override suspend fun trackLiveQuery(liveQueryId: String): Unit = Unit
 
     protected fun publishEvent(event: SurrealConnectionEvent) {
         _events.tryEmit(event)

@@ -27,12 +27,9 @@ internal interface SurrealEngine :
     val features: Set<SurrealFeature>
     val events: SharedFlow<SurrealConnectionEvent>
     val liveNotifications: SharedFlow<SurrealLiveNotification>
-
-    /**
-     * The ids of the live queries running on this engine: started and not yet
-     * killed. Empty for an engine that cannot run them.
-     */
     val activeLiveQueries: StateFlow<Set<String>>
+
+    suspend fun trackLiveQuery(liveQueryId: String)
 
     suspend fun start()
 }

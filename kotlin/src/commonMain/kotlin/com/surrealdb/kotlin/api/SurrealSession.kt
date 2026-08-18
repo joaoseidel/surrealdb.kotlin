@@ -1,12 +1,17 @@
 package com.surrealdb.kotlin.api
 
+import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.live.liveEventFlow
+import com.surrealdb.kotlin.api.live.toLiveStatement
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.QueryDispatcher
 import com.surrealdb.kotlin.api.query.QueryableImpl
 import com.surrealdb.kotlin.api.query.SurrealQueryable
 import com.surrealdb.kotlin.api.query.firstQueryResult
 import com.surrealdb.kotlin.runtime.ConnectionController
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -184,6 +189,31 @@ public open class SurrealSession internal constructor(
 
     public suspend fun liveResult(table: String, diff: Boolean? = null): Result<LiveQuerySubscription> =
         runCatching { live(table, diff) }
+
+    public fun <T> liveEvents(spec: String, decode: (JsonElement) -> T): Flow<LiveQueryEvent<T>> {
+        if (SurrealFeature.LiveQueries !in controller.features) {
+            throw SurrealFeatureNotSupportedException(
+                "Live queries need a ws:// or wss:// connection; this client is on ${controller.config.url}",
+            )
+        }
+
+        val statement = toLiveStatement(spec)
+
+        return liveEventFlow(
+            notifications = controller.liveNotifications,
+            start = {
+                val id = firstQueryResult(query(statement)).jsonPrimitive.content
+                controller.trackLive(id)
+                id
+            },
+            stop = { id -> kill(id) },
+            decode = decode,
+        )
+    }
+
+    /** As [liveEvents], decoding each record with this session's serializer. */
+    public inline fun <reified T> liveEvents(spec: String): Flow<LiveQueryEvent<T>> =
+        liveEvents(spec) { decode(it) }
 
     public suspend fun kill(liveQueryId: String): JsonElement =
         withAutoAuthRetry { controller.kill(sessionId, liveQueryId) }
