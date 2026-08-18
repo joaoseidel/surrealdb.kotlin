@@ -12,7 +12,9 @@ import com.surrealdb.kotlin.runtime.codec.SurrealCodec
 import com.surrealdb.kotlin.runtime.randomRequestId
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -45,6 +47,8 @@ internal abstract class RpcEngine(
 
     override val liveNotifications: SharedFlow<SurrealLiveNotification> =
         MutableSharedFlow<SurrealLiveNotification>().asSharedFlow()
+
+    override val activeLiveQueries: StateFlow<Set<String>> = MutableStateFlow<Set<String>>(emptySet())
 
     protected fun publishEvent(event: SurrealConnectionEvent) {
         _events.tryEmit(event)

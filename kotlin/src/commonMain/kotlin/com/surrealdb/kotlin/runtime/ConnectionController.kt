@@ -21,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -51,6 +52,7 @@ internal class ConnectionController(
 
     val features: Set<SurrealFeature> get() = engine.features
     val events: SharedFlow<SurrealConnectionEvent> get() = engine.events
+    val activeLiveQueries: StateFlow<Set<String>> get() = engine.activeLiveQueries
 
     private val sessionsMutex = Mutex()
     private val sessions = mutableMapOf<String, MutableSessionState>()

@@ -215,6 +215,11 @@ class SurrealJvmIntegrationTest {
             client.query("DEFINE TABLE live_person SCHEMALESS")
 
             val subscription = client.live("live_person")
+
+            // Wait on the engine's own record of the subscription rather than sleeping
+            // and hoping — this is what activeLiveQueries is for.
+            withTimeout(5_000) { client.activeLiveQueries.first { subscription.id in it } }
+
             client.create(RecordId("live_person", "one"))
                 .content(buildJsonObject { put("name", JsonPrimitive("Live")) })
                 .await()
@@ -223,6 +228,11 @@ class SurrealJvmIntegrationTest {
             assertEquals("CREATE", event.action)
 
             client.kill(subscription.id)
+            assertTrue(
+                subscription.id !in client.activeLiveQueries.value,
+                "kill(id) must stop tracking the query even though it never sees the subscription",
+            )
+
             subscription.cancel()
             client.delete(RecordId("live_person", "one")).await()
         } finally {

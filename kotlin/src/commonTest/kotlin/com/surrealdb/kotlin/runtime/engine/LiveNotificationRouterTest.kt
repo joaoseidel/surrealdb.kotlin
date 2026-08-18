@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -26,11 +27,13 @@ private fun notification(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private fun TestScope.broadcastInto(router: LiveNotificationRouter): MutableList<SurrealLiveNotification> {
-    val seen = mutableListOf<SurrealLiveNotification>()
-    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-        router.notifications.collect { seen += it }
-    }
+private fun <T> TestScope.collectInto(flow: Flow<T>): MutableList<T> {
+    val seen = mutableListOf<T>()
+    // Unconfined, deliberately: a plain launch has not reached its collect by the
+    // time the test routes a notification, which would make every assertion below a
+    // race. An unconfined one runs to the first suspension — the subscription —
+    // before this returns.
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { flow.collect { seen += it } }
     return seen
 }
 
@@ -43,7 +46,7 @@ class LiveNotificationRouterTest :
                 ) {
                     runTest {
                         val router = LiveNotificationRouter()
-                        val seen = broadcastInto(router)
+                        val seen = collectInto(router.notifications)
 
                         router.route(notification(liveQueryId = "not-registered-yet"))
 
@@ -54,7 +57,7 @@ class LiveNotificationRouterTest :
                 should("carry a notification that also reached a subscription, so neither consumer takes it from the other") {
                     runTest {
                         val router = LiveNotificationRouter()
-                        val seen = broadcastInto(router)
+                        val seen = collectInto(router.notifications)
                         val events = router.register("lq-1")
 
                         router.route(notification())
@@ -67,9 +70,9 @@ class LiveNotificationRouterTest :
                 should("keep carrying notifications after the subscription they belong to is gone") {
                     runTest {
                         val router = LiveNotificationRouter()
-                        val seen = broadcastInto(router)
+                        val seen = collectInto(router.notifications)
                         router.register("lq-1")
-                        router.unregister("lq-1")
+                        router.untrack("lq-1")
 
                         router.route(notification())
 
@@ -111,7 +114,7 @@ class LiveNotificationRouterTest :
 
                         router.route(notification(action = "CREATE"))
                         router.route(notification(action = "UPDATE"))
-                        router.unregister("lq-1")
+                        router.untrack("lq-1")
 
                         events.toList() shouldContainExactly
                             listOf(
@@ -126,7 +129,7 @@ class LiveNotificationRouterTest :
                         val router = LiveNotificationRouter()
                         val events = router.register("lq-1")
 
-                        router.unregister("lq-1")
+                        router.untrack("lq-1")
 
                         events.toList().shouldBeEmpty()
                     }
@@ -142,6 +145,82 @@ class LiveNotificationRouterTest :
 
                         replaced.toList().shouldBeEmpty()
                         current.first() shouldBe notification()
+                    }
+                }
+            }
+
+            context("activeQueries") {
+                should("start empty, so nothing is reported running before anything is") {
+                    runTest {
+                        LiveNotificationRouter().activeQueries.value.shouldBeEmpty()
+                    }
+                }
+
+                should("list a query as soon as it is registered, so a caller can wait for the subscription to exist rather than sleep") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+
+                        router.register("lq-1")
+
+                        router.activeQueries.value shouldBe setOf("lq-1")
+                    }
+                }
+
+                should("list a query tracked without a channel, since a collector filtering the broadcast opens none") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+
+                        router.track("lq-1")
+
+                        router.activeQueries.value shouldBe setOf("lq-1")
+                    }
+                }
+
+                should("drop only the query that was untracked, leaving the connection's others running") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1")
+                        router.track("lq-2")
+
+                        router.untrack("lq-1")
+
+                        router.activeQueries.value shouldBe setOf("lq-2")
+                    }
+                }
+
+                should("ignore an untrack for an id it never had, so killing a subscription twice is harmless") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1")
+
+                        router.untrack("lq-1")
+                        router.untrack("lq-1")
+
+                        router.activeQueries.value.shouldBeEmpty()
+                    }
+                }
+
+                should("empty when the connection carrying the queries is gone") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.register("lq-1")
+                        router.track("lq-2")
+
+                        router.closeAll(SurrealTransportException("WebSocket terminated"))
+
+                        router.activeQueries.value.shouldBeEmpty()
+                    }
+                }
+
+                should("report each change to a collector, so waiting on a subscription needs no polling") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.activeQueries)
+
+                        router.track("lq-1")
+                        router.untrack("lq-1")
+
+                        seen shouldContainExactly listOf(emptySet(), setOf("lq-1"), emptySet())
                     }
                 }
             }

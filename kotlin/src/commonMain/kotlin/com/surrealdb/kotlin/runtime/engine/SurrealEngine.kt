@@ -11,6 +11,7 @@ import com.surrealdb.kotlin.api.error.SurrealRpcException
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.SurrealRpcError
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.JsonElement
 
 internal data class SessionSnapshot(
@@ -26,6 +27,12 @@ internal interface SurrealEngine :
     val features: Set<SurrealFeature>
     val events: SharedFlow<SurrealConnectionEvent>
     val liveNotifications: SharedFlow<SurrealLiveNotification>
+
+    /**
+     * The ids of the live queries running on this engine: started and not yet
+     * killed. Empty for an engine that cannot run them.
+     */
+    val activeLiveQueries: StateFlow<Set<String>>
 
     suspend fun start()
 }
