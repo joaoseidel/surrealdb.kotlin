@@ -26,10 +26,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.concurrent.Volatile
@@ -64,6 +66,8 @@ internal class WebSocketEngine(
 
     private val live = LiveNotificationRouter()
     override val liveNotifications: SharedFlow<SurrealLiveNotification> = live.notifications
+
+    override val activeLiveQueries: StateFlow<Set<String>> = live.activeQueries
 
     // Tracks the session state actually applied to the current socket. Reset on
     // each (re)connect so authenticate/use are re-sent.
@@ -116,8 +120,19 @@ internal class WebSocketEngine(
 
         return LiveQuerySubscription(id = id, events = live.register(id)) {
             runCatching { sendBuffered(newRequest("kill", listOf(JsonPrimitive(id)))) }
-            live.unregister(id)
+            live.untrack(id)
         }
+    }
+
+    /**
+     * `kill` is reachable without the subscription that started the query —
+     * `SurrealSession.kill(id)` calls it with nothing but an id — so this, not
+     * [LiveQuerySubscription.cancel], is where a killed query stops being tracked.
+     */
+    override suspend fun kill(liveQueryId: String, session: SessionSnapshot): JsonElement {
+        val result = super.kill(liveQueryId, session)
+        live.untrack(liveQueryId)
+        return result
     }
 
     override fun close() {
