@@ -1,12 +1,12 @@
 package com.surrealdb.kotlin.api
 
-import com.surrealdb.kotlin.internal.ConnectionController
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.QueryDispatcher
 import com.surrealdb.kotlin.api.query.QueryableImpl
 import com.surrealdb.kotlin.api.query.SurrealQueryable
 import com.surrealdb.kotlin.api.query.firstQueryResult
+import com.surrealdb.kotlin.runtime.ConnectionController
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
