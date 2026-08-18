@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.engine
 
+import com.surrealdb.kotlin.api.ReconnectConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

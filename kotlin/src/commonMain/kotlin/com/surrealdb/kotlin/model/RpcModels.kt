@@ -1,6 +1,5 @@
 package com.surrealdb.kotlin.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -35,11 +34,4 @@ internal data class SurrealRpcError(
     val kind: String? = null,
     val details: JsonElement? = null,
     val data: JsonElement? = null,
-)
-
-@Serializable
-public data class SurrealLiveNotification(
-    val action: String,
-    @SerialName("id") val liveQueryId: String,
-    val result: JsonElement,
 )

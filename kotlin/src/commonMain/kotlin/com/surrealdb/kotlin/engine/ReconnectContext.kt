@@ -1,12 +1,6 @@
 package com.surrealdb.kotlin.engine
 
-public data class ReconnectConfig(
-    val enabled: Boolean = true,
-    val initialDelayMillis: Long = 250,
-    val maxDelayMillis: Long = 30_000,
-    val multiplier: Double = 1.5,
-    val maxAttempts: Int? = null,
-)
+import com.surrealdb.kotlin.api.ReconnectConfig
 
 internal class ReconnectContext(private val config: ReconnectConfig) {
     private var attempts = 0

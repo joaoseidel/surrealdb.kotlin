@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.internal
 
-import com.surrealdb.kotlin.model.SurrealLiveNotification
+import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.model.SurrealRpcResponse
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject

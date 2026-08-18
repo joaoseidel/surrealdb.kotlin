@@ -495,7 +495,7 @@ The integration suite covers the full RPC flow, multi-session isolation, the tra
 Run a single test class or method:
 
 ```bash
-./gradlew jvmTest --tests "com.surrealdb.kotlin.RpcMethodsTest"
+./gradlew jvmTest --tests "com.surrealdb.kotlin.api.RpcMethodsTest"
 ./gradlew jvmTest --tests "*ErrorMapping*"
 ```
 
