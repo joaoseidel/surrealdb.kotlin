@@ -3,105 +3,95 @@ package com.surrealdb.kotlin.runtime.codec
 import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.runtime.SurrealRpcRequest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class CodecTest {
+private val codec = SurrealCodec(SurrealClientConfig(url = "http://localhost:8000"))
 
-    private val codec = SurrealCodec(SurrealClientConfig(url = "http://localhost:8000"))
+/** Parses back through Json so assertions are about structure, not string formatting. */
+private fun parse(text: String) =
+    SurrealClientConfig(url = "x").json.parseToJsonElement(text).jsonObject
 
-    // ── HTTP payload round-trip ──
+class CodecTest :
+    ShouldSpec({
+        context("SurrealCodec HTTP") {
+            should("encode the id, method and params the server dispatches on") {
+                val request =
+                    SurrealRpcRequest(
+                        id = "abc-123",
+                        method = "query",
+                        params = listOf(
+                            JsonPrimitive("SELECT * FROM person"),
+                            buildJsonObject { put("limit", JsonPrimitive(10)) },
+                        ),
+                    )
 
-    @Test
-    fun `encodes request id, method and params over HTTP`() {
-        val request = SurrealRpcRequest(
-            id = "abc-123",
-            method = "query",
-            params = listOf(JsonPrimitive("SELECT * FROM person"), buildJsonObject { put("limit", JsonPrimitive(10)) }),
-        )
+                val parsed = parse(codec.encodeHttpPayload(request).decodeToString())
 
-        val bytes = codec.encodeHttpPayload(request)
-        val text = bytes.decodeToString()
+                parsed["id"]?.jsonPrimitive?.content shouldBe "abc-123"
+                parsed["method"]?.jsonPrimitive?.content shouldBe "query"
+                parsed["params"].shouldNotBeNull()
+            }
 
-        // Parse it back through Json to assert structure (avoid string equality flakiness)
-        val parsed = SurrealClientConfig(url = "x").json
-            .parseToJsonElement(text).jsonObject
-        assertEquals("abc-123", parsed["id"]?.jsonPrimitive?.content)
-        assertEquals("query", parsed["method"]?.jsonPrimitive?.content)
-        assertNotNull(parsed["params"])
-    }
+            should("decode a successful response, leaving error unset") {
+                val response = codec.decodeHttpPayload("""{"id":"1","result":{"ok":true}}""".encodeToByteArray())
 
-    @Test
-    fun `decodes successful HTTP response`() {
-        val payload = """{"id":"1","result":{"ok":true}}""".encodeToByteArray()
-        val response = codec.decodeHttpPayload(payload)
+                response.id shouldBe "1"
+                (response.result as JsonObject)["ok"]?.jsonPrimitive?.content?.toBooleanStrict() shouldBe true
+                response.error.shouldBeNull()
+            }
 
-        assertEquals("1", response.id)
-        assertEquals(true, (response.result as JsonObject)["ok"]?.jsonPrimitive?.content?.toBooleanStrict())
-        assertNull(response.error)
-    }
+            should("decode an error response, keeping the server's code and message") {
+                val payload = """{"id":"1","error":{"code":-32000,"message":"oops"}}""".encodeToByteArray()
 
-    @Test
-    fun `decodes error HTTP response`() {
-        val payload = """{"id":"1","error":{"code":-32000,"message":"oops"}}""".encodeToByteArray()
-        val response = codec.decodeHttpPayload(payload)
+                val response = codec.decodeHttpPayload(payload)
 
-        assertEquals("1", response.id)
-        assertNotNull(response.error)
-        assertEquals(-32000, response.error?.code)
-        assertEquals("oops", response.error?.message)
-    }
+                response.id shouldBe "1"
+                response.error.shouldNotBeNull()
+                response.error?.code shouldBe -32000
+                response.error?.message shouldBe "oops"
+            }
 
-    @Test
-    fun `decode of malformed payload throws SurrealProtocolException`() {
-        assertFailsWith<SurrealProtocolException> {
-            codec.decodeHttpPayload("not json at all".encodeToByteArray())
+            should("fail as a protocol error on a malformed payload, not a serialization one") {
+                shouldThrow<SurrealProtocolException> {
+                    codec.decodeHttpPayload("not json at all".encodeToByteArray())
+                }
+            }
+
+            should("announce application/json, which the server requires") {
+                codec.contentTypeHeader() shouldBe "application/json"
+            }
         }
-    }
 
-    // ── WS round-trip ──
+        context("SurrealCodec WebSocket") {
+            should("encode a request as JSON the server can dispatch on") {
+                val request = SurrealRpcRequest(id = "ws-1", method = "ping", params = emptyList())
 
-    @Test
-    fun `WS encodeWsText produces valid JSON`() {
-        val request = SurrealRpcRequest(
-            id = "ws-1",
-            method = "ping",
-            params = emptyList(),
-        )
-        val text = codec.encodeWsText(request)
-        val parsed = SurrealClientConfig(url = "x").json
-            .parseToJsonElement(text).jsonObject
-        assertEquals("ws-1", parsed["id"]?.jsonPrimitive?.content)
-        assertEquals("ping", parsed["method"]?.jsonPrimitive?.content)
-    }
+                val parsed = parse(codec.encodeWsText(request))
 
-    @Test
-    fun `WS decodeWsText parses live notification frame`() {
-        val frame = """{"result":{"action":"CREATE","id":"live-1","result":{"id":"person:1"}}}"""
-        val response = codec.decodeWsText(frame)
+                parsed["id"]?.jsonPrimitive?.content shouldBe "ws-1"
+                parsed["method"]?.jsonPrimitive?.content shouldBe "ping"
+            }
 
-        // No top-level id → live notification
-        assertNull(response.id)
-        assertNotNull(response.result)
-    }
+            should("leave id unset on a live notification, which is how it is told from a reply") {
+                val frame = """{"result":{"action":"CREATE","id":"live-1","result":{"id":"person:1"}}}"""
 
-    @Test
-    fun `WS decode of malformed text throws SurrealProtocolException`() {
-        assertFailsWith<SurrealProtocolException> {
-            codec.decodeWsText("definitely not json")
+                val response = codec.decodeWsText(frame)
+
+                response.id.shouldBeNull()
+                response.result.shouldNotBeNull()
+            }
+
+            should("fail as a protocol error on malformed text, not a serialization one") {
+                shouldThrow<SurrealProtocolException> { codec.decodeWsText("definitely not json") }
+            }
         }
-    }
-
-    @Test
-    fun `contentTypeHeader is application slash json`() {
-        assertEquals("application/json", codec.contentTypeHeader())
-    }
-}
+    })

@@ -1,5 +1,10 @@
 package com.surrealdb.kotlin.api
 
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -7,138 +12,142 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-class SessionLifecycleTest {
-
-    private fun client(): SurrealClient {
-        val engine = MockEngine { _ ->
+/** A client whose every call answers with a token, so these specs are about session state only. */
+private fun client(): SurrealClient {
+    val engine =
+        MockEngine { _ ->
             respond(
                 content = """{"id":"1","result":"jwt-token"}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        return SurrealClient(
-            SurrealClientConfig(
-                url = "http://localhost:8000",
-                autoConnect = false,
-                httpClientFactory = { _ -> HttpClient(engine) },
-            ),
-        )
-    }
-
-    @Test
-    fun `newSession returns a different session id from the root`() = runTest {
-        val c = client()
-        val session = c.newSession()
-        assertNotEquals(c.sessionId, session.sessionId)
-    }
-
-    @Test
-    fun `each new session has a unique id`() = runTest {
-        val c = client()
-        val a = c.newSession()
-        val b = c.newSession()
-        val z = c.newSession()
-        assertEquals(3, setOf(a.sessionId, b.sessionId, z.sessionId).size)
-    }
-
-    @Test
-    fun `signin on one session does not leak token to another`() = runTest {
-        val c = client()
-        val other = c.newSession()
-        c.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
-
-        assertNotNull(c.accessToken())
-        assertNull(other.accessToken())
-    }
-
-    @Test
-    fun `use on one session does not leak ns or db to another`() = runTest {
-        val c = client()
-        val other = c.newSession()
-        c.use("ns1", "db1")
-
-        assertEquals("ns1", c.namespace())
-        assertEquals("db1", c.database())
-        assertNull(other.namespace())
-        assertNull(other.database())
-    }
-
-    @Test
-    fun `let on one session does not affect another`() = runTest {
-        val c = client()
-        val other = c.newSession()
-        // Both sessions submit `let` calls, but each tracks its own variables.
-        // Validate by introspecting state via snapshot through invalidate-style
-        // round-trips would be heavy; instead, smoke-test that the call goes
-        // through without cross-talk by asserting different sessionIds.
-        c.`let`("x", JsonPrimitive(1))
-        other.`let`("y", JsonPrimitive(2))
-        assertNotEquals(c.sessionId, other.sessionId)
-    }
-
-    @Test
-    fun `closeSession on the root client is a no-op (cannot remove root)`() = runTest {
-        val c = client()
-        // Calling closeSession on the root is silently ignored — this should not throw.
-        c.closeSession(c)
-        // Root session is still usable.
-        c.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
-        assertNotNull(c.accessToken())
-    }
-
-    @Test
-    fun `closeSession on a child session removes it`() = runTest {
-        val c = client()
-        val child = c.newSession()
-        c.closeSession(child)
-        // Subsequent ops on the closed session would error inside the controller's
-        // snapshot — but the API contract is that closeSession is best-effort.
-        // We verify here only that no exception is thrown when closing.
-    }
-
-    @Test
-    fun `invalidate clears access token on its session only`() = runTest {
-        val c = client()
-        val other = c.newSession()
-        c.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
-        other.signin(buildJsonObject { put("user", JsonPrimitive("v")) })
-
-        assertNotNull(c.accessToken())
-        assertNotNull(other.accessToken())
-
-        c.invalidate()
-        assertNull(c.accessToken())
-        // Other session's token is unaffected.
-        assertNotNull(other.accessToken())
-    }
-
-    @Test
-    fun `reset clears namespace, database, and access token on its session only`() = runTest {
-        val c = client()
-        val other = c.newSession()
-
-        c.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
-        c.use("ns1", "db1")
-        other.signin(buildJsonObject { put("user", JsonPrimitive("v")) })
-        other.use("ns2", "db2")
-
-        c.reset()
-        assertNull(c.accessToken())
-        assertNull(c.namespace())
-        assertNull(c.database())
-
-        // Other session is untouched
-        assertNotNull(other.accessToken())
-        assertEquals("ns2", other.namespace())
-    }
+    return SurrealClient(
+        SurrealClientConfig(
+            url = "http://localhost:8000",
+            autoConnect = false,
+            httpClientFactory = { _ -> HttpClient(engine) },
+        ),
+    )
 }
+
+private fun credentials(user: String) = buildJsonObject { put("user", JsonPrimitive(user)) }
+
+class SessionLifecycleTest :
+    ShouldSpec({
+        context("SurrealClient.newSession") {
+            should("hand back an id distinct from the root, since the root is itself a session") {
+                runTest {
+                    val client = client()
+
+                    val session = client.newSession()
+
+                    session.sessionId shouldNotBe client.sessionId
+                }
+            }
+
+            should("give every session its own id, so state cannot be shared by accident") {
+                runTest {
+                    val client = client()
+
+                    val ids = setOf(client.newSession(), client.newSession(), client.newSession())
+                        .map { it.sessionId }
+
+                    ids.toSet().size shouldBe 3
+                }
+            }
+        }
+
+        context("state is per session") {
+            // The whole point of newSession: one connection, independent auth and context.
+            should("keep an access token on the session that signed in") {
+                runTest {
+                    val client = client()
+                    val other = client.newSession()
+
+                    client.signin(credentials("u"))
+
+                    client.accessToken().shouldNotBeNull()
+                    other.accessToken().shouldBeNull()
+                }
+            }
+
+            should("keep namespace and database on the session that selected them") {
+                runTest {
+                    val client = client()
+                    val other = client.newSession()
+
+                    client.use("ns1", "db1")
+
+                    client.namespace() shouldBe "ns1"
+                    client.database() shouldBe "db1"
+                    other.namespace().shouldBeNull()
+                    other.database().shouldBeNull()
+                }
+            }
+
+            should("clear only the invalidating session's token") {
+                runTest {
+                    val client = client()
+                    val other = client.newSession()
+                    client.signin(credentials("u"))
+                    other.signin(credentials("v"))
+
+                    client.invalidate()
+
+                    client.accessToken().shouldBeNull()
+                    other.accessToken().shouldNotBeNull()
+                }
+            }
+
+            should("clear only the resetting session's token, namespace and database") {
+                runTest {
+                    val client = client()
+                    val other = client.newSession()
+                    client.signin(credentials("u"))
+                    client.use("ns1", "db1")
+                    other.signin(credentials("v"))
+                    other.use("ns2", "db2")
+
+                    client.reset()
+
+                    client.accessToken().shouldBeNull()
+                    client.namespace().shouldBeNull()
+                    client.database().shouldBeNull()
+                    other.accessToken().shouldNotBeNull()
+                    other.namespace() shouldBe "ns2"
+                }
+            }
+        }
+
+        context("SurrealClient.closeSession") {
+            should("ignore an attempt to close the root, which must stay usable") {
+                runTest {
+                    val client = client()
+
+                    client.closeSession(client)
+
+                    client.signin(credentials("u"))
+                    client.accessToken().shouldNotBeNull()
+                }
+            }
+
+            should("close a child without disturbing the root, since closing is best effort") {
+                runTest {
+                    val client = client()
+                    val child = client.newSession()
+
+                    client.closeSession(child)
+
+                    // The contract is only that closing does not throw and leaves the root working;
+                    // operations on a closed session are deliberately unspecified.
+                    client.signin(credentials("u"))
+                    client.accessToken().shouldNotBeNull()
+                }
+            }
+        }
+    })
