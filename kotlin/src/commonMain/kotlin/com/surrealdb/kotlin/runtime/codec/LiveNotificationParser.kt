@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.SurrealRpcResponse
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 internal fun parseLiveNotification(response: SurrealRpcResponse): SurrealLiveNotification? {
@@ -11,5 +12,11 @@ internal fun parseLiveNotification(response: SurrealRpcResponse): SurrealLiveNot
     val action = result["action"]?.jsonPrimitive?.content ?: return null
     val liveQueryId = result["id"]?.jsonPrimitive?.content ?: return null
     val payload = result["result"] ?: JsonNull
-    return SurrealLiveNotification(action = action, liveQueryId = liveQueryId, result = payload)
+    val record = result["record"]?.jsonPrimitive?.contentOrNull
+    return SurrealLiveNotification(
+        action = action,
+        liveQueryId = liveQueryId,
+        result = payload,
+        record = record,
+    )
 }
