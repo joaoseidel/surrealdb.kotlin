@@ -1,13 +1,15 @@
 package com.surrealdb.kotlin.engine
 
-import com.surrealdb.kotlin.SurrealClientConfig
-import com.surrealdb.kotlin.error.SurrealProtocolException
-import com.surrealdb.kotlin.error.SurrealTransportException
+import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.error.SurrealTransportException
+import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.internal.SurrealCodec
 import com.surrealdb.kotlin.internal.deriveWsEndpoint
 import com.surrealdb.kotlin.internal.parseLiveNotification
-import com.surrealdb.kotlin.live.LiveQuerySubscription
-import com.surrealdb.kotlin.model.SurrealLiveNotification
 import com.surrealdb.kotlin.model.SurrealRpcRequest
 import com.surrealdb.kotlin.model.SurrealRpcResponse
 import io.ktor.client.HttpClient

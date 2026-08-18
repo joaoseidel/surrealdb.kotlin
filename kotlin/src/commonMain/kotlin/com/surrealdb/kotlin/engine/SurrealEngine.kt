@@ -1,11 +1,13 @@
 package com.surrealdb.kotlin.engine
 
-import com.surrealdb.kotlin.error.SurrealAlreadyExistsException
-import com.surrealdb.kotlin.error.SurrealAuthenticationException
-import com.surrealdb.kotlin.error.SurrealErrorKind
-import com.surrealdb.kotlin.error.SurrealNotFoundException
-import com.surrealdb.kotlin.error.SurrealQueryException
-import com.surrealdb.kotlin.error.SurrealRpcException
+import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.error.SurrealAlreadyExistsException
+import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
+import com.surrealdb.kotlin.api.error.SurrealErrorKind
+import com.surrealdb.kotlin.api.error.SurrealNotFoundException
+import com.surrealdb.kotlin.api.error.SurrealQueryException
+import com.surrealdb.kotlin.api.error.SurrealRpcException
 import com.surrealdb.kotlin.model.SurrealRpcError
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.JsonElement

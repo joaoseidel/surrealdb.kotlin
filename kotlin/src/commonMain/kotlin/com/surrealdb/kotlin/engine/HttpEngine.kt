@@ -1,7 +1,9 @@
 package com.surrealdb.kotlin.engine
 
-import com.surrealdb.kotlin.SurrealClientConfig
-import com.surrealdb.kotlin.error.SurrealTransportException
+import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.error.SurrealTransportException
 import com.surrealdb.kotlin.internal.SurrealCodec
 import com.surrealdb.kotlin.internal.normalizeRpcEndpoint
 import com.surrealdb.kotlin.model.SurrealRpcRequest
