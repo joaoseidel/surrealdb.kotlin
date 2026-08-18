@@ -2,10 +2,10 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.SurrealFeature
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
-import com.surrealdb.kotlin.api.query.awaitAs
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
-import com.surrealdb.kotlin.internal.parseLiveNotification
-import com.surrealdb.kotlin.model.SurrealRpcResponse
+import com.surrealdb.kotlin.api.query.awaitAs
+import com.surrealdb.kotlin.runtime.SurrealRpcResponse
+import com.surrealdb.kotlin.runtime.codec.parseLiveNotification
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

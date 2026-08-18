@@ -1,9 +1,9 @@
 package com.surrealdb.kotlin.api.query
 
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.serialization.json.JsonPrimitive
 
 class SurqlTest {
 

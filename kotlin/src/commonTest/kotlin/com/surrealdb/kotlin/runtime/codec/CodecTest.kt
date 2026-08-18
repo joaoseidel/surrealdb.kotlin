@@ -1,8 +1,8 @@
-package com.surrealdb.kotlin.internal
+package com.surrealdb.kotlin.runtime.codec
 
 import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
-import com.surrealdb.kotlin.model.SurrealRpcRequest
+import com.surrealdb.kotlin.runtime.SurrealRpcRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
