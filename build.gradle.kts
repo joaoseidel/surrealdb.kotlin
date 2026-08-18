@@ -1,21 +1,15 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("multiplatform") version "2.1.10"
-    kotlin("plugin.serialization") version "2.1.10"
-    id("com.android.library") version "8.8.2"
-    id("org.jetbrains.dokka") version "2.0.0"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.dokka)
     `maven-publish`
 }
 
 group = providers.gradleProperty("GROUP").get()
 version = providers.gradleProperty("VERSION_NAME").get()
-
-val ktorVersion = "2.3.13"
-val coroutinesVersion = "1.10.1"
-val serializationVersion = "1.8.0"
-val datetimeVersion = "0.6.1"
-val junitVersion = "5.11.4"
 
 kotlin {
     explicitApi()
@@ -39,39 +33,36 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
-            implementation("io.ktor:ktor-client-core:$ktorVersion")
-            implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websockets)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-            implementation("io.ktor:ktor-client-mock:$ktorVersion")
+            implementation(libs.bundles.testing)
         }
 
         androidMain.dependencies {
-            implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+            implementation(libs.ktor.client.okhttp)
         }
 
         jvmMain.dependencies {
-            implementation("io.ktor:ktor-client-cio:$ktorVersion")
+            implementation(libs.ktor.client.cio)
         }
 
         iosMain.dependencies {
-            implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+            implementation(libs.ktor.client.darwin)
         }
 
         jvmTest.dependencies {
-            implementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+            implementation(libs.junit.jupiter)
         }
 
         androidInstrumentedTest.dependencies {
-            implementation("androidx.test.ext:junit:1.2.1")
-            implementation("androidx.test:runner:1.6.2")
-            implementation("androidx.test:core-ktx:1.6.1")
+            implementation(libs.bundles.androidx.test)
         }
     }
 }
