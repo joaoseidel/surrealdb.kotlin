@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "surrealdb.kotlin"
 
 include(":kotlin")
+include(":spectron")
