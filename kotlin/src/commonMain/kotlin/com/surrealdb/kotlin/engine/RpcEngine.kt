@@ -1,11 +1,12 @@
 package com.surrealdb.kotlin.engine
 
-import com.surrealdb.kotlin.SurrealClientConfig
-import com.surrealdb.kotlin.error.SurrealFeatureNotSupportedException
-import com.surrealdb.kotlin.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.internal.SurrealCodec
 import com.surrealdb.kotlin.internal.randomRequestId
-import com.surrealdb.kotlin.live.LiveQuerySubscription
 import com.surrealdb.kotlin.model.SurrealRpcRequest
 import com.surrealdb.kotlin.model.SurrealRpcResponse
 import io.ktor.client.HttpClient

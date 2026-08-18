@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.internal
 
-import com.surrealdb.kotlin.SurrealClientConfig
-import com.surrealdb.kotlin.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.model.SurrealRpcRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals

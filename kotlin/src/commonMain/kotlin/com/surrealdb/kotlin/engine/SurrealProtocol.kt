@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.engine
 
-import com.surrealdb.kotlin.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
