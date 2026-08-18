@@ -1,4 +1,4 @@
-package com.surrealdb.kotlin.model
+package com.surrealdb.kotlin.runtime
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray

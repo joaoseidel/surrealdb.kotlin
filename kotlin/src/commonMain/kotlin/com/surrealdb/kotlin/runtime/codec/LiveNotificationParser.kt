@@ -1,7 +1,7 @@
-package com.surrealdb.kotlin.internal
+package com.surrealdb.kotlin.runtime.codec
 
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
-import com.surrealdb.kotlin.model.SurrealRpcResponse
+import com.surrealdb.kotlin.runtime.SurrealRpcResponse
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive

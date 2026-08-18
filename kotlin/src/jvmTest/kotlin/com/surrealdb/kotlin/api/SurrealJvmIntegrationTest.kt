@@ -4,11 +4,11 @@ import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
 import com.surrealdb.kotlin.api.query.RecordId
 import com.surrealdb.kotlin.api.query.Table
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray

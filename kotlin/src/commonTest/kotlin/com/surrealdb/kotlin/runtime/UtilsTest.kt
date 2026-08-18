@@ -1,4 +1,4 @@
-package com.surrealdb.kotlin.internal
+package com.surrealdb.kotlin.runtime
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

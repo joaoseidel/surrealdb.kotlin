@@ -1,4 +1,4 @@
-package com.surrealdb.kotlin.engine
+package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.error.SurrealAlreadyExistsException
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
@@ -6,7 +6,7 @@ import com.surrealdb.kotlin.api.error.SurrealErrorKind
 import com.surrealdb.kotlin.api.error.SurrealNotFoundException
 import com.surrealdb.kotlin.api.error.SurrealQueryException
 import com.surrealdb.kotlin.api.error.SurrealRpcException
-import com.surrealdb.kotlin.model.SurrealRpcError
+import com.surrealdb.kotlin.runtime.SurrealRpcError
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

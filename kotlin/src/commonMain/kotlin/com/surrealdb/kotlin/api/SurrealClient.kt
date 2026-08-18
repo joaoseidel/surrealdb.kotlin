@@ -2,7 +2,7 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
-import com.surrealdb.kotlin.internal.ConnectionController
+import com.surrealdb.kotlin.runtime.ConnectionController
 import kotlinx.coroutines.flow.SharedFlow
 
 public class SurrealClient private constructor(

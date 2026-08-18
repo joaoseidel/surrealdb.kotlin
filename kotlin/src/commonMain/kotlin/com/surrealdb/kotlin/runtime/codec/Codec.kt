@@ -1,9 +1,9 @@
-package com.surrealdb.kotlin.internal
+package com.surrealdb.kotlin.runtime.codec
 
 import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
-import com.surrealdb.kotlin.model.SurrealRpcRequest
-import com.surrealdb.kotlin.model.SurrealRpcResponse
+import com.surrealdb.kotlin.runtime.SurrealRpcRequest
+import com.surrealdb.kotlin.runtime.SurrealRpcResponse
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

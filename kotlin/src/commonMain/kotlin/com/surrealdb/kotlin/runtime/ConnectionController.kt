@@ -1,17 +1,20 @@
-package com.surrealdb.kotlin.internal
+package com.surrealdb.kotlin.runtime
 
 import com.surrealdb.kotlin.api.SurrealClientConfig
-import com.surrealdb.kotlin.engine.HttpEngine
-import com.surrealdb.kotlin.engine.SessionSnapshot
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
-import com.surrealdb.kotlin.engine.SurrealEngine
 import com.surrealdb.kotlin.api.SurrealFeature
-import com.surrealdb.kotlin.engine.WebSocketEngine
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.runtime.codec.SurrealCodec
+import com.surrealdb.kotlin.runtime.engine.HttpEngine
+import com.surrealdb.kotlin.runtime.engine.SessionSnapshot
+import com.surrealdb.kotlin.runtime.engine.SurrealEngine
+import com.surrealdb.kotlin.runtime.engine.WebSocketEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.WebSockets
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,8 +24,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonElement
 

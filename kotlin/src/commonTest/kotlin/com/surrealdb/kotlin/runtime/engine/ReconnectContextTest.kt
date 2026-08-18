@@ -1,4 +1,4 @@
-package com.surrealdb.kotlin.engine
+package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.ReconnectConfig
 import kotlin.test.Test
