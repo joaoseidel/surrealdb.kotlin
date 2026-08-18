@@ -4,6 +4,13 @@ import com.surrealdb.kotlin.api.query.RecordId
 import com.surrealdb.kotlin.api.query.Table
 import com.surrealdb.kotlin.api.query.eq
 import com.surrealdb.kotlin.api.query.field
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -11,38 +18,35 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-/**
- * Wire-format tests for every public RPC method. Asserts the JSON-RPC envelope
- * (method + params) that hits the transport, using a MockEngine to intercept
- * HTTP requests.
- *
- * Builder-style CRUD (select/create/...) all compile down to the `query` RPC,
- * so we verify the resulting SurrealQL fragment + bindings instead of the
- * legacy dedicated-RPC names.
- */
-class RpcMethodsTest {
+private val harnessJson = Json { ignoreUnknownKeys = true }
 
-    /** Captures the last RPC request and serves a stub `result` response. */
-    private class Harness {
-        var lastMethod: String? = null
-        var lastParams: JsonArray? = null
-        var stubResult: String = """{"id":"1","result":null}"""
+private suspend fun readBody(request: HttpRequestData): String =
+    when (val body = request.body) {
+        is OutgoingContent.ByteArrayContent -> body.bytes().decodeToString()
+        else -> error("unsupported body type: ${body::class.simpleName}")
+    }
 
-        val engine = MockEngine { request ->
-            val body = readBody(request)
-            val parsed = json.parseToJsonElement(body).jsonObject
+/** Captures the JSON-RPC envelope that reaches the transport and serves a stub result. */
+private class Harness {
+    var lastMethod: String? = null
+    var lastParams: JsonArray? = null
+    var stubResult: String = """{"id":"1","result":null}"""
+
+    val engine =
+        MockEngine { request ->
+            val parsed = harnessJson.parseToJsonElement(readBody(request)).jsonObject
             lastMethod = parsed["method"]?.jsonPrimitive?.content
             lastParams = parsed["params"]?.jsonArray
             respond(
@@ -52,7 +56,8 @@ class RpcMethodsTest {
             )
         }
 
-        val client = SurrealClient(
+    val client =
+        SurrealClient(
             SurrealClientConfig(
                 url = "http://localhost:8000",
                 autoConnect = false,
@@ -60,296 +65,376 @@ class RpcMethodsTest {
             ),
         )
 
-        fun lastSurql(): String = lastParams?.get(0)?.jsonPrimitive?.content
-            ?: error("no SurrealQL in last params")
-    }
+    fun lastSurql(): String =
+        lastParams?.get(0)?.jsonPrimitive?.content ?: error("no SurrealQL in last params")
 
-    // ── server methods ──
+    fun paramCount(): Int = lastParams?.size ?: 0
 
-    @Test
-    fun `ping sends ping with empty params`() = runTest {
-        val h = Harness()
-        h.client.ping()
-        assertEquals("ping", h.lastMethod)
-        assertEquals(0, h.lastParams?.size ?: 0)
-    }
-
-    @Test
-    fun `version sends version with empty params`() = runTest {
-        val h = Harness()
-        h.client.version()
-        assertEquals("version", h.lastMethod)
-        assertEquals(0, h.lastParams?.size ?: 0)
-    }
-
-    @Test
-    fun `use sends namespace and database as separate params`() = runTest {
-        val h = Harness()
-        h.client.use("ns1", "db1")
-        assertEquals("use", h.lastMethod)
-        assertEquals(2, h.lastParams?.size)
-        assertEquals("ns1", h.lastParams?.get(0)?.jsonPrimitive?.content)
-        assertEquals("db1", h.lastParams?.get(1)?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `auth uses query RPC with SELECT FROM ONLY $auth`() = runTest {
-        val h = Harness()
-        // Stub the wrapped `[{status, result}]` envelope shape.
-        h.stubResult = """{"id":"1","result":[{"status":"OK","result":{"id":"u:1"}}]}"""
-        h.client.auth()
-        assertEquals("query", h.lastMethod)
-        assertEquals("SELECT * FROM ONLY \$auth", h.lastSurql())
-    }
-
-    // ── auth methods ──
-
-    @Test
-    fun `signup sends signup with credentials object`() = runTest {
-        val h = Harness()
-        h.client.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
-        assertEquals("signup", h.lastMethod)
-        assertEquals("u", h.lastParams?.get(0)?.jsonObject?.get("user")?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `signin sends signin with credentials object`() = runTest {
-        val h = Harness()
-        h.client.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
-        assertEquals("signin", h.lastMethod)
-        assertEquals("u", h.lastParams?.get(0)?.jsonObject?.get("user")?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `authenticate sends authenticate with token string`() = runTest {
-        val h = Harness()
-        h.client.authenticate("jwt-here")
-        assertEquals("authenticate", h.lastMethod)
-        assertEquals("jwt-here", h.lastParams?.get(0)?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `invalidate sends invalidate with empty params`() = runTest {
-        val h = Harness()
-        h.client.invalidate()
-        assertEquals("invalidate", h.lastMethod)
-        assertEquals(0, h.lastParams?.size ?: 0)
-    }
-
-    @Test
-    fun `reset sends reset with empty params`() = runTest {
-        val h = Harness()
-        h.client.reset()
-        assertEquals("reset", h.lastMethod)
-        assertEquals(0, h.lastParams?.size ?: 0)
-    }
-
-    // ── session variables ──
-
-    @Test
-    fun `let sends key and value`() = runTest {
-        val h = Harness()
-        h.client.`let`("k", JsonPrimitive("v"))
-        assertEquals("let", h.lastMethod)
-        assertEquals("k", h.lastParams?.get(0)?.jsonPrimitive?.content)
-        assertEquals("v", h.lastParams?.get(1)?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `unset sends only the key`() = runTest {
-        val h = Harness()
-        h.client.unset("k")
-        assertEquals("unset", h.lastMethod)
-        assertEquals(1, h.lastParams?.size)
-        assertEquals("k", h.lastParams?.get(0)?.jsonPrimitive?.content)
-    }
-
-    // ── query ──
-
-    @Test
-    fun `query without vars sends just the SQL`() = runTest {
-        val h = Harness()
-        h.client.query("SELECT 1")
-        assertEquals("query", h.lastMethod)
-        assertEquals(1, h.lastParams?.size)
-        assertEquals("SELECT 1", h.lastParams?.get(0)?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `query with vars sends both`() = runTest {
-        val h = Harness()
-        h.client.query("SELECT type::table(\$tb)", buildJsonObject { put("tb", JsonPrimitive("person")) })
-        assertEquals("query", h.lastMethod)
-        assertEquals(2, h.lastParams?.size)
-        assertEquals("person", h.lastParams?.get(1)?.jsonObject?.get("tb")?.jsonPrimitive?.content)
-    }
-
-    // ── builder CRUD: each compiles to the `query` RPC ──
-
-    private fun envelope(stub: String = "null") =
-        """{"id":"1","result":[{"status":"OK","time":"1ms","result":$stub}]}"""
-
-    @Test
-    fun `select builder compiles to SELECT FROM ONLY with table binding`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.select(Table("person")).await()
-        assertEquals("query", h.lastMethod)
-        assertTrue(h.lastSurql().startsWith("SELECT * FROM ONLY type::table("))
-        // Bound table name lives in the vars object (second param).
-        val vars = h.lastParams?.get(1)?.jsonObject
-        assertEquals("person", vars?.values?.firstOrNull()?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `select where compiles into a WHERE clause`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.select(Table("person")).where(field("age") eq 30).await()
-        val surql = h.lastSurql()
-        assertTrue(surql.contains("WHERE"), "expected WHERE in: $surql")
-        assertTrue(surql.contains("age"), "expected 'age' in: $surql")
-    }
-
-    @Test
-    fun `create builder compiles to CREATE ONLY with CONTENT binding`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.create(RecordId("person", "1"))
-            .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
-            .await()
-        val surql = h.lastSurql()
-        assertTrue(surql.startsWith("CREATE ONLY type::record("))
-        assertTrue(surql.contains(" CONTENT "))
-    }
-
-    @Test
-    fun `update builder compiles to UPDATE ONLY`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.update(RecordId("person", "1"))
-            .content(buildJsonObject { put("name", JsonPrimitive("New")) })
-            .await()
-        assertTrue(h.lastSurql().startsWith("UPDATE ONLY type::record("))
-    }
-
-    @Test
-    fun `upsert builder compiles to UPSERT ONLY`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.upsert(RecordId("person", "1"))
-            .content(buildJsonObject { put("name", JsonPrimitive("X")) })
-            .await()
-        assertTrue(h.lastSurql().startsWith("UPSERT ONLY type::record("))
-    }
-
-    @Test
-    fun `merge builder compiles to UPDATE ONLY MERGE`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
-            .await()
-        val surql = h.lastSurql()
-        assertTrue(surql.startsWith("UPDATE ONLY type::record("))
-        assertTrue(surql.contains(" MERGE "))
-    }
-
-    @Test
-    fun `patch builder compiles to UPDATE ONLY PATCH`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.patch(RecordId("person", "1"), buildJsonObject { put("op", JsonPrimitive("replace")) })
-            .await()
-        val surql = h.lastSurql()
-        assertTrue(surql.startsWith("UPDATE ONLY type::record("))
-        assertTrue(surql.contains(" PATCH "))
-    }
-
-    @Test
-    fun `patch builder with diff appends RETURN DIFF`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.patch(RecordId("person", "1"), buildJsonObject {}, diff = true)
-            .await()
-        assertTrue(h.lastSurql().endsWith(" RETURN DIFF"))
-    }
-
-    @Test
-    fun `delete builder compiles to DELETE ONLY`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.delete(RecordId("person", "1")).await()
-        assertTrue(h.lastSurql().startsWith("DELETE ONLY type::record("))
-    }
-
-    // ── graph ──
-
-    @Test
-    fun `relate builder compiles to RELATE arrow chain`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.relate(RecordId("person", "a"), Table("likes"), RecordId("person", "b")).await()
-        val surql = h.lastSurql()
-        assertTrue(surql.startsWith("RELATE "), "got $surql")
-        assertTrue(surql.contains("->"))
-    }
-
-    @Test
-    fun `insert builder compiles to INSERT INTO with bound data`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.insert(Table("person"), buildJsonObject { put("name", JsonPrimitive("A")) }).await()
-        assertTrue(h.lastSurql().startsWith("INSERT INTO $"))
-    }
-
-    @Test
-    fun `insertRelation builder compiles to INSERT RELATION INTO`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.insertRelation(Table("likes"), buildJsonObject { put("in", JsonPrimitive("p:a")) }).await()
-        assertTrue(h.lastSurql().startsWith("INSERT RELATION INTO $"))
-    }
-
-    @Test
-    fun `run builder compiles to function call with bound args`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.run("fn::greet").args("world").await()
-        assertEquals("query", h.lastMethod)
-        val surql = h.lastSurql()
-        assertTrue(surql.startsWith("fn::greet("), "got $surql")
-    }
-
-    @Test
-    fun `run with version emits angle-bracket version`() = runTest {
-        val h = Harness().apply { stubResult = envelope() }
-        h.client.run("fn::greet").version("1.0").args("world").await()
-        assertTrue(h.lastSurql().startsWith("fn::greet<1.0>("))
-    }
-
-    // ── result propagation ──
-
-    @Test
-    fun `null result is returned as JsonNull`() = runTest {
-        val h = Harness()
-        h.stubResult = """{"id":"1","result":null}"""
-        val result = h.client.ping()
-        assertTrue(result is kotlinx.serialization.json.JsonNull)
-    }
-
-    @Test
-    fun `complex result is returned verbatim`() = runTest {
-        val h = Harness()
-        h.stubResult = """{"id":"1","result":[{"a":1},{"b":2}]}"""
-        val result = h.client.ping().jsonArray
-        assertEquals(2, result.size)
-    }
-
-    @Test
-    fun `missing id in response is tolerated`() = runTest {
-        val h = Harness()
-        h.stubResult = """{"result":{"ok":true}}"""
-        val result = h.client.ping().jsonObject
-        assertEquals("true", result["ok"]?.jsonPrimitive?.content)
-    }
-
-    companion object {
-        private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-
-        private suspend fun readBody(request: HttpRequestData): String {
-            val body = request.body
-            val bytes = when (body) {
-                is io.ktor.http.content.OutgoingContent.ByteArrayContent -> body.bytes()
-                else -> error("unsupported body type: ${body::class.simpleName}")
-            }
-            return bytes.decodeToString()
-        }
-    }
+    fun param(index: Int) = lastParams?.get(index)
 }
+
+/** The `[{status, result}]` envelope the server wraps a `query` result in. */
+private fun envelope(stub: String = "null") =
+    """{"id":"1","result":[{"status":"OK","time":"1ms","result":$stub}]}"""
+
+private fun builderHarness() = Harness().apply { stubResult = envelope() }
+
+/**
+ * Wire-format specs for every public RPC method: what method name and params reach the transport.
+ *
+ * Builder-style CRUD all compiles down to the `query` RPC, so those cases assert the SurrealQL
+ * fragment and its bindings rather than a dedicated RPC name.
+ */
+class RpcMethodsTest :
+    ShouldSpec({
+        context("server methods") {
+            should("send ping with no params") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.ping()
+
+                    h.lastMethod shouldBe "ping"
+                    h.paramCount() shouldBe 0
+                }
+            }
+
+            should("send version with no params") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.version()
+
+                    h.lastMethod shouldBe "version"
+                    h.paramCount() shouldBe 0
+                }
+            }
+
+            should("send namespace and database as two params, not one pair") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.use("ns1", "db1")
+
+                    h.lastMethod shouldBe "use"
+                    h.paramCount() shouldBe 2
+                    h.param(0)?.jsonPrimitive?.content shouldBe "ns1"
+                    h.param(1)?.jsonPrimitive?.content shouldBe "db1"
+                }
+            }
+
+            should("answer who-am-I through query, because there is no auth RPC") {
+                runTest {
+                    val h = Harness()
+                    h.stubResult = """{"id":"1","result":[{"status":"OK","result":{"id":"u:1"}}]}"""
+
+                    h.client.auth()
+
+                    h.lastMethod shouldBe "query"
+                    h.lastSurql() shouldBe "SELECT * FROM ONLY \$auth"
+                }
+            }
+        }
+
+        context("auth methods") {
+            should("send signup with the credentials object intact") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
+
+                    h.lastMethod shouldBe "signup"
+                    h.param(0)?.jsonObject?.get("user")?.jsonPrimitive?.content shouldBe "u"
+                }
+            }
+
+            should("send signin with the credentials object intact") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
+
+                    h.lastMethod shouldBe "signin"
+                    h.param(0)?.jsonObject?.get("user")?.jsonPrimitive?.content shouldBe "u"
+                }
+            }
+
+            should("send authenticate with the raw token string") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.authenticate("jwt-here")
+
+                    h.lastMethod shouldBe "authenticate"
+                    h.param(0)?.jsonPrimitive?.content shouldBe "jwt-here"
+                }
+            }
+
+            should("send invalidate with no params") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.invalidate()
+
+                    h.lastMethod shouldBe "invalidate"
+                    h.paramCount() shouldBe 0
+                }
+            }
+
+            should("send reset with no params") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.reset()
+
+                    h.lastMethod shouldBe "reset"
+                    h.paramCount() shouldBe 0
+                }
+            }
+        }
+
+        context("session variables") {
+            should("send let with key and value as separate params") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.`let`("k", JsonPrimitive("v"))
+
+                    h.lastMethod shouldBe "let"
+                    h.param(0)?.jsonPrimitive?.content shouldBe "k"
+                    h.param(1)?.jsonPrimitive?.content shouldBe "v"
+                }
+            }
+
+            should("send unset with the key alone") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.unset("k")
+
+                    h.lastMethod shouldBe "unset"
+                    h.paramCount() shouldBe 1
+                    h.param(0)?.jsonPrimitive?.content shouldBe "k"
+                }
+            }
+        }
+
+        context("query") {
+            should("omit the vars param when the caller passed none") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.query("SELECT 1")
+
+                    h.lastMethod shouldBe "query"
+                    h.paramCount() shouldBe 1
+                    h.param(0)?.jsonPrimitive?.content shouldBe "SELECT 1"
+                }
+            }
+
+            should("send bindings as a second param, so they are never inlined into the SQL") {
+                runTest {
+                    val h = Harness()
+
+                    h.client.query(
+                        "SELECT type::table(\$tb)",
+                        buildJsonObject { put("tb", JsonPrimitive("person")) },
+                    )
+
+                    h.lastMethod shouldBe "query"
+                    h.paramCount() shouldBe 2
+                    h.param(1)?.jsonObject?.get("tb")?.jsonPrimitive?.content shouldBe "person"
+                }
+            }
+        }
+
+        context("builder CRUD compiles to the query RPC") {
+            should("bind the table name rather than inline it, so it cannot be injected") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.select(Table("person")).await()
+
+                    h.lastMethod shouldBe "query"
+                    h.lastSurql() shouldStartWith "SELECT * FROM ONLY type::table("
+                    h.param(1)?.jsonObject?.values?.firstOrNull()?.jsonPrimitive?.content shouldBe "person"
+                }
+            }
+
+            should("render a where clause into the statement") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.select(Table("person")).where(field("age") eq 30).await()
+
+                    h.lastSurql() shouldContain "WHERE"
+                    h.lastSurql() shouldContain "age"
+                }
+            }
+
+            should("compile create to CREATE ONLY with a bound CONTENT") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.create(RecordId("person", "1"))
+                        .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "CREATE ONLY type::record("
+                    h.lastSurql() shouldContain " CONTENT "
+                }
+            }
+
+            should("compile update to UPDATE ONLY") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.update(RecordId("person", "1"))
+                        .content(buildJsonObject { put("name", JsonPrimitive("New")) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "UPDATE ONLY type::record("
+                }
+            }
+
+            should("compile upsert to UPSERT ONLY") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.upsert(RecordId("person", "1"))
+                        .content(buildJsonObject { put("name", JsonPrimitive("X")) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "UPSERT ONLY type::record("
+                }
+            }
+
+            should("compile merge to UPDATE ONLY MERGE, not a dedicated merge RPC") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "UPDATE ONLY type::record("
+                    h.lastSurql() shouldContain " MERGE "
+                }
+            }
+
+            should("compile patch to UPDATE ONLY PATCH") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.patch(RecordId("person", "1"), buildJsonObject { put("op", JsonPrimitive("replace")) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "UPDATE ONLY type::record("
+                    h.lastSurql() shouldContain " PATCH "
+                }
+            }
+
+            should("append RETURN DIFF when the caller asked for a diff") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).await()
+
+                    h.lastSurql() shouldEndWith " RETURN DIFF"
+                }
+            }
+
+            should("compile delete to DELETE ONLY") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.delete(RecordId("person", "1")).await()
+
+                    h.lastSurql() shouldStartWith "DELETE ONLY type::record("
+                }
+            }
+        }
+
+        context("graph") {
+            should("compile relate to a RELATE arrow chain") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.relate(RecordId("person", "a"), Table("likes"), RecordId("person", "b")).await()
+
+                    h.lastSurql() shouldStartWith "RELATE "
+                    h.lastSurql() shouldContain "->"
+                }
+            }
+
+            should("compile insert to INSERT INTO with the data bound") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.insert(Table("person"), buildJsonObject { put("name", JsonPrimitive("A")) }).await()
+
+                    h.lastSurql() shouldStartWith "INSERT INTO $"
+                }
+            }
+
+            should("compile insertRelation to INSERT RELATION INTO") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.insertRelation(Table("likes"), buildJsonObject { put("in", JsonPrimitive("p:a")) })
+                        .await()
+
+                    h.lastSurql() shouldStartWith "INSERT RELATION INTO $"
+                }
+            }
+
+            should("compile run to a function call with bound args") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.run("fn::greet").args("world").await()
+
+                    h.lastMethod shouldBe "query"
+                    h.lastSurql() shouldStartWith "fn::greet("
+                }
+            }
+
+            should("emit the angle-bracket form when a function version is named") {
+                runTest {
+                    val h = builderHarness()
+
+                    h.client.run("fn::greet").version("1.0").args("world").await()
+
+                    h.lastSurql() shouldStartWith "fn::greet<1.0>("
+                }
+            }
+        }
+
+        context("result propagation") {
+            should("hand back JsonNull rather than null, so callers need no null check") {
+                runTest {
+                    val h = Harness()
+                    h.stubResult = """{"id":"1","result":null}"""
+
+                    h.client.ping().shouldBeInstanceOf<JsonNull>()
+                }
+            }
+
+            should("hand back a complex result verbatim, without reshaping it") {
+                runTest {
+                    val h = Harness()
+                    h.stubResult = """{"id":"1","result":[{"a":1},{"b":2}]}"""
+
+                    h.client.ping().jsonArray shouldHaveSize 2
+                }
+            }
+
+            should("tolerate a response with no id, which live-capable servers may send") {
+                runTest {
+                    val h = Harness()
+                    h.stubResult = """{"result":{"ok":true}}"""
+
+                    h.client.ping().jsonObject["ok"]?.jsonPrimitive?.content shouldBe "true"
+                }
+            }
+        }
+    })
