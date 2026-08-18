@@ -5,6 +5,7 @@ import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.codec.SurrealCodec
 import com.surrealdb.kotlin.runtime.engine.HttpEngine
 import com.surrealdb.kotlin.runtime.engine.SessionSnapshot
@@ -53,6 +54,9 @@ internal class ConnectionController(
     val features: Set<SurrealFeature> get() = engine.features
     val events: SharedFlow<SurrealConnectionEvent> get() = engine.events
     val activeLiveQueries: StateFlow<Set<String>> get() = engine.activeLiveQueries
+    val liveNotifications: SharedFlow<SurrealLiveNotification> get() = engine.liveNotifications
+
+    suspend fun trackLive(liveQueryId: String): Unit = engine.trackLiveQuery(liveQueryId)
 
     private val sessionsMutex = Mutex()
     private val sessions = mutableMapOf<String, MutableSessionState>()

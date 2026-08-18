@@ -2,20 +2,26 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.api.query.RecordId
 import com.surrealdb.kotlin.api.query.Table
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -235,6 +241,60 @@ class SurrealJvmIntegrationTest {
 
             subscription.cancel()
             client.delete(RecordId("live_person", "one")).await()
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `flow scoped live queries filter server side and kill on cancellation`(): Unit = runBlocking {
+        assumeTrue(System.getenv("SURREAL_RUN_INTEGRATION") == "true")
+        val httpEndpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
+        val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
+
+        val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+        try {
+            client.signin(
+                buildJsonObject {
+                    put("user", JsonPrimitive("root"))
+                    put("pass", JsonPrimitive("root"))
+                },
+            )
+            client.use("main", "main")
+            client.query("DEFINE TABLE live_book SCHEMALESS")
+
+            val received = Channel<LiveQueryEvent<JsonElement>>(Channel.UNLIMITED)
+            val collector = launch {
+                client.liveEvents<JsonElement>("SELECT * FROM live_book WHERE pages > 100")
+                    .collect { received.send(it) }
+            }
+
+            // The query exists only once collection has begun, so wait for it rather
+            // than racing the writes below against the LIVE SELECT.
+            val queryId = withTimeout(5_000) { client.activeLiveQueries.first { it.isNotEmpty() } }.single()
+
+            client.create(RecordId("live_book", "pamphlet"))
+                .content(buildJsonObject { put("pages", JsonPrimitive(10)) })
+                .await()
+            client.create(RecordId("live_book", "tome"))
+                .content(buildJsonObject { put("pages", JsonPrimitive(500)) })
+                .await()
+
+            // Notifications arrive in write order on one socket, so seeing the tome's
+            // means the pamphlet's would already have arrived had the server sent one.
+            val event = withTimeout(10_000) { received.receive() }
+            assertTrue(event is LiveQueryEvent.Created, "expected a Created event, got $event")
+            assertEquals(RecordId("live_book", "tome"), event.record)
+            assertFalse(
+                received.tryReceive().isSuccess,
+                "the WHERE filter must be evaluated server side — the pamphlet should never have been sent",
+            )
+
+            collector.cancelAndJoin()
+            withTimeout(5_000) { client.activeLiveQueries.first { queryId !in it } }
+
+            client.delete(RecordId("live_book", "pamphlet")).await()
+            client.delete(RecordId("live_book", "tome")).await()
         } finally {
             client.close()
         }
