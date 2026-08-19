@@ -248,9 +248,10 @@ public open class SurrealSession internal constructor(
 
         return liveEventFlow(
             notifications = controller.liveNotifications,
+            failures = controller.liveFailures,
             start = {
                 val id = firstQueryResult(query(statement)).jsonPrimitive.content
-                controller.trackLive(id)
+                controller.trackLive(sessionId, id, statement)
                 id
             },
             stop = { id -> kill(id) },

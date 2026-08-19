@@ -4,10 +4,13 @@ import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.codec.SurrealCodec
 import com.surrealdb.kotlin.runtime.engine.HttpEngine
+import com.surrealdb.kotlin.runtime.engine.LiveQuerySource
+import com.surrealdb.kotlin.runtime.engine.LiveQuerySpec
 import com.surrealdb.kotlin.runtime.engine.SessionSnapshot
 import com.surrealdb.kotlin.runtime.engine.SurrealEngine
 import com.surrealdb.kotlin.runtime.engine.WebSocketEngine
@@ -56,8 +59,17 @@ internal class ConnectionController(
     val events: SharedFlow<SurrealConnectionEvent> get() = engine.events
     val activeLiveQueries: StateFlow<Set<String>> get() = engine.activeLiveQueries
     val liveNotifications: SharedFlow<SurrealLiveNotification> get() = engine.liveNotifications
+    val liveFailures: SharedFlow<LiveQueryFailure> get() = engine.liveFailures
 
-    suspend fun trackLive(liveQueryId: String): Unit = engine.trackLiveQuery(liveQueryId)
+    suspend fun trackLive(
+        sessionId: String,
+        liveQueryId: String,
+        statement: String,
+    ): Unit =
+        engine.trackLiveQuery(
+            liveQueryId,
+            LiveQuerySource(LiveQuerySpec.Statement(statement)) { snapshot(sessionId) },
+        )
 
     private val sessionsMutex = Mutex()
     private val sessions = mutableMapOf<String, MutableSessionState>()
@@ -183,7 +195,7 @@ internal class ConnectionController(
                 "Live queries are not supported by the active engine — use a ws:// or wss:// URL",
             )
         }
-        return engine.liveQuery(table, diff, snapshot(sessionId))
+        return engine.liveQuery(table, diff) { snapshot(sessionId) }
     }
 
     suspend fun kill(

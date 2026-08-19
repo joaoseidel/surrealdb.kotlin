@@ -115,6 +115,20 @@ public class SurrealQueryException(
     public val isCancelled: Boolean get() = query.isCancelled
 }
 
+/**
+ * A live query stopped delivering and cannot be recovered. Thrown into the
+ * collector rather than reported anywhere else, because a subscription that
+ * simply goes quiet is indistinguishable from one with nothing to say.
+ *
+ * The usual [cause] is the failure of the statement the engine re-ran to
+ * re-establish the subscription after a reconnect — the server forgets its
+ * live queries when the session behind them goes.
+ */
+public class SurrealLiveQueryException(
+    message: String,
+    cause: Throwable? = null,
+) : SurrealException(message, cause)
+
 public class SurrealFeatureNotSupportedException(
     message: String,
 ) : SurrealException(message)

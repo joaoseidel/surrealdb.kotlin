@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.SurrealRpcRequest
@@ -49,11 +50,18 @@ internal abstract class RpcEngine(
         MutableSharedFlow<SurrealLiveNotification>()
             .asSharedFlow()
 
+    override val liveFailures: SharedFlow<LiveQueryFailure> =
+        MutableSharedFlow<LiveQueryFailure>()
+            .asSharedFlow()
+
     override val activeLiveQueries: StateFlow<Set<String>> = MutableStateFlow(emptySet())
 
     // Nothing to track on an engine that cannot receive a notification; overridden
     // where there is a connection to hold the subscription.
-    override suspend fun trackLiveQuery(liveQueryId: String): Unit = Unit
+    override suspend fun trackLiveQuery(
+        liveQueryId: String,
+        source: LiveQuerySource,
+    ): Unit = Unit
 
     protected fun publishEvent(event: SurrealConnectionEvent) {
         _events.tryEmit(event)
@@ -190,7 +198,7 @@ internal abstract class RpcEngine(
     override suspend fun liveQuery(
         table: String,
         diff: Boolean?,
-        session: SessionSnapshot,
+        session: suspend () -> SessionSnapshot,
     ): LiveQuerySubscription =
         throw SurrealFeatureNotSupportedException(
             "Live queries are not supported by ${this::class.simpleName} — use a ws:// or wss:// URL",

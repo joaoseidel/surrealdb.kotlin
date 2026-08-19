@@ -1,11 +1,13 @@
 package com.surrealdb.kotlin.api.live
 
+import com.surrealdb.kotlin.api.error.SurrealLiveQueryException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -38,6 +40,7 @@ private class FakeEngine(
     private val startFails: Throwable? = null,
 ) {
     val notifications = MutableSharedFlow<SurrealLiveNotification>(extraBufferCapacity = 8)
+    val failures = MutableSharedFlow<LiveQueryFailure>(extraBufferCapacity = 8)
     val started = mutableListOf<String>()
     val stopped = mutableListOf<String>()
     var onStarted: (String) -> Unit = {}
@@ -45,6 +48,7 @@ private class FakeEngine(
     fun <T> flow(decode: (kotlinx.serialization.json.JsonElement) -> T): Flow<LiveQueryEvent<T>> =
         liveEventFlow(
             notifications = notifications,
+            failures = failures,
             start = {
                 startFails?.let { throw it }
                 val id = "lq-${started.size + 1}"
@@ -65,6 +69,15 @@ private fun <T> TestScope.collectInBackground(
     flow: Flow<T>,
     into: MutableList<T>,
 ): Job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { flow.collect { into += it } }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun TestScope.collectOutcome(flow: Flow<*>): CompletableDeferred<Throwable?> {
+    val outcome = CompletableDeferred<Throwable?>()
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        outcome.complete(runCatching { flow.collect { } }.exceptionOrNull())
+    }
+    return outcome
+}
 
 class LiveQueryFlowTest :
     ShouldSpec({
@@ -119,6 +132,53 @@ class LiveQueryFlowTest :
 
                         shouldThrow<IllegalStateException> { engine.flow(content).toList() }
 
+                        engine.stopped.shouldBeEmpty()
+                    }
+                }
+            }
+
+            context("a subscription that can no longer deliver") {
+                should("throw the failure into the collector, so a dead query is not mistaken for a quiet one") {
+                    runTest {
+                        val engine = FakeEngine()
+                        val outcome = collectOutcome(engine.flow(content))
+
+                        engine.failures.emit(
+                            LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
+                        )
+
+                        outcome
+                            .await()
+                            .shouldBeInstanceOf<SurrealLiveQueryException>()
+                            .message shouldBe "could not be re-established"
+                    }
+                }
+
+                should("ignore a failure belonging to another query, which says nothing about this one") {
+                    runTest {
+                        val engine = FakeEngine()
+                        val events = mutableListOf<LiveQueryEvent<String>>()
+                        collectInBackground(engine.flow(content), events)
+
+                        engine.failures.emit(
+                            LiveQueryFailure("lq-2", SurrealLiveQueryException("someone else's query")),
+                        )
+                        engine.notifications.emit(notification("lq-1", payload = "mine"))
+
+                        events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "mine"
+                    }
+                }
+
+                should("kill nothing, the query it would name having already stopped existing") {
+                    runTest {
+                        val engine = FakeEngine()
+                        val outcome = collectOutcome(engine.flow(content))
+
+                        engine.failures.emit(
+                            LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
+                        )
+
+                        outcome.await()
                         engine.stopped.shouldBeEmpty()
                     }
                 }

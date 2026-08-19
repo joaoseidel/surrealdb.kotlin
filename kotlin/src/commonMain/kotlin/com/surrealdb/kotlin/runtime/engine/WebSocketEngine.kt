@@ -3,10 +3,13 @@ package com.surrealdb.kotlin.runtime.engine
 import com.surrealdb.kotlin.api.SurrealClientConfig
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.error.SurrealLiveQueryException
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.api.error.SurrealTransportException
+import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
+import com.surrealdb.kotlin.api.query.firstQueryResult
 import com.surrealdb.kotlin.runtime.SurrealRpcRequest
 import com.surrealdb.kotlin.runtime.SurrealRpcResponse
 import com.surrealdb.kotlin.runtime.codec.SurrealCodec
@@ -24,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +36,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.concurrent.Volatile
@@ -56,6 +61,7 @@ internal class WebSocketEngine(
     private val stateMutex = Mutex()
     private var wsSession: DefaultClientWebSocketSession? = null
     private var connectLoopJob: Job? = null
+    private var reissueJob: Job? = null
 
     @Volatile private var terminated = false
 
@@ -67,9 +73,14 @@ internal class WebSocketEngine(
     private val live = LiveNotificationRouter()
     override val liveNotifications: SharedFlow<SurrealLiveNotification> = live.notifications
 
+    override val liveFailures: SharedFlow<LiveQueryFailure> = live.failures
+
     override val activeLiveQueries: StateFlow<Set<String>> = live.activeQueries
 
-    override suspend fun trackLiveQuery(liveQueryId: String): Unit = live.track(liveQueryId)
+    override suspend fun trackLiveQuery(
+        liveQueryId: String,
+        source: LiveQuerySource,
+    ): Unit = live.track(liveQueryId, source)
 
     // Tracks the session state actually applied to the current socket. Reset on
     // each (re)connect so authenticate/use are re-sent.
@@ -105,23 +116,21 @@ internal class WebSocketEngine(
     override suspend fun liveQuery(
         table: String,
         diff: Boolean?,
-        session: SessionSnapshot,
+        session: suspend () -> SessionSnapshot,
     ): LiveQuerySubscription {
+        val spec = LiveQuerySpec.Table(table, diff)
+
         awaitReady()
-        applyContext(session)
-        val params =
-            buildList {
-                add(JsonPrimitive(table))
-                if (diff != null) add(JsonPrimitive(diff))
-            }
-        val response = sendBuffered(newRequest("live", params))
+        applyContext(session())
+        val response = sendBuffered(requestFor(spec))
         response.error?.let { throw mapRpcError(it) }
         val id =
             response.result?.jsonPrimitive?.content
                 ?: throw SurrealProtocolException("Live query did not return a subscription id")
 
-        return LiveQuerySubscription(id = id, events = live.register(id)) {
-            runCatching { sendBuffered(newRequest("kill", listOf(JsonPrimitive(id)))) }
+        val events = live.register(id, LiveQuerySource(spec, session))
+        return LiveQuerySubscription(id = id, events = events) {
+            runCatching { kill(id, session()) }
             live.untrack(id)
         }
     }
@@ -130,7 +139,7 @@ internal class WebSocketEngine(
         liveQueryId: String,
         session: SessionSnapshot,
     ): JsonElement {
-        val result = super.kill(liveQueryId, session)
+        val result = super.kill(live.serverIdFor(liveQueryId), session)
         live.untrack(liveQueryId)
         return result
     }
@@ -163,6 +172,10 @@ internal class WebSocketEngine(
                         continue
                     }
 
+                // Before anything is replayed onto the new socket, so a pass left over
+                // from the previous one cannot issue a second copy of a live query.
+                reissueJob?.cancelAndJoin()
+
                 stateMutex.withLock { wsSession = newSession }
                 resetAppliedContext()
                 replayPending(newSession)
@@ -171,6 +184,10 @@ internal class WebSocketEngine(
                 ready = true
                 readyDeferred.complete(Unit)
                 reconnect.reset()
+
+                // Launched rather than awaited: re-issuing sends RPCs whose replies only
+                // arrive once this coroutine is inside readLoop.
+                reissueJob = scope.launch { reissueLiveQueries() }
 
                 val cause = runCatching { readLoop(newSession) }.exceptionOrNull()
                 ready = false
@@ -208,6 +225,58 @@ internal class WebSocketEngine(
         for (call in calls) {
             runCatching { socket.send(Frame.Text(codec.encodeWsText(call.request))) }
         }
+    }
+
+    private suspend fun reissueLiveQueries() {
+        for (tracked in live.reissuable()) {
+            try {
+                applyContext(tracked.source.session())
+                val response = sendBuffered(requestFor(tracked.source.spec))
+                response.error?.let { throw mapRpcError(it) }
+                live.rebind(tracked.id, readSubscriptionId(tracked.source.spec, response))
+            } catch (cause: CancellationException) {
+                throw cause
+            } catch (cause: Throwable) {
+                live.fail(
+                    tracked.id,
+                    SurrealLiveQueryException(
+                        "Live query ${tracked.id} could not be re-established after reconnecting",
+                        cause,
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun requestFor(spec: LiveQuerySpec) =
+        when (spec) {
+            is LiveQuerySpec.Table -> {
+                newRequest(
+                    "live",
+                    buildList {
+                        add(JsonPrimitive(spec.table))
+                        if (spec.diff != null) add(JsonPrimitive(spec.diff))
+                    },
+                )
+            }
+
+            is LiveQuerySpec.Statement -> {
+                newRequest("query", listOf(JsonPrimitive(spec.sql)))
+            }
+        }
+
+    private fun readSubscriptionId(
+        spec: LiveQuerySpec,
+        response: SurrealRpcResponse,
+    ): String {
+        val result =
+            when (spec) {
+                is LiveQuerySpec.Table -> response.result ?: JsonNull
+                is LiveQuerySpec.Statement -> firstQueryResult(response.result ?: JsonNull)
+            }
+
+        return (result as? JsonPrimitive)?.takeIf { it.isString }?.content
+            ?: throw SurrealProtocolException("Live query did not return a subscription id (got $result)")
     }
 
     private suspend fun readLoop(activeSession: DefaultClientWebSocketSession) {
@@ -315,6 +384,7 @@ internal class WebSocketEngine(
 
     private suspend fun teardown() {
         terminated = true
+        reissueJob?.cancel()
         connectLoopJob?.cancel()
         val sessionToClose =
             stateMutex.withLock {

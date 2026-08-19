@@ -82,7 +82,7 @@ internal interface SurrealProtocol {
     suspend fun liveQuery(
         table: String,
         diff: Boolean?,
-        session: SessionSnapshot,
+        session: suspend () -> SessionSnapshot,
     ): LiveQuerySubscription
 
     suspend fun kill(
