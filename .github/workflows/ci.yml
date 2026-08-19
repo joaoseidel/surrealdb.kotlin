@@ -7,11 +7,26 @@ on:
 
 jobs:
   jvm:
+    name: jvm (${{ matrix.surrealdb }})
     runs-on: ubuntu-latest
+    # A green run against a floating tag changes meaning whenever SurrealDB
+    # publishes, without a commit here. The pinned version is what the suite is
+    # developed against and is the one that can fail the build; `latest` rides
+    # along as an early warning that a future server release breaks the client,
+    # non-blocking because that is someone else's release, not this change.
+    continue-on-error: ${{ !matrix.blocking }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - surrealdb: "surrealdb/surrealdb:v3.2.4"
+            blocking: true
+          - surrealdb: "surrealdb/surrealdb:latest"
+            blocking: false
     env:
       SURREAL_RUN_INTEGRATION: "true"
       SURREAL_JVM_ENDPOINT: "http://127.0.0.1:8000"
-      SURREALDB_IMAGE: "surrealdb/surrealdb:latest"
+      SURREALDB_IMAGE: ${{ matrix.surrealdb }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
