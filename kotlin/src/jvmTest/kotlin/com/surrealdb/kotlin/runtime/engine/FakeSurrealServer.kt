@@ -25,6 +25,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -44,9 +45,15 @@ internal data class IssuedLiveQuery(
  * A real socket rather than a mocked engine, because the behaviour under test —
  * a subscription surviving a reconnect — only exists in the interaction between
  * the connect loop and the router.
+ *
+ * With [notifyOnStart] set, every live query it starts is announced with one
+ * notification sent *before* the reply naming the subscription. That is the drop
+ * race made deterministic: a client that only starts listening once it has read
+ * the id has already missed the frame.
  */
 internal class FakeSurrealServer(
     private val liveQueriesBeforeRejecting: Int = Int.MAX_VALUE,
+    private val notifyOnStart: String? = null,
 ) {
     private val json = Json
     private val ids = AtomicInteger()
@@ -57,6 +64,8 @@ internal class FakeSurrealServer(
 
     /** One entry per accepted websocket, so a test can wait for the reconnect. */
     val connections: Channel<Unit> = Channel(Channel.UNLIMITED)
+
+    private val announcements = ConcurrentLinkedQueue<String>()
 
     @Volatile
     private var socket: DefaultWebSocketSession? = null
@@ -69,7 +78,11 @@ internal class FakeSurrealServer(
                     socket = this
                     connections.trySend(Unit)
                     for (frame in incoming) {
-                        if (frame is Frame.Text) send(Frame.Text(reply(frame.readText())))
+                        if (frame is Frame.Text) {
+                            val response = reply(frame.readText())
+                            announce()
+                            send(Frame.Text(response))
+                        }
                     }
                 }
             }
@@ -111,6 +124,13 @@ internal class FakeSurrealServer(
             }
 
         socket?.send(Frame.Text(json.encodeToString(JsonElement.serializer(), notification)))
+    }
+
+    private suspend fun announce() {
+        while (true) {
+            val liveQueryId = announcements.poll() ?: return
+            notify(liveQueryId, checkNotNull(notifyOnStart))
+        }
     }
 
     private sealed interface Outcome {
@@ -171,6 +191,7 @@ internal class FakeSurrealServer(
 
         val liveQueryId = "lq-${ids.incrementAndGet()}"
         issued += IssuedLiveQuery(method, target, liveQueryId)
+        if (notifyOnStart != null) announcements += liveQueryId
         return Outcome.Ok(JsonPrimitive(liveQueryId))
     }
 

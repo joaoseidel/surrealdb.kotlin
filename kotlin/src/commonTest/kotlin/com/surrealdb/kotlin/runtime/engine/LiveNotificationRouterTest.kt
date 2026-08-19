@@ -235,6 +235,172 @@ class LiveNotificationRouterTest :
                 }
             }
 
+            context("a notification that arrives before its subscription is registered") {
+                should(
+                    "reach the channel that names it, the server having pushed it before the client read the id",
+                ) {
+                    runTest {
+                        val router = LiveNotificationRouter()
+
+                        val events =
+                            router.attributing {
+                                router.route(notification())
+                                router.register("lq-1")
+                            }
+
+                        events.first() shouldBe notification()
+                    }
+                }
+
+                should("reach the broadcast once, not once while held and again when claimed") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+
+                        router.attributing {
+                            router.route(notification())
+                            router.register("lq-1")
+                        }
+
+                        seen shouldContainExactly listOf(notification())
+                    }
+                }
+
+                should("keep its order, so a create the subscription never saw cannot follow the update to it") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+
+                        val events =
+                            router.attributing {
+                                router.route(notification(action = "CREATE"))
+                                router.route(notification(action = "UPDATE"))
+                                router.register("lq-1")
+                            }
+                        router.untrack("lq-1")
+
+                        events.toList() shouldContainExactly
+                            listOf(
+                                notification(action = "CREATE"),
+                                notification(action = "UPDATE"),
+                            )
+                    }
+                }
+
+                should("reach the broadcast unattributed once nothing is left that could claim it") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+
+                        router.attributing {
+                            router.route(notification(liveQueryId = "belongs-to-nobody"))
+                            seen.shouldBeEmpty()
+                        }
+
+                        seen shouldContainExactly listOf(notification(liveQueryId = "belongs-to-nobody"))
+                    }
+                }
+
+                should("wait for the last registration, not the first, when two live queries start at once") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+
+                        router.attributing {
+                            router.attributing {
+                                router.route(notification(liveQueryId = "lq-2"))
+                                router.register("lq-1")
+                            }
+                            seen.shouldBeEmpty()
+                            router.register("lq-2")
+                        }
+
+                        seen shouldContainExactly listOf(notification(liveQueryId = "lq-2"))
+                    }
+                }
+
+                should("go straight through for a subscription already registered, which needs no attribution") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+                        router.register("lq-1")
+
+                        router.attributing {
+                            router.route(notification())
+
+                            seen shouldContainExactly listOf(notification())
+                        }
+                    }
+                }
+
+                should("give up the oldest past the hold limit, releasing it as it would have been anyway") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+
+                        val events =
+                            router.attributing {
+                                repeat(HELD_NOTIFICATION_LIMIT + 1) {
+                                    router.route(notification(action = "action-$it"))
+                                }
+
+                                seen.map { it.action } shouldContainExactly listOf("action-0")
+                                router.register("lq-1")
+                            }
+                        router.untrack("lq-1")
+
+                        events.toList().map { it.action } shouldContainExactly
+                            (1..HELD_NOTIFICATION_LIMIT).map { "action-$it" }
+                    }
+                }
+
+                should("be released when the connection carrying it is gone, rather than swallowed") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+
+                        router.attributing {
+                            router.route(notification())
+                            router.closeAll(SurrealTransportException("WebSocket terminated"))
+                        }
+
+                        seen shouldContainExactly listOf(notification())
+                    }
+                }
+            }
+
+            context("a notification that arrives before a re-issued subscription is rebound") {
+                should("reach the subscription that will own it, under the id it has always had") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val events = router.register("lq-1", source())
+
+                        router.attributing {
+                            router.route(notification(liveQueryId = "lq-9"))
+                            router.rebind("lq-1", "lq-9")
+                        }
+
+                        events.first() shouldBe notification(liveQueryId = "lq-9").copy(liveQueryId = "lq-1")
+                    }
+                }
+
+                should(
+                    "reach the broadcast relabelled, so the flow form's id filter matches it as it does the rest",
+                ) {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+                        router.track("lq-1", source())
+
+                        router.attributing {
+                            router.route(notification(liveQueryId = "lq-9"))
+                            router.rebind("lq-1", "lq-9")
+                        }
+
+                        seen.single().liveQueryId shouldBe "lq-1"
+                    }
+                }
+            }
+
             context("serverIdFor") {
                 should(
                     "give back an id it does not know, so killing an untracked live query still reaches the server",

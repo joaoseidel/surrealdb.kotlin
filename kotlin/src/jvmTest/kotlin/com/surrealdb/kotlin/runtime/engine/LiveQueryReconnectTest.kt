@@ -40,9 +40,10 @@ private fun clientFor(server: FakeSurrealServer) =
 
 private fun withServer(
     liveQueriesBeforeRejecting: Int = Int.MAX_VALUE,
+    notifyOnStart: String? = null,
     block: suspend CoroutineScope.(FakeSurrealServer, SurrealClient) -> Unit,
 ) {
-    val server = FakeSurrealServer(liveQueriesBeforeRejecting)
+    val server = FakeSurrealServer(liveQueriesBeforeRejecting, notifyOnStart)
     server.start()
     try {
         val client = clientFor(server)
@@ -140,6 +141,58 @@ class LiveQueryReconnectTest :
                         withTimeout(PATIENCE_MILLIS) { subscription.events.collect { } }
                     }
                     awaiting { subscription.id !in client.activeLiveQueries.value }
+                }
+            }
+        }
+
+        context("a notification the server pushes before the reply naming its subscription") {
+
+            should("reach the subscription, which had no id to attribute it to when the frame arrived") {
+                withServer(notifyOnStart = "before-the-reply") { server, client ->
+                    val subscription = client.live("book")
+                    val received = mutableListOf<SurrealLiveNotification>()
+                    val collector: Job = launch { subscription.events.collect { received += it } }
+
+                    awaiting { received.size == 1 }
+
+                    server.issued.single().liveQueryId shouldBe subscription.id
+                    received.single().liveQueryId shouldBe subscription.id
+                    collector.cancel()
+                }
+            }
+
+            should("reach it again after a reconnect, the same window opening on the re-issued statement") {
+                withServer(notifyOnStart = "before-the-reply") { server, client ->
+                    val subscription = client.live("book")
+                    val received = mutableListOf<SurrealLiveNotification>()
+                    val collector: Job = launch { subscription.events.collect { received += it } }
+                    awaiting { received.size == 1 }
+
+                    server.dropConnection()
+                    awaiting { server.issued.size == 2 }
+                    awaiting { received.size == 2 }
+
+                    server.issued[0].liveQueryId shouldNotBe server.issued[1].liveQueryId
+                    received.map { it.liveQueryId } shouldBe listOf(subscription.id, subscription.id)
+                    collector.cancel()
+                }
+            }
+
+            should("reach the flow form too, whose id filter would otherwise never match the re-issued id") {
+                withServer(notifyOnStart = "before-the-reply") { server, client ->
+                    val events = mutableListOf<LiveQueryEvent<JsonElement>>()
+                    val collector = launch { client.liveEvents<JsonElement>("book").collect { events += it } }
+
+                    awaiting { client.activeLiveQueries.value.isNotEmpty() }
+                    val queryId = client.activeLiveQueries.value.single()
+                    awaiting { events.size == 1 }
+
+                    server.dropConnection()
+                    awaiting { server.issued.size == 2 }
+                    awaiting { events.size == 2 }
+
+                    events.map { it.queryId } shouldBe listOf(queryId, queryId)
+                    collector.cancel()
                 }
             }
         }
