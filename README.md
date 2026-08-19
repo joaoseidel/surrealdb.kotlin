@@ -41,8 +41,8 @@ CRUD operations (`select`, `create`, `update`, `upsert`, `merge`, `patch`, `dele
 RPC methods — they compile locally to SurrealQL and dispatch through `query`. This matches
 the [surrealdb.js](https://github.com/surrealdb/surrealdb.js/tree/main/packages/sdk/src/query) approach and keeps the wire protocol slim.
 
-For typed decoding, every builder exposes `awaitAs<T>()`; the raw `query()` family has `queryAs<T>()` plus `Result<JsonElement>` variants suffixed
-with `Result`.
+For typed decoding, every builder exposes `awaitAs<T>()` and the raw `query()` family has `queryAs<T>()`. Every call throws on failure; a caller who
+wants a `Result` writes `runCatching { session.ping() }`.
 
 ## Quick start
 

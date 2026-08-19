@@ -34,11 +34,7 @@ public open class Session internal constructor(
 
     public suspend fun ping(): JsonElement = withAutoAuthRetry { controller.health(sessionId) }
 
-    public suspend fun pingResult(): Result<JsonElement> = runCatching { ping() }
-
     public suspend fun version(): JsonElement = withAutoAuthRetry { controller.version(sessionId) }
-
-    public suspend fun versionResult(): Result<JsonElement> = runCatching { version() }
 
     public suspend fun use(
         namespace: String,
@@ -51,11 +47,6 @@ public open class Session internal constructor(
         }
         return result
     }
-
-    public suspend fun useResult(
-        namespace: String,
-        database: String,
-    ): Result<JsonElement> = runCatching { use(namespace, database) }
 
     public suspend fun auth(): JsonElement =
         try {
@@ -70,15 +61,11 @@ public open class Session internal constructor(
             }
         }
 
-    public suspend fun authResult(): Result<JsonElement> = runCatching { auth() }
-
     public suspend fun signup(params: JsonObject): JsonElement {
         val result = withAutoAuthRetry { controller.signup(sessionId, params) }
         applyTokenResult(result)
         return result
     }
-
-    public suspend fun signupResult(params: JsonObject): Result<JsonElement> = runCatching { signup(params) }
 
     public suspend fun signin(params: JsonObject): JsonElement {
         val result = withAutoAuthRetry { controller.signin(sessionId, params) }
@@ -86,16 +73,12 @@ public open class Session internal constructor(
         return result
     }
 
-    public suspend fun signinResult(params: JsonObject): Result<JsonElement> = runCatching { signin(params) }
-
     public suspend fun authenticate(token: String): JsonElement {
         val result = withAutoAuthRetry { controller.authenticate(sessionId, token) }
         controller.update(sessionId) { accessToken = token }
         scheduleRenewalIfPossible()
         return result
     }
-
-    public suspend fun authenticateResult(token: String): Result<JsonElement> = runCatching { authenticate(token) }
 
     public suspend fun invalidate(): JsonElement {
         val result = withAutoAuthRetry { controller.invalidate(sessionId) }
@@ -107,8 +90,6 @@ public open class Session internal constructor(
         }
         return result
     }
-
-    public suspend fun invalidateResult(): Result<JsonElement> = runCatching { invalidate() }
 
     public suspend fun reset(): JsonElement {
         val result = withAutoAuthRetry { controller.reset(sessionId) }
@@ -124,8 +105,6 @@ public open class Session internal constructor(
         return result
     }
 
-    public suspend fun resetResult(): Result<JsonElement> = runCatching { reset() }
-
     // Backticked because it is named for the SurrealDB RPC method it calls, and
     // `let` is a soft keyword here. Renaming it would break every caller, so the
     // naming rule is suppressed at this one declaration rather than repo-wide.
@@ -139,29 +118,17 @@ public open class Session internal constructor(
         return result
     }
 
-    public suspend fun letResult(
-        key: String,
-        value: JsonElement,
-    ): Result<JsonElement> = runCatching { `let`(key, value) }
-
     public suspend fun unset(key: String): JsonElement {
         val result = withAutoAuthRetry { controller.unset(sessionId, key) }
         controller.update(sessionId) { variables.remove(key) }
         return result
     }
 
-    public suspend fun unsetResult(key: String): Result<JsonElement> = runCatching { unset(key) }
-
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
     override suspend fun query(bound: BoundQuery): JsonElement =
         withAutoAuthRetry {
             controller.query(sessionId, bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
         }
-
-    public suspend fun queryResult(
-        sql: String,
-        vars: JsonObject? = null,
-    ): Result<JsonElement> = runCatching { query(sql, vars) }
 
     /**
      * Subscribe to live notifications for changes on a table. The argument is a
@@ -172,11 +139,6 @@ public open class Session internal constructor(
         table: String,
         diff: Boolean? = null,
     ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table, diff) }
-
-    public suspend fun liveResult(
-        table: String,
-        diff: Boolean? = null,
-    ): Result<LiveQuerySubscription> = runCatching { live(table, diff) }
 
     public fun <T> liveEvents(
         spec: String,
@@ -208,8 +170,6 @@ public open class Session internal constructor(
 
     public suspend fun kill(liveQueryId: String): JsonElement =
         withAutoAuthRetry { controller.kill(sessionId, liveQueryId) }
-
-    public suspend fun killResult(liveQueryId: String): Result<JsonElement> = runCatching { kill(liveQueryId) }
 
     override val json: kotlinx.serialization.json.Json get() = controller.config.json
 
