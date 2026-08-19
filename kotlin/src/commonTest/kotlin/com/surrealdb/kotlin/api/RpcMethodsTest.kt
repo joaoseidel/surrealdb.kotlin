@@ -2,8 +2,19 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.query.create
+import com.surrealdb.kotlin.api.query.delete
 import com.surrealdb.kotlin.api.query.eq
 import com.surrealdb.kotlin.api.query.field
+import com.surrealdb.kotlin.api.query.insert
+import com.surrealdb.kotlin.api.query.insertRelation
+import com.surrealdb.kotlin.api.query.merge
+import com.surrealdb.kotlin.api.query.patch
+import com.surrealdb.kotlin.api.query.relate
+import com.surrealdb.kotlin.api.query.run
+import com.surrealdb.kotlin.api.query.select
+import com.surrealdb.kotlin.api.query.update
+import com.surrealdb.kotlin.api.query.upsert
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe

@@ -5,6 +5,14 @@ import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
+import com.surrealdb.kotlin.api.query.create
+import com.surrealdb.kotlin.api.query.delete
+import com.surrealdb.kotlin.api.query.insert
+import com.surrealdb.kotlin.api.query.merge
+import com.surrealdb.kotlin.api.query.patch
+import com.surrealdb.kotlin.api.query.relate
+import com.surrealdb.kotlin.api.query.update
+import com.surrealdb.kotlin.api.query.upsert
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first

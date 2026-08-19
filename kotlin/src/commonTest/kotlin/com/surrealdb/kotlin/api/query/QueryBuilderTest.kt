@@ -20,11 +20,11 @@ import kotlin.test.assertTrue
  * should be intentional.
  */
 class QueryBuilderTest {
-    private val dispatcher =
-        object : QueryDispatcher {
+    private val context =
+        object : QueryContext {
             override val json: Json = Json
 
-            override suspend fun dispatch(query: BoundQuery): JsonElement = error("not used in compile-only tests")
+            override suspend fun query(bound: BoundQuery): JsonElement = error("not used in compile-only tests")
         }
 
     private fun bindings(q: BoundQuery): Map<String, JsonElement> = q.bindings
@@ -33,7 +33,7 @@ class QueryBuilderTest {
 
     @Test
     fun `select from table emits SELECT FROM ONLY with bound table name`() {
-        val q = SelectQuery(dispatcher, Table("person")).compile()
+        val q = SelectQuery(context, Table("person")).compile()
         assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::table("))
         assertEquals(1, q.bindings.size)
         assertEquals(
@@ -47,27 +47,27 @@ class QueryBuilderTest {
 
     @Test
     fun `select from record id binds table and id separately`() {
-        val q = SelectQuery(dispatcher, RecordId("person", "alice")).compile()
+        val q = SelectQuery(context, RecordId("person", "alice")).compile()
         assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::record("))
         assertEquals(2, q.bindings.size)
     }
 
     @Test
     fun `select fields emits comma-separated field list`() {
-        val q = SelectQuery(dispatcher, Table("person")).fields("id", "name", "age").compile()
+        val q = SelectQuery(context, Table("person")).fields("id", "name", "age").compile()
         assertTrue(q.surql.startsWith("SELECT id, name, age FROM ONLY"))
     }
 
     @Test
     fun `select value emits VALUE clause`() {
-        val q = SelectQuery(dispatcher, Table("person")).value("name").compile()
+        val q = SelectQuery(context, Table("person")).value("name").compile()
         assertTrue(q.surql.startsWith("SELECT VALUE name FROM ONLY"))
     }
 
     @Test
     fun `select where compiles expression with bound value`() {
         val q =
-            SelectQuery(dispatcher, Table("person"))
+            SelectQuery(context, Table("person"))
                 .where(field("age") gt 18)
                 .compile()
         assertTrue(q.surql.contains(" WHERE (age > "))
@@ -76,7 +76,7 @@ class QueryBuilderTest {
     @Test
     fun `select limit and start bind values`() {
         val q =
-            SelectQuery(dispatcher, Table("person"))
+            SelectQuery(context, Table("person"))
                 .start(10)
                 .limit(5)
                 .compile()
@@ -87,7 +87,7 @@ class QueryBuilderTest {
     @Test
     fun `select fetch emits comma-separated field list`() {
         val q =
-            SelectQuery(dispatcher, Table("post"))
+            SelectQuery(context, Table("post"))
                 .fetch("author", "comments")
                 .compile()
         assertTrue(q.surql.endsWith(" FETCH author, comments"))
@@ -96,7 +96,7 @@ class QueryBuilderTest {
     @Test
     fun `select rejects invalid field identifier`() {
         try {
-            SelectQuery(dispatcher, Table("person")).fields("name; DROP TABLE x; --")
+            SelectQuery(context, Table("person")).fields("name; DROP TABLE x; --")
             error("should have thrown")
         } catch (_: IllegalArgumentException) {
             // expected
@@ -108,7 +108,7 @@ class QueryBuilderTest {
     @Test
     fun `create content binds the data object`() {
         val q =
-            CreateQuery(dispatcher, RecordId("person", "1"))
+            CreateQuery(context, RecordId("person", "1"))
                 .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                 .compile()
         assertTrue(q.surql.startsWith("CREATE ONLY type::record("))
@@ -118,7 +118,7 @@ class QueryBuilderTest {
     @Test
     fun `update content compiles to UPDATE ONLY CONTENT`() {
         val q =
-            UpdateQuery(dispatcher, RecordId("person", "1"))
+            UpdateQuery(context, RecordId("person", "1"))
                 .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                 .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
@@ -128,7 +128,7 @@ class QueryBuilderTest {
     @Test
     fun `upsert with where compiles to UPSERT ONLY then WHERE`() {
         val q =
-            UpsertQuery(dispatcher, Table("person"))
+            UpsertQuery(context, Table("person"))
                 .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                 .where(field("email") eq "x@y.z")
                 .compile()
@@ -140,7 +140,7 @@ class QueryBuilderTest {
     @Test
     fun `merge compiles to UPDATE ONLY MERGE`() {
         val q =
-            MergeQuery(dispatcher, RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
+            MergeQuery(context, RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
                 .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
         assertTrue(q.surql.contains(" MERGE "))
@@ -148,14 +148,14 @@ class QueryBuilderTest {
 
     @Test
     fun `patch with diff appends RETURN DIFF`() {
-        val q = PatchQuery(dispatcher, RecordId("person", "1"), buildJsonObject {}, diff = true).compile()
+        val q = PatchQuery(context, RecordId("person", "1"), buildJsonObject {}, diff = true).compile()
         assertTrue(q.surql.endsWith(" RETURN DIFF"))
     }
 
     @Test
     fun `delete with where compiles to DELETE ONLY then WHERE`() {
         val q =
-            DeleteQuery(dispatcher, Table("person"))
+            DeleteQuery(context, Table("person"))
                 .where(field("active") eq false)
                 .compile()
         assertTrue(q.surql.startsWith("DELETE ONLY type::table("))
@@ -168,7 +168,7 @@ class QueryBuilderTest {
     fun `relate compiles to arrow chain`() {
         val q =
             RelateQuery(
-                dispatcher,
+                context,
                 RecordId("person", "a"),
                 Table("likes"),
                 RecordId("person", "b"),
@@ -181,7 +181,7 @@ class QueryBuilderTest {
     fun `insert compiles to INSERT INTO with bound table and data`() {
         val q =
             InsertQuery(
-                dispatcher,
+                context,
                 Table("person"),
                 buildJsonObject { put("name", JsonPrimitive("A")) },
             ).compile()
@@ -192,7 +192,7 @@ class QueryBuilderTest {
     fun `insertRelation compiles to INSERT RELATION INTO`() {
         val q =
             InsertRelationQuery(
-                dispatcher,
+                context,
                 Table("likes"),
                 buildJsonObject { put("in", JsonPrimitive("p:a")) },
             ).compile()
@@ -203,13 +203,13 @@ class QueryBuilderTest {
 
     @Test
     fun `run with no args compiles to empty parens`() {
-        val q = RunQuery(dispatcher, "fn::greet").compile()
+        val q = RunQuery(context, "fn::greet").compile()
         assertEquals("fn::greet()", q.surql)
     }
 
     @Test
     fun `run with args binds each one`() {
-        val q = RunQuery(dispatcher, "fn::greet").args("alice", 42).compile()
+        val q = RunQuery(context, "fn::greet").args("alice", 42).compile()
         assertTrue(q.surql.startsWith("fn::greet("))
         assertEquals(2, q.bindings.size)
     }
@@ -217,7 +217,7 @@ class QueryBuilderTest {
     @Test
     fun `run rejects invalid function names`() {
         try {
-            RunQuery(dispatcher, "fn::; DROP TABLE x")
+            RunQuery(context, "fn::; DROP TABLE x")
             error("should have thrown")
         } catch (_: IllegalArgumentException) {
             // expected
@@ -227,7 +227,7 @@ class QueryBuilderTest {
     @Test
     fun `run rejects invalid version`() {
         try {
-            RunQuery(dispatcher, "fn::ok", version = "not-a-version")
+            RunQuery(context, "fn::ok", version = "not-a-version")
             error("should have thrown")
         } catch (_: IllegalArgumentException) {
             // expected

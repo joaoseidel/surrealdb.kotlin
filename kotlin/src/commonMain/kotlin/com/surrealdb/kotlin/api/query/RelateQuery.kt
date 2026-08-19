@@ -10,7 +10,7 @@ import kotlinx.serialization.json.JsonElement
 private val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 
 public class RelateQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val `in`: Any,
     private val relation: Any,
     private val out: Any,
@@ -80,12 +80,12 @@ public class RelateQuery internal constructor(
         }
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         data: JsonElement? = this.data,
         returnMode: ReturnMode? = this.returnMode,
-    ): RelateQuery = RelateQuery(dispatcher, `in`, relation, out, data, returnMode)
+    ): RelateQuery = RelateQuery(context, `in`, relation, out, data, returnMode)
 }

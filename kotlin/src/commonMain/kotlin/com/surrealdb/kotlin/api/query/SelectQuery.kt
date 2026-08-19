@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * returns a fresh instance so builders are safe to share or pin to a variable.
  */
 public class SelectQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val what: Any,
     private val selection: Selection = Selection.All,
     private val fields: List<String> = emptyList(),
@@ -82,10 +82,10 @@ public class SelectQuery internal constructor(
     }
 
     /** Dispatch the query and return the unwrapped first-statement result. */
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
     /** Dispatch and return the raw `[{ status, result, time, type }]` envelope. */
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         selection: Selection = this.selection,
@@ -98,7 +98,7 @@ public class SelectQuery internal constructor(
         versionAt: String? = this.versionAt,
     ): SelectQuery =
         SelectQuery(
-            dispatcher,
+            context,
             what,
             selection,
             fields,

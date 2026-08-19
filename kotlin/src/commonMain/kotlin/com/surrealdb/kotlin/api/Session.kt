@@ -6,9 +6,7 @@ import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.live.liveEventFlow
 import com.surrealdb.kotlin.api.live.toLiveStatement
 import com.surrealdb.kotlin.api.query.BoundQuery
-import com.surrealdb.kotlin.api.query.QueryDispatcher
-import com.surrealdb.kotlin.api.query.Queryable
-import com.surrealdb.kotlin.api.query.QueryableImpl
+import com.surrealdb.kotlin.api.query.QueryContext
 import com.surrealdb.kotlin.api.query.firstQueryResult
 import com.surrealdb.kotlin.runtime.ConnectionController
 import kotlinx.coroutines.flow.Flow
@@ -22,19 +20,8 @@ import kotlinx.serialization.json.jsonPrimitive
 public open class Session internal constructor(
     internal val controller: ConnectionController,
     internal val sessionId: String,
-) : Queryable {
+) : QueryContext {
     private val authMutex = Mutex()
-
-    // Dispatcher used by builder objects. `txn = null` here — a transaction
-    // exposes its own session-bound queryable with a non-null txn.
-    @PublishedApi
-    internal val sessionDispatcher: QueryDispatcher =
-        object : QueryDispatcher {
-            override val json get() = controller.config.json
-
-            override suspend fun dispatch(query: BoundQuery): JsonElement = this@Session.query(query)
-        }
-    private val queryable = QueryableImpl(sessionDispatcher)
 
     /** Current namespace for this session, or null if none has been selected. */
     public suspend fun namespace(): String? = controller.snapshot(sessionId).namespace
@@ -165,59 +152,16 @@ public open class Session internal constructor(
 
     public suspend fun unsetResult(key: String): Result<JsonElement> = runCatching { unset(key) }
 
-    /** Dispatch a raw SurrealQL string as the `query` RPC. */
-    override suspend fun query(
-        sql: String,
-        vars: JsonObject?,
-    ): JsonElement = withAutoAuthRetry { controller.query(sessionId, sql, vars) }
-
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
     override suspend fun query(bound: BoundQuery): JsonElement =
-        query(bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
+        withAutoAuthRetry {
+            controller.query(sessionId, bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
+        }
 
     public suspend fun queryResult(
         sql: String,
         vars: JsonObject? = null,
     ): Result<JsonElement> = runCatching { query(sql, vars) }
-
-    override fun select(what: Any): com.surrealdb.kotlin.api.query.SelectQuery = queryable.select(what)
-
-    override fun create(what: Any): com.surrealdb.kotlin.api.query.CreateQuery = queryable.create(what)
-
-    override fun upsert(what: Any): com.surrealdb.kotlin.api.query.UpsertQuery = queryable.upsert(what)
-
-    override fun update(what: Any): com.surrealdb.kotlin.api.query.UpdateQuery = queryable.update(what)
-
-    override fun merge(
-        what: Any,
-        data: Any,
-    ): com.surrealdb.kotlin.api.query.MergeQuery = queryable.merge(what, data)
-
-    override fun patch(
-        what: Any,
-        patches: JsonElement,
-        diff: Boolean,
-    ): com.surrealdb.kotlin.api.query.PatchQuery = queryable.patch(what, patches, diff)
-
-    override fun delete(what: Any): com.surrealdb.kotlin.api.query.DeleteQuery = queryable.delete(what)
-
-    override fun relate(
-        `in`: Any,
-        relation: Any,
-        out: Any,
-    ): com.surrealdb.kotlin.api.query.RelateQuery = queryable.relate(`in`, relation, out)
-
-    override fun insert(
-        into: com.surrealdb.kotlin.api.data.Table,
-        data: JsonElement,
-    ): com.surrealdb.kotlin.api.query.InsertQuery = queryable.insert(into, data)
-
-    override fun insertRelation(
-        into: com.surrealdb.kotlin.api.data.Table,
-        data: JsonElement,
-    ): com.surrealdb.kotlin.api.query.InsertRelationQuery = queryable.insertRelation(into, data)
-
-    override fun run(function: String): com.surrealdb.kotlin.api.query.RunQuery = queryable.run(function)
 
     /**
      * Subscribe to live notifications for changes on a table. The argument is a
@@ -267,7 +211,7 @@ public open class Session internal constructor(
 
     public suspend fun killResult(liveQueryId: String): Result<JsonElement> = runCatching { kill(liveQueryId) }
 
-    public val json: kotlinx.serialization.json.Json get() = controller.config.json
+    override val json: kotlinx.serialization.json.Json get() = controller.config.json
 
     public inline fun <reified T> decode(element: JsonElement): T = json.decodeFromJsonElement(element)
 

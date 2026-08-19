@@ -18,6 +18,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -38,9 +39,9 @@ internal data class IssuedLiveQuery(
 
 /**
  * Enough of the SurrealDB websocket RPC to test what the client does when the
- * socket goes away: it answers `live`, `query` and the session methods, hands
- * out a fresh subscription id every time, and drops the connection underneath a
- * running client on demand.
+ * socket goes away: it answers `live`, `query`, `begin` and the session
+ * methods, hands out a fresh subscription id every time, and drops the
+ * connection underneath a running client on demand.
  *
  * A real socket rather than a mocked engine, because the behaviour under test —
  * a subscription surviving a reconnect — only exists in the interaction between
@@ -61,6 +62,9 @@ internal class FakeSurrealServer(
 
     /** Every live query the server was asked to start, oldest first. */
     val issued: MutableList<IssuedLiveQuery> = CopyOnWriteArrayList()
+
+    /** Every JSON-RPC envelope the server received, oldest first. */
+    val received: MutableList<JsonObject> = CopyOnWriteArrayList()
 
     /** One entry per accepted websocket, so a test can wait for the reconnect. */
     val connections: Channel<Unit> = Channel(Channel.UNLIMITED)
@@ -143,6 +147,7 @@ internal class FakeSurrealServer(
 
     private fun reply(text: String): String {
         val request = Json.parseToJsonElement(text).jsonObject
+        received += request
         val requestId = request["id"]?.jsonPrimitive?.content
         val method = request["method"]?.jsonPrimitive?.content.orEmpty()
         val params = request["params"]?.jsonArray ?: JsonArray(emptyList())
@@ -157,6 +162,7 @@ internal class FakeSurrealServer(
             when (method) {
                 "live" -> startLiveQuery(method, firstParam)
                 "query" -> runStatement(firstParam)
+                "begin" -> Outcome.Ok(JsonPrimitive("txn-${ids.incrementAndGet()}"))
                 else -> Outcome.Ok(JsonNull)
             }
 

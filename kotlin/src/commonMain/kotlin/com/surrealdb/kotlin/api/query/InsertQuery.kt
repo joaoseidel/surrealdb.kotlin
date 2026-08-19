@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonElement
  * Builder for `INSERT INTO <table> $data` queries.
  */
 public class InsertQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val into: Table,
     private val data: JsonElement,
 ) {
@@ -23,16 +23,16 @@ public class InsertQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 }
 
 /**
  * Builder for `INSERT RELATION INTO <table> $data` queries.
  */
 public class InsertRelationQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val into: Table,
     private val data: JsonElement,
 ) {
@@ -45,7 +45,7 @@ public class InsertRelationQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 }

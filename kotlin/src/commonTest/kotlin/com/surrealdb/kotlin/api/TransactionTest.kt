@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.query.create
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

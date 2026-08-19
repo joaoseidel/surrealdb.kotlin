@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonElement
  * dot-separated digits.
  */
 public class RunQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val name: String,
     private val version: String? = null,
     private val args: List<Any?> = emptyList(),
@@ -26,9 +26,9 @@ public class RunQuery internal constructor(
         }
     }
 
-    public fun version(version: String): RunQuery = RunQuery(dispatcher, name, version, args)
+    public fun version(version: String): RunQuery = RunQuery(context, name, version, args)
 
-    public fun args(vararg args: Any?): RunQuery = RunQuery(dispatcher, name, version, args.toList())
+    public fun args(vararg args: Any?): RunQuery = RunQuery(context, name, version, args.toList())
 
     public fun compile(): BoundQuery {
         val q = BoundQuery()
@@ -43,9 +43,9 @@ public class RunQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private companion object {
         val NAME_REGEX = Regex("""^[a-zA-Z0-9_:]+$""")
