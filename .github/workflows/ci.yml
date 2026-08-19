@@ -130,3 +130,79 @@ jobs:
       - name: iOS test report
         if: failure()
         run: cat kotlin/build/test-results/iosSimulatorArm64Test/*.xml || true
+
+  android:
+    runs-on: ubuntu-latest
+    env:
+      SURREALDB_IMAGE: "surrealdb/surrealdb:v3.2.4"
+      SURREAL_HOST_ENDPOINT: "http://127.0.0.1:8000"
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Enable KVM
+        # Without it the x86_64 emulator falls back to software emulation and the
+        # job runs long enough to be useless.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Start SurrealDB
+        run: |
+          docker run -d --name surrealdb -p 8000:8000 "$SURREALDB_IMAGE" start --user root --pass root memory
+          for i in {1..20}; do
+            if curl -fsS "$SURREAL_HOST_ENDPOINT/health" > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs surrealdb
+          exit 1
+
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 30
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          # The test runs inside the emulator, where the runner's environment does
+          # not exist — the gate and the endpoint have to arrive as instrumentation
+          # arguments. 10.0.2.2 is the host loopback as seen from the emulator.
+          script: >
+            ./gradlew --no-daemon :kotlin:connectedDebugAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.SURREAL_RUN_INTEGRATION=true
+            -Pandroid.testInstrumentationRunnerArguments.SURREAL_ANDROID_ENDPOINT=http://10.0.2.2:8000
+
+      - name: Confirm the Android tests actually ran
+        # As with the iOS job, a task that runs nothing still exits 0. A skipped
+        # count is checked too: the gate above is an assumption, and an assumption
+        # that fails reports as a pass while testing nothing at all.
+        run: |
+          results="kotlin/build/outputs/androidTest-results/connected/debug"
+          shopt -s nullglob
+          files=("$results"/TEST-*.xml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no instrumented test results under $results"
+            exit 1
+          fi
+          count=$(cat "${files[@]}" | grep -c '<testcase' || true)
+          skipped=$(cat "${files[@]}" | grep -c '<skipped' || true)
+          echo "Android tests run: $count (skipped: $skipped)"
+          test "$count" -gt 0
+          test "$skipped" -eq 0
+
+      - name: Android test report
+        if: failure()
+        run: cat kotlin/build/outputs/androidTest-results/connected/debug/TEST-*.xml || true
+
+      - name: SurrealDB logs
+        if: always()
+        run: docker logs surrealdb || true
