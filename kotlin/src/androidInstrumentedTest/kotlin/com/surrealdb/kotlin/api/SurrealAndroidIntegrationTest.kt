@@ -1,35 +1,109 @@
 package com.surrealdb.kotlin.api
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.surrealdb.kotlin.api.data.RecordId
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SurrealAndroidIntegrationTest {
-    @Test
-    fun pingAndQuery() =
-        runBlocking {
-            assumeTrue(System.getenv("SURREAL_RUN_INTEGRATION") == "true")
-            val endpoint = System.getenv("SURREAL_ANDROID_ENDPOINT") ?: "http://10.0.2.2:8000"
+    private val rootCredentials =
+        buildJsonObject {
+            put("user", JsonPrimitive("root"))
+            put("pass", JsonPrimitive("root"))
+        }
 
-            val client =
-                SurrealClient(
-                    SurrealClientConfig(url = endpoint),
+    private fun argument(name: String): String? = InstrumentationRegistry.getArguments().getString(name)
+
+    private fun requireIntegration() = assumeTrue(argument("SURREAL_RUN_INTEGRATION") == "true")
+
+    private fun endpoint(): String = argument("SURREAL_ANDROID_ENDPOINT") ?: "http://10.0.2.2:8000"
+
+    @Test
+    fun rpcOverHttp(): Unit =
+        runBlocking {
+            requireIntegration()
+
+            val client = SurrealClient(SurrealClientConfig(url = endpoint()))
+
+            try {
+                client.signin(rootCredentials)
+                client.use("main", "main")
+                client.ping()
+
+                client.query("DEFINE TABLE android_person SCHEMALESS")
+                client.query("DELETE android_person")
+
+                client
+                    .create(RecordId("android_person", "ada"))
+                    .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
+                    .await()
+
+                val rows =
+                    client
+                        .query("SELECT * FROM android_person")
+                        .jsonArray[0]
+                        .jsonObject["result"]!!
+                        .jsonArray
+
+                assertEquals(1, rows.size)
+                assertEquals(
+                    "Ada",
+                    rows[0]
+                        .jsonObject["name"]!!
+                        .jsonPrimitive.content,
                 )
 
-            client.signin(
-                buildJsonObject {
-                    put("user", JsonPrimitive("root"))
-                    put("pass", JsonPrimitive("root"))
-                },
-            )
-            client.use("main", "main")
-            client.ping()
-            client.query("SELECT * FROM person LIMIT 1")
-            client.close()
+                client.delete(RecordId("android_person", "ada")).await()
+            } finally {
+                client.close()
+            }
+        }
+
+    @Test
+    fun liveQueryOverWebSocket(): Unit =
+        runBlocking {
+            requireIntegration()
+
+            val wsEndpoint =
+                endpoint()
+                    .replace("http://", "ws://")
+                    .replace("https://", "wss://")
+            val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+
+            try {
+                client.signin(rootCredentials)
+                client.use("main", "main")
+                client.query("DEFINE TABLE android_live SCHEMALESS")
+                client.query("DELETE android_live")
+
+                val subscription = client.live("android_live")
+                withTimeout(10_000) { client.activeLiveQueries.first { subscription.id in it } }
+
+                client
+                    .create(RecordId("android_live", "one"))
+                    .content(buildJsonObject { put("name", JsonPrimitive("Live")) })
+                    .await()
+
+                val event = withTimeout(10_000) { subscription.events.first() }
+
+                assertEquals("CREATE", event.action)
+
+                subscription.cancel()
+                client.delete(RecordId("android_live", "one")).await()
+            } finally {
+                client.close()
+            }
         }
 }
