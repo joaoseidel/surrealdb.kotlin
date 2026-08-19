@@ -21,9 +21,11 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD
   method inside the block is automatically scoped to that transaction.
 - Coroutines `Flow` API for live query notifications.
-- Fluent query builder DSL: `client.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation compiles to
-  local SurrealQL with bound parameters and dispatches via the `query` RPC,
-  mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
+- Fluent query builder DSL: `client.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
+  acts on with a `Table`, `RecordId` or `RecordIdRange` — the `Target` type, so
+  `select("user")` cannot compile into a query for the *string* `"user"` — then
+  compiles to local SurrealQL with bound parameters and dispatches via the
+  `query` RPC, mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
 - [Spectron](#spectron) client for memory and knowledge management, shipped as a separate opt-in artifact (`com.surrealdb:kotlin-spectron`).
 
 ## Supported RPC methods

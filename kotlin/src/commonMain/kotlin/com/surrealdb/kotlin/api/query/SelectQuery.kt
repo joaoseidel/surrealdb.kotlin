@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -12,7 +13,7 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 public class SelectQuery internal constructor(
     context: QueryContext,
-    private val what: Any,
+    private val what: Target,
     private val selection: Selection = Selection.All,
     private val fields: List<String> = emptyList(),
     private val start: Int? = null,
@@ -62,7 +63,7 @@ public class SelectQuery internal constructor(
             Selection.Value -> q.appendLiteral(" VALUE " + fields.first())
         }
         q.appendLiteral(" FROM ONLY ")
-        q.appendValue(what)
+        q.appendTarget(what)
         cond?.let {
             q.appendLiteral(" WHERE ")
             it.compile(q)

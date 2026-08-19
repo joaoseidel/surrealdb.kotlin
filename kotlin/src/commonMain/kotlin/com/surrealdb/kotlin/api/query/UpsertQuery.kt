@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -7,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
  */
 public class UpsertQuery internal constructor(
     context: QueryContext,
-    private val what: Any,
+    private val what: Target,
     private val data: JsonElement? = null,
     private val cond: Expr? = null,
     private val returnMode: ReturnMode? = null,
@@ -21,7 +22,7 @@ public class UpsertQuery internal constructor(
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPSERT ONLY ")
-        q.appendValue(what)
+        q.appendTarget(what)
         data?.let {
             q.appendLiteral(" CONTENT ")
             q.bind(it)

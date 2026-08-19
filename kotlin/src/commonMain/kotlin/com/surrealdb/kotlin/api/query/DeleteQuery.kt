@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -7,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
  */
 public class DeleteQuery internal constructor(
     context: QueryContext,
-    private val what: Any,
+    private val what: Target,
     private val cond: Expr? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
@@ -18,7 +19,7 @@ public class DeleteQuery internal constructor(
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("DELETE ONLY ")
-        q.appendValue(what)
+        q.appendTarget(what)
         cond?.let {
             q.appendLiteral(" WHERE ")
             it.compile(q)
