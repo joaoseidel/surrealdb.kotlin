@@ -118,7 +118,7 @@ val client = Surreal(Surreal.Config(url = "ws://localhost:8000"))
 `live(table)` subscribes to changes on a single table and returns a subscription whose `events` is a `Flow`:
 
 ```kotlin
-val sub = db.live("person")
+val sub = db.live(Table("person"))
 
 val job = scope.launch {
     sub.events.collect { event ->
@@ -130,6 +130,16 @@ val job = scope.launch {
 db.kill(sub.id)
 sub.cancel()
 job.cancel()
+```
+
+The `live` RPC accepts a table and nothing else. It answers a record id or a range with
+`Cannot execute LIVE statement using value: …`, so `live` takes `Table` rather than the `Target` the CRUD verbs take, and those two cases fail to compile.
+
+`LiveMode` chooses what each notification carries:
+
+```kotlin
+db.live(Table("person"))                   // {"id": "person:one", "name": "Ada"}
+db.live(Table("person"), LiveMode.Diffs)   // [{"op": "replace", "path": "/name", "value": "Ada"}]
 ```
 
 For complex `LIVE SELECT` queries with `WHERE` clauses, run the SurrealQL through `query("LIVE SELECT ...")` to obtain the live UUID.
@@ -230,7 +240,7 @@ Surreal.Config(
 
 ```kotlin
 if (client.supports(Feature.LiveQueries)) {
-    val sub = db.live("person")
+    val sub = db.live(Table("person"))
 }
 ```
 

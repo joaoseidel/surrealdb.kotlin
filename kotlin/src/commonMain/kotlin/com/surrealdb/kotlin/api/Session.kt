@@ -1,6 +1,8 @@
 package com.surrealdb.kotlin.api
 
+import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.api.live.LiveMode
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
 import com.surrealdb.kotlin.api.live.liveEventFlow
@@ -138,14 +140,15 @@ public class Session internal constructor(
         }
 
     /**
-     * Subscribe to live notifications for changes on a table. The argument is a
-     * table name or record id — to use complex `LIVE SELECT` SurrealQL, run it
-     * via [query] which will return a live query UUID.
+     * Subscribe to live notifications for changes on a table.
+     *
+     * To watch one record, or to filter, write the `LIVE SELECT` yourself and
+     * run it via [query], which returns a live query UUID.
      */
     public suspend fun live(
-        table: String,
-        diff: Boolean? = null,
-    ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table, diff) }
+        table: Table<*>,
+        mode: LiveMode = LiveMode.Records,
+    ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table.tableName, mode.wantsDiff) }
 
     public fun <T> liveEvents(
         spec: String,
@@ -279,3 +282,10 @@ public class Session internal constructor(
         }
     }
 }
+
+private val LiveMode.wantsDiff: Boolean
+    get() =
+        when (this) {
+            LiveMode.Records -> false
+            LiveMode.Diffs -> true
+        }
