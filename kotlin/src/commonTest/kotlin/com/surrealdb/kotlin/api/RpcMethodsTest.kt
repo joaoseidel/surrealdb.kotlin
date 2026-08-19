@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.api
 
-import com.surrealdb.kotlin.api.query.RecordId
-import com.surrealdb.kotlin.api.query.Table
+import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.eq
 import com.surrealdb.kotlin.api.query.field
 import io.kotest.core.spec.style.ShouldSpec

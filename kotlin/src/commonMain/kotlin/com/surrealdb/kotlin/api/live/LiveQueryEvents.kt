@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api.live
 
-import com.surrealdb.kotlin.api.query.RecordId
+import com.surrealdb.kotlin.api.data.RecordId
 import kotlinx.serialization.json.JsonElement
 
 public fun <T> SurrealLiveNotification.toEvent(decode: (JsonElement) -> T): LiveQueryEvent<T> {

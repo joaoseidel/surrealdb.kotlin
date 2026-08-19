@@ -166,7 +166,7 @@ class SurrealClientTest {
             val person: Person =
                 client
                     .select(
-                        com.surrealdb.kotlin.api.query
+                        com.surrealdb.kotlin.api.data
                             .RecordId("person", "1"),
                     ).awaitAs()
 

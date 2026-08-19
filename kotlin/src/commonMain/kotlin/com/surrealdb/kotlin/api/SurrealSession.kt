@@ -208,12 +208,12 @@ public open class SurrealSession internal constructor(
     ): com.surrealdb.kotlin.api.query.RelateQuery = queryable.relate(`in`, relation, out)
 
     override fun insert(
-        into: com.surrealdb.kotlin.api.query.Table,
+        into: com.surrealdb.kotlin.api.data.Table,
         data: JsonElement,
     ): com.surrealdb.kotlin.api.query.InsertQuery = queryable.insert(into, data)
 
     override fun insertRelation(
-        into: com.surrealdb.kotlin.api.query.Table,
+        into: com.surrealdb.kotlin.api.data.Table,
         data: JsonElement,
     ): com.surrealdb.kotlin.api.query.InsertRelationQuery = queryable.insertRelation(into, data)
 
