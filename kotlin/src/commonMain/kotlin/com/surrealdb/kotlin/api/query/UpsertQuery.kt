@@ -13,7 +13,9 @@ public class UpsertQuery internal constructor(
     private val returnMode: ReturnMode? = null,
 ) {
     public fun content(data: JsonElement): UpsertQuery = copy(data = data)
+
     public fun where(expr: Expr): UpsertQuery = copy(cond = expr)
+
     public fun returnMode(mode: ReturnMode): UpsertQuery = copy(returnMode = mode)
 
     public fun compile(): BoundQuery {
@@ -24,12 +26,16 @@ public class UpsertQuery internal constructor(
             q.appendLiteral(" CONTENT ")
             q.bind(it)
         }
-        cond?.let { q.appendLiteral(" WHERE "); it.compile(q) }
+        cond?.let {
+            q.appendLiteral(" WHERE ")
+            it.compile(q)
+        }
         returnMode?.render(q)
         return q
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 
     private fun copy(

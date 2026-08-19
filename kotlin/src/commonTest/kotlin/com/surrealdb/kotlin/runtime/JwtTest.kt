@@ -7,13 +7,19 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @OptIn(ExperimentalEncodingApi::class)
-private fun encode(text: String, urlSafe: Boolean): String {
+private fun encode(
+    text: String,
+    urlSafe: Boolean,
+): String {
     val b64 = Base64.encode(text.encodeToByteArray())
     // Standard base64 → drop padding and replace +/ with -_ for the URL-safe variant.
     return if (urlSafe) b64.trimEnd('=').replace('+', '-').replace('/', '_') else b64
 }
 
-private fun jwt(payloadJson: String, urlSafe: Boolean = true): String =
+private fun jwt(
+    payloadJson: String,
+    urlSafe: Boolean = true,
+): String =
     "${encode("""{"alg":"HS256","typ":"JWT"}""", urlSafe)}." +
         "${encode(payloadJson, urlSafe)}." +
         encode("signature-bytes", urlSafe)
@@ -72,7 +78,12 @@ class JwtTest :
                 should("decode '-' and '_' without crashing, even when the result is not JSON") {
                     // Standard base64 of these bytes is "+/+/", URL-safe "-_-_".
                     val raw = byteArrayOf(0xfb.toByte(), 0xff.toByte(), 0xbf.toByte())
-                    val urlSafe = Base64.encode(raw).trimEnd('=').replace('+', '-').replace('/', '_')
+                    val urlSafe =
+                        Base64
+                            .encode(raw)
+                            .trimEnd('=')
+                            .replace('+', '-')
+                            .replace('/', '_')
 
                     parseJwtExpiryMillis("h.$urlSafe.s").shouldBeNull()
                 }

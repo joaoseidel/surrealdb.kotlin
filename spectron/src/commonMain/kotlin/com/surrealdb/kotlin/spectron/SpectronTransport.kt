@@ -28,23 +28,25 @@ internal val DEFAULT_TIMEOUT: Duration = Duration.parse("PT30S")
 internal const val DEFAULT_MAX_RETRIES: Int = 3
 private const val USER_AGENT_VALUE: String = "surrealdb-kotlin-spectron/1.0"
 
-internal fun quotePath(value: String): String = buildString(value.length) {
-    for (byte in value.encodeToByteArray()) {
-        val b = byte.toInt() and 0xFF
-        val c = b.toChar()
-        val isUnreserved = (c in '0'..'9') ||
-            (c in 'A'..'Z') ||
-            (c in 'a'..'z') ||
-            c == '-' || c == '_' || c == '.' || c == '~'
-        if (isUnreserved) {
-            append(c)
-        } else {
-            append('%')
-            append(hexDigits[(b ushr 4) and 0xF])
-            append(hexDigits[b and 0xF])
+internal fun quotePath(value: String): String =
+    buildString(value.length) {
+        for (byte in value.encodeToByteArray()) {
+            val b = byte.toInt() and 0xFF
+            val c = b.toChar()
+            val isUnreserved =
+                (c in '0'..'9') ||
+                    (c in 'A'..'Z') ||
+                    (c in 'a'..'z') ||
+                    c == '-' || c == '_' || c == '.' || c == '~'
+            if (isUnreserved) {
+                append(c)
+            } else {
+                append('%')
+                append(hexDigits[(b ushr 4) and 0xF])
+                append(hexDigits[b and 0xF])
+            }
         }
     }
-}
 
 private val hexDigits: CharArray = "0123456789ABCDEF".toCharArray()
 
@@ -103,12 +105,13 @@ internal class SpectronTransport(
         mimeType: String?,
         fields: Map<String, String>,
         headers: Map<String, String> = emptyMap(),
-    ): JsonElement? = request(
-        HttpMethod.Post,
-        path,
-        multipart = buildMultipart(file, filename, mimeType, fields),
-        extraHeaders = headers,
-    )
+    ): JsonElement? =
+        request(
+            HttpMethod.Post,
+            path,
+            multipart = buildMultipart(file, filename, mimeType, fields),
+            extraHeaders = headers,
+        )
 
     suspend fun putMultipart(
         path: String,
@@ -117,14 +120,18 @@ internal class SpectronTransport(
         mimeType: String?,
         fields: Map<String, String>,
         headers: Map<String, String> = emptyMap(),
-    ): JsonElement? = request(
-        HttpMethod.Put,
-        path,
-        multipart = buildMultipart(file, filename, mimeType, fields),
-        extraHeaders = headers,
-    )
+    ): JsonElement? =
+        request(
+            HttpMethod.Put,
+            path,
+            multipart = buildMultipart(file, filename, mimeType, fields),
+            extraHeaders = headers,
+        )
 
-    suspend fun getRawBytes(path: String, headers: Map<String, String> = emptyMap()): ByteArray {
+    suspend fun getRawBytes(
+        path: String,
+        headers: Map<String, String> = emptyMap(),
+    ): ByteArray {
         val response = executeRequest(HttpMethod.Get, path, emptyMap(), null, null, headers)
         if (!response.status.isSuccess()) {
             handleError(response)
@@ -143,25 +150,26 @@ internal class SpectronTransport(
         var attempt = 0
         val schedule = backoffSchedule(maxRetries)
         while (true) {
-            val response = try {
-                executeRequest(method, path, params, jsonBody, multipart, extraHeaders)
-            } catch (cause: CancellationException) {
-                throw cause
-            } catch (cause: HttpRequestTimeoutException) {
-                if (!shouldRetry(method.value, null, attempt, maxRetries)) {
-                    throw SpectronTransportException(detail = cause.message, cause = cause)
+            val response =
+                try {
+                    executeRequest(method, path, params, jsonBody, multipart, extraHeaders)
+                } catch (cause: CancellationException) {
+                    throw cause
+                } catch (cause: HttpRequestTimeoutException) {
+                    if (!shouldRetry(method.value, null, attempt, maxRetries)) {
+                        throw SpectronTransportException(detail = cause.message, cause = cause)
+                    }
+                    delay(schedule[attempt])
+                    attempt++
+                    continue
+                } catch (cause: Throwable) {
+                    if (!shouldRetry(method.value, null, attempt, maxRetries)) {
+                        throw SpectronTransportException(detail = cause.message, cause = cause)
+                    }
+                    delay(schedule[attempt])
+                    attempt++
+                    continue
                 }
-                delay(schedule[attempt])
-                attempt++
-                continue
-            } catch (cause: Throwable) {
-                if (!shouldRetry(method.value, null, attempt, maxRetries)) {
-                    throw SpectronTransportException(detail = cause.message, cause = cause)
-                }
-                delay(schedule[attempt])
-                attempt++
-                continue
-            }
 
             val status = response.status.value
             if (status >= 400) {
@@ -200,7 +208,10 @@ internal class SpectronTransport(
                 if (value != null) parameter(key, value.toString())
             }
             when {
-                multipart != null -> setBody(multipart)
+                multipart != null -> {
+                    setBody(multipart)
+                }
+
                 jsonBody != null && jsonBody !is JsonNull -> {
                     headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     setBody(json.encodeToString(JsonElement.serializer(), jsonBody))
@@ -219,27 +230,29 @@ internal class SpectronTransport(
         filename: String,
         mimeType: String?,
         fields: Map<String, String>,
-    ): MultiPartFormDataContent = MultiPartFormDataContent(
-        formData {
-            append(
-                key = "file",
-                value = file,
-                headers = io.ktor.http.Headers.build {
-                    append(
-                        HttpHeaders.ContentDisposition,
-                        "form-data; name=\"file\"; filename=\"$filename\"",
-                    )
-                    append(
-                        HttpHeaders.ContentType,
-                        mimeType ?: ContentType.Application.OctetStream.toString(),
-                    )
-                },
-            )
-            for ((key, value) in fields) {
-                append(key, value)
-            }
-        },
-    )
+    ): MultiPartFormDataContent =
+        MultiPartFormDataContent(
+            formData {
+                append(
+                    key = "file",
+                    value = file,
+                    headers =
+                        io.ktor.http.Headers.build {
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                "form-data; name=\"file\"; filename=\"$filename\"",
+                            )
+                            append(
+                                HttpHeaders.ContentType,
+                                mimeType ?: ContentType.Application.OctetStream.toString(),
+                            )
+                        },
+                )
+                for ((key, value) in fields) {
+                    append(key, value)
+                }
+            },
+        )
 
     private suspend fun handleError(response: HttpResponse): Nothing {
         val status = response.status.value
@@ -249,11 +262,12 @@ internal class SpectronTransport(
         throw errorFromResponse(status, body, headerMap)
     }
 
-    private fun decodeJson(text: String): JsonElement = try {
-        json.parseToJsonElement(text)
-    } catch (cause: SerializationException) {
-        throw SpectronTransportException(detail = "Failed to parse JSON: ${cause.message}", cause = cause)
-    }
+    private fun decodeJson(text: String): JsonElement =
+        try {
+            json.parseToJsonElement(text)
+        } catch (cause: SerializationException) {
+            throw SpectronTransportException(detail = "Failed to parse JSON: ${cause.message}", cause = cause)
+        }
 }
 
 private fun HttpStatusCode.isSuccess(): Boolean = value in 200..299

@@ -9,12 +9,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.ktlint)
     alias(libs.plugins.kotest) apply false
 }
 
 val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
+
+// Read out here: inside allprojects the type-safe catalog accessor resolves
+// against the wrong receiver.
+val ktlintVersion =
+    libs.versions.ktlint.cli
+        .get()
 
 val expectedArtifactSuffixes =
     listOf(
@@ -39,6 +46,17 @@ val appleArtifactSuffixes =
 allprojects {
     group = providers.gradleProperty("GROUP").get()
     version = providers.gradleProperty("VERSION_NAME").get()
+
+    // Applied to every project, not only the ones with Kotlin source, so the build
+    // scripts are linted too. What "formatted" means lives in .editorconfig, which
+    // IntelliJ and a bare ktlint binary read as well -- one answer, not three.
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+        // The plugin version pins the plugin, not the formatter. Without this the
+        // ktlint release that decides the layout can change under a plain rebuild.
+        version.set(ktlintVersion)
+    }
 }
 
 subprojects {

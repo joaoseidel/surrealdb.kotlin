@@ -65,8 +65,7 @@ private class Harness {
             ),
         )
 
-    fun lastSurql(): String =
-        lastParams?.get(0)?.jsonPrimitive?.content ?: error("no SurrealQL in last params")
+    fun lastSurql(): String = lastParams?.get(0)?.jsonPrimitive?.content ?: error("no SurrealQL in last params")
 
     fun paramCount(): Int = lastParams?.size ?: 0
 
@@ -74,8 +73,7 @@ private class Harness {
 }
 
 /** The `[{status, result}]` envelope the server wraps a `query` result in. */
-private fun envelope(stub: String = "null") =
-    """{"id":"1","result":[{"status":"OK","time":"1ms","result":$stub}]}"""
+private fun envelope(stub: String = "null") = """{"id":"1","result":[{"status":"OK","time":"1ms","result":$stub}]}"""
 
 private fun builderHarness() = Harness().apply { stubResult = envelope() }
 
@@ -144,7 +142,12 @@ class RpcMethodsTest :
                     h.client.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
 
                     h.lastMethod shouldBe "signup"
-                    h.param(0)?.jsonObject?.get("user")?.jsonPrimitive?.content shouldBe "u"
+                    h
+                        .param(0)
+                        ?.jsonObject
+                        ?.get("user")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "u"
                 }
             }
 
@@ -155,7 +158,12 @@ class RpcMethodsTest :
                     h.client.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
 
                     h.lastMethod shouldBe "signin"
-                    h.param(0)?.jsonObject?.get("user")?.jsonPrimitive?.content shouldBe "u"
+                    h
+                        .param(0)
+                        ?.jsonObject
+                        ?.get("user")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "u"
                 }
             }
 
@@ -243,7 +251,12 @@ class RpcMethodsTest :
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 2
-                    h.param(1)?.jsonObject?.get("tb")?.jsonPrimitive?.content shouldBe "person"
+                    h
+                        .param(1)
+                        ?.jsonObject
+                        ?.get("tb")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "person"
                 }
             }
         }
@@ -257,7 +270,13 @@ class RpcMethodsTest :
 
                     h.lastMethod shouldBe "query"
                     h.lastSurql() shouldStartWith "SELECT * FROM ONLY type::table("
-                    h.param(1)?.jsonObject?.values?.firstOrNull()?.jsonPrimitive?.content shouldBe "person"
+                    h
+                        .param(1)
+                        ?.jsonObject
+                        ?.values
+                        ?.firstOrNull()
+                        ?.jsonPrimitive
+                        ?.content shouldBe "person"
                 }
             }
 
@@ -265,7 +284,10 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.select(Table("person")).where(field("age") eq 30).await()
+                    h.client
+                        .select(Table("person"))
+                        .where(field("age") eq 30)
+                        .await()
 
                     h.lastSurql() shouldContain "WHERE"
                     h.lastSurql() shouldContain "age"
@@ -276,7 +298,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.create(RecordId("person", "1"))
+                    h.client
+                        .create(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                         .await()
 
@@ -289,7 +312,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.update(RecordId("person", "1"))
+                    h.client
+                        .update(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("New")) })
                         .await()
 
@@ -301,7 +325,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.upsert(RecordId("person", "1"))
+                    h.client
+                        .upsert(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                         .await()
 
@@ -313,7 +338,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
+                    h.client
+                        .merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
                         .await()
 
                     h.lastSurql() shouldStartWith "UPDATE ONLY type::record("
@@ -325,7 +351,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.patch(RecordId("person", "1"), buildJsonObject { put("op", JsonPrimitive("replace")) })
+                    h.client
+                        .patch(RecordId("person", "1"), buildJsonObject { put("op", JsonPrimitive("replace")) })
                         .await()
 
                     h.lastSurql() shouldStartWith "UPDATE ONLY type::record("
@@ -380,7 +407,8 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.insertRelation(Table("likes"), buildJsonObject { put("in", JsonPrimitive("p:a")) })
+                    h.client
+                        .insertRelation(Table("likes"), buildJsonObject { put("in", JsonPrimitive("p:a")) })
                         .await()
 
                     h.lastSurql() shouldStartWith "INSERT RELATION INTO $"
@@ -391,7 +419,10 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.run("fn::greet").args("world").await()
+                    h.client
+                        .run("fn::greet")
+                        .args("world")
+                        .await()
 
                     h.lastMethod shouldBe "query"
                     h.lastSurql() shouldStartWith "fn::greet("
@@ -402,7 +433,11 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.run("fn::greet").version("1.0").args("world").await()
+                    h.client
+                        .run("fn::greet")
+                        .version("1.0")
+                        .args("world")
+                        .await()
 
                     h.lastSurql() shouldStartWith "fn::greet<1.0>("
                 }
@@ -433,7 +468,11 @@ class RpcMethodsTest :
                     val h = Harness()
                     h.stubResult = """{"result":{"ok":true}}"""
 
-                    h.client.ping().jsonObject["ok"]?.jsonPrimitive?.content shouldBe "true"
+                    h.client
+                        .ping()
+                        .jsonObject["ok"]
+                        ?.jsonPrimitive
+                        ?.content shouldBe "true"
                 }
             }
         }

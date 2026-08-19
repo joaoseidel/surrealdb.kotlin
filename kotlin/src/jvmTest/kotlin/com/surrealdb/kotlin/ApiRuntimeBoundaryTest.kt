@@ -38,14 +38,15 @@ class ApiRuntimeBoundaryTest {
         )
 
         val found =
-            apiRoot.walkTopDown()
+            apiRoot
+                .walkTopDown()
                 .filter { it.isFile && it.extension == "kt" }
                 .flatMap { file ->
-                    file.readLines()
+                    file
+                        .readLines()
                         .mapNotNull { line -> IMPORT.find(line)?.groupValues?.get(1) }
                         .map { imported -> "${file.name} -> $imported" }
-                }
-                .toSortedSet()
+                }.toSortedSet()
 
         assertEquals(
             allowed.toSortedSet(),

@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+ktlint_code_style = ktlint_official
+max_line_length = 120
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Off: it would rename six files that are deliberately named for their topic rather
+# than their one public type -- ns/Traces.kt holding SpectronTraces, api/SurrealAuth.kt
+# holding SurrealAuthInput. Renaming public source files is a change of its own, and
+# the Surreal* names are the subject of an open question with the maintainers; neither
+# belongs inside a formatting pass.
+ktlint_standard_filename = disabled
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

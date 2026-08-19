@@ -23,11 +23,15 @@ public class PatchQuery internal constructor(
         q.appendValue(what)
         q.appendLiteral(" PATCH ")
         q.bind(patches)
-        cond?.let { q.appendLiteral(" WHERE "); it.compile(q) }
+        cond?.let {
+            q.appendLiteral(" WHERE ")
+            it.compile(q)
+        }
         if (diff) q.appendLiteral(" RETURN DIFF")
         return q
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 }

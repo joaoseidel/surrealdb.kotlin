@@ -17,10 +17,12 @@ import kotlinx.serialization.json.jsonPrimitive
  * Throws [SurrealRpcException] if the statement reports `status: "ERR"`.
  */
 internal fun firstQueryResult(response: JsonElement): JsonElement {
-    val array = response as? JsonArray
-        ?: throw SurrealProtocolException("Expected array response from query, got: $response")
-    val first = array.firstOrNull() as? JsonObject
-        ?: return JsonNull
+    val array =
+        response as? JsonArray
+            ?: throw SurrealProtocolException("Expected array response from query, got: $response")
+    val first =
+        array.firstOrNull() as? JsonObject
+            ?: return JsonNull
     val status = first["status"]?.jsonPrimitive?.content
     if (status == "ERR") {
         val message = first["result"]?.jsonPrimitive?.content ?: "query failed"

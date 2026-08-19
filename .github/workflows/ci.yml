@@ -6,6 +6,23 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Its own job rather than a step on `jvm`, which runs twice over a server
+      # matrix: formatting does not depend on a server, and a lint failure should
+      # be legible without reading past a Docker log.
+      - name: Check formatting
+        run: ./gradlew --no-daemon ktlintCheck
+
   jvm:
     name: jvm (${{ matrix.surrealdb }})
     runs-on: ubuntu-latest

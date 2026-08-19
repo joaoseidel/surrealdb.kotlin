@@ -125,7 +125,9 @@ class LiveQueryFlowTest :
             }
 
             context("each collection") {
-                should("get a query of its own, so two collectors share no id and cancelling one cannot end the other") {
+                should(
+                    "get a query of its own, so two collectors share no id and cancelling one cannot end the other",
+                ) {
                     runTest {
                         val engine = FakeEngine()
                         val flow = engine.flow(content)

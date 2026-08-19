@@ -14,8 +14,6 @@ import com.surrealdb.kotlin.runtime.engine.WebSocketEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.WebSockets
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +26,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonElement
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 internal class MutableSessionState {
     var namespace: String? = null
@@ -46,10 +46,11 @@ internal class ConnectionController(
     private val codec = SurrealCodec(config)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val engine: SurrealEngine = when {
-        isWsUrl(config.url) -> WebSocketEngine(config, httpClient, codec, scope)
-        else -> HttpEngine(config, httpClient, codec)
-    }
+    private val engine: SurrealEngine =
+        when {
+            isWsUrl(config.url) -> WebSocketEngine(config, httpClient, codec, scope)
+            else -> HttpEngine(config, httpClient, codec)
+        }
 
     val features: Set<SurrealFeature> get() = engine.features
     val events: SharedFlow<SurrealConnectionEvent> get() = engine.events
@@ -94,35 +95,45 @@ internal class ConnectionController(
 
     // ── Typed protocol passthroughs ──────────────────────────────────────────
 
-    suspend fun health(sessionId: String): JsonElement =
-        engine.health(snapshot(sessionId))
+    suspend fun health(sessionId: String): JsonElement = engine.health(snapshot(sessionId))
 
-    suspend fun version(sessionId: String): JsonElement =
-        engine.version(snapshot(sessionId))
+    suspend fun version(sessionId: String): JsonElement = engine.version(snapshot(sessionId))
 
-    suspend fun use(sessionId: String, namespace: String, database: String): JsonElement =
-        engine.use(namespace, database, snapshot(sessionId))
+    suspend fun use(
+        sessionId: String,
+        namespace: String,
+        database: String,
+    ): JsonElement = engine.use(namespace, database, snapshot(sessionId))
 
-    suspend fun signup(sessionId: String, params: kotlinx.serialization.json.JsonObject): JsonElement =
-        engine.signup(params, snapshot(sessionId))
+    suspend fun signup(
+        sessionId: String,
+        params: kotlinx.serialization.json.JsonObject,
+    ): JsonElement = engine.signup(params, snapshot(sessionId))
 
-    suspend fun signin(sessionId: String, params: kotlinx.serialization.json.JsonObject): JsonElement =
-        engine.signin(params, snapshot(sessionId))
+    suspend fun signin(
+        sessionId: String,
+        params: kotlinx.serialization.json.JsonObject,
+    ): JsonElement = engine.signin(params, snapshot(sessionId))
 
-    suspend fun authenticate(sessionId: String, token: String): JsonElement =
-        engine.authenticate(token, snapshot(sessionId))
+    suspend fun authenticate(
+        sessionId: String,
+        token: String,
+    ): JsonElement = engine.authenticate(token, snapshot(sessionId))
 
-    suspend fun invalidate(sessionId: String): JsonElement =
-        engine.invalidate(snapshot(sessionId))
+    suspend fun invalidate(sessionId: String): JsonElement = engine.invalidate(snapshot(sessionId))
 
-    suspend fun reset(sessionId: String): JsonElement =
-        engine.reset(snapshot(sessionId))
+    suspend fun reset(sessionId: String): JsonElement = engine.reset(snapshot(sessionId))
 
-    suspend fun set(sessionId: String, name: String, value: JsonElement): JsonElement =
-        engine.set(name, value, snapshot(sessionId))
+    suspend fun set(
+        sessionId: String,
+        name: String,
+        value: JsonElement,
+    ): JsonElement = engine.set(name, value, snapshot(sessionId))
 
-    suspend fun unset(sessionId: String, name: String): JsonElement =
-        engine.unset(name, snapshot(sessionId))
+    suspend fun unset(
+        sessionId: String,
+        name: String,
+    ): JsonElement = engine.unset(name, snapshot(sessionId))
 
     suspend fun query(
         sessionId: String,
@@ -136,7 +147,7 @@ internal class ConnectionController(
     private fun requireTransactionSupport() {
         if (SurrealFeature.Transactions !in engine.features) {
             throw SurrealFeatureNotSupportedException(
-                "Transactions are not supported by the active engine — use a ws:// or wss:// URL"
+                "Transactions are not supported by the active engine — use a ws:// or wss:// URL",
             )
         }
     }
@@ -146,39 +157,55 @@ internal class ConnectionController(
         return engine.begin(snapshot(sessionId))
     }
 
-    suspend fun commit(sessionId: String, txnId: String) {
+    suspend fun commit(
+        sessionId: String,
+        txnId: String,
+    ) {
         requireTransactionSupport()
         engine.commit(txnId, snapshot(sessionId))
     }
 
-    suspend fun cancel(sessionId: String, txnId: String) {
+    suspend fun cancel(
+        sessionId: String,
+        txnId: String,
+    ) {
         requireTransactionSupport()
         engine.cancel(txnId, snapshot(sessionId))
     }
 
-    suspend fun live(sessionId: String, table: String, diff: Boolean?): LiveQuerySubscription {
+    suspend fun live(
+        sessionId: String,
+        table: String,
+        diff: Boolean?,
+    ): LiveQuerySubscription {
         if (SurrealFeature.LiveQueries !in engine.features) {
             throw SurrealFeatureNotSupportedException(
-                "Live queries are not supported by the active engine — use a ws:// or wss:// URL"
+                "Live queries are not supported by the active engine — use a ws:// or wss:// URL",
             )
         }
         return engine.liveQuery(table, diff, snapshot(sessionId))
     }
 
-    suspend fun kill(sessionId: String, liveQueryId: String): JsonElement =
-        engine.kill(liveQueryId, snapshot(sessionId))
+    suspend fun kill(
+        sessionId: String,
+        liveQueryId: String,
+    ): JsonElement = engine.kill(liveQueryId, snapshot(sessionId))
 
-    suspend fun snapshot(sessionId: String): SessionSnapshot = sessionsMutex.withLock {
-        val s = sessions[sessionId] ?: error("Unknown session $sessionId")
-        SessionSnapshot(
-            token = s.accessToken,
-            namespace = s.namespace,
-            database = s.database,
-            variables = s.variables.toMap(),
-        )
-    }
+    suspend fun snapshot(sessionId: String): SessionSnapshot =
+        sessionsMutex.withLock {
+            val s = sessions[sessionId] ?: error("Unknown session $sessionId")
+            SessionSnapshot(
+                token = s.accessToken,
+                namespace = s.namespace,
+                database = s.database,
+                variables = s.variables.toMap(),
+            )
+        }
 
-    suspend fun update(sessionId: String, block: MutableSessionState.() -> Unit) {
+    suspend fun update(
+        sessionId: String,
+        block: MutableSessionState.() -> Unit,
+    ) {
         sessionsMutex.withLock {
             sessions[sessionId]?.block()
         }
@@ -188,7 +215,10 @@ internal class ConnectionController(
      * Schedule JWT renewal for a session: cancels any existing renewal job and
      * schedules a new one based on the access token's `exp` claim.
      */
-    suspend fun scheduleRenewal(sessionId: String, onRenew: suspend () -> Unit) {
+    suspend fun scheduleRenewal(
+        sessionId: String,
+        onRenew: suspend () -> Unit,
+    ) {
         sessionsMutex.withLock {
             val s = sessions[sessionId] ?: return@withLock
             s.renewalJob?.cancel()
@@ -197,10 +227,11 @@ internal class ConnectionController(
             val now = Clock.System.now().toEpochMilliseconds()
             val fireAt = expiryMs - config.tokenRenewalLeadMillis
             val delayMs = (fireAt - now).coerceAtLeast(0)
-            s.renewalJob = scope.launch {
-                kotlinx.coroutines.delay(delayMs)
-                runCatching { onRenew() }
-            }
+            s.renewalJob =
+                scope.launch {
+                    kotlinx.coroutines.delay(delayMs)
+                    runCatching { onRenew() }
+                }
         }
     }
 
@@ -216,14 +247,14 @@ internal class ConnectionController(
         }
     }
 
-    private fun defaultHttpClient(config: SurrealClientConfig): HttpClient = HttpClient {
-        install(WebSockets)
-        install(HttpTimeout) {
-            requestTimeoutMillis = config.requestTimeoutMillis
-            connectTimeoutMillis = config.requestTimeoutMillis
-            socketTimeoutMillis = config.requestTimeoutMillis
+    private fun defaultHttpClient(config: SurrealClientConfig): HttpClient =
+        HttpClient {
+            install(WebSockets)
+            install(HttpTimeout) {
+                requestTimeoutMillis = config.requestTimeoutMillis
+                connectTimeoutMillis = config.requestTimeoutMillis
+                socketTimeoutMillis = config.requestTimeoutMillis
+            }
+            expectSuccess = false
         }
-        expectSuccess = false
-    }
 }
-

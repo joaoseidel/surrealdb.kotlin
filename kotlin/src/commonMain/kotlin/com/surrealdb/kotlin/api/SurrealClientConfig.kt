@@ -6,11 +6,12 @@ import kotlinx.serialization.json.Json
 
 public data class SurrealClientConfig(
     val url: String,
-    val json: Json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        explicitNulls = true
-    },
+    val json: Json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            explicitNulls = true
+        },
     val autoAuthenticate: Boolean = false,
     val credentialProvider: (suspend () -> SurrealAuthInput?)? = null,
     val httpClientFactory: ((SurrealClientConfig) -> HttpClient)? = null,

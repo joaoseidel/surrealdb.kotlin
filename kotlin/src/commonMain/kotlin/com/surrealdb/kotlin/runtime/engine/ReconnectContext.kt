@@ -2,7 +2,9 @@ package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.ReconnectConfig
 
-internal class ReconnectContext(private val config: ReconnectConfig) {
+internal class ReconnectContext(
+    private val config: ReconnectConfig,
+) {
     private var attempts = 0
 
     val allowed: Boolean

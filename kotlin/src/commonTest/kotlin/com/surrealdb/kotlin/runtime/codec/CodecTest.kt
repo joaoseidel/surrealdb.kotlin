@@ -17,8 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
 private val codec = SurrealCodec(SurrealClientConfig(url = "http://localhost:8000"))
 
 /** Parses back through Json so assertions are about structure, not string formatting. */
-private fun parse(text: String) =
-    SurrealClientConfig(url = "x").json.parseToJsonElement(text).jsonObject
+private fun parse(text: String) = SurrealClientConfig(url = "x").json.parseToJsonElement(text).jsonObject
 
 class CodecTest :
     ShouldSpec({
@@ -28,10 +27,11 @@ class CodecTest :
                     SurrealRpcRequest(
                         id = "abc-123",
                         method = "query",
-                        params = listOf(
-                            JsonPrimitive("SELECT * FROM person"),
-                            buildJsonObject { put("limit", JsonPrimitive(10)) },
-                        ),
+                        params =
+                            listOf(
+                                JsonPrimitive("SELECT * FROM person"),
+                                buildJsonObject { put("limit", JsonPrimitive(10)) },
+                            ),
                     )
 
                 val parsed = parse(codec.encodeHttpPayload(request).decodeToString())

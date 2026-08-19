@@ -45,7 +45,9 @@ internal abstract class RpcEngine(
 
     final override val events: SharedFlow<SurrealConnectionEvent> = _events.asSharedFlow()
 
-    override val liveNotifications: SharedFlow<SurrealLiveNotification> = MutableSharedFlow<SurrealLiveNotification>().asSharedFlow()
+    override val liveNotifications: SharedFlow<SurrealLiveNotification> =
+        MutableSharedFlow<SurrealLiveNotification>()
+            .asSharedFlow()
 
     override val activeLiveQueries: StateFlow<Set<String>> = MutableStateFlow(emptySet())
 
@@ -80,9 +82,11 @@ internal abstract class RpcEngine(
 
     // ── Protocol methods ─────────────────────────────────────────────────────
 
-    override suspend fun health(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("ping", emptyList()), session))
+    override suspend fun health(session: SessionSnapshot): JsonElement =
+        unwrap(dispatch(newRequest("ping", emptyList()), session))
 
-    override suspend fun version(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("version", emptyList()), session))
+    override suspend fun version(session: SessionSnapshot): JsonElement =
+        unwrap(dispatch(newRequest("version", emptyList()), session))
 
     override suspend fun use(
         namespace: String,
@@ -114,7 +118,8 @@ internal abstract class RpcEngine(
     override suspend fun invalidate(session: SessionSnapshot): JsonElement =
         unwrap(dispatch(newRequest("invalidate", emptyList()), session))
 
-    override suspend fun reset(session: SessionSnapshot): JsonElement = unwrap(dispatch(newRequest("reset", emptyList()), session))
+    override suspend fun reset(session: SessionSnapshot): JsonElement =
+        unwrap(dispatch(newRequest("reset", emptyList()), session))
 
     override suspend fun set(
         name: String,

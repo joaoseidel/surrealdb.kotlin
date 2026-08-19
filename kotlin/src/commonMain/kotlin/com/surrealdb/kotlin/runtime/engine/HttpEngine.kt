@@ -22,11 +22,11 @@ internal class HttpEngine(
     httpClient: HttpClient,
     codec: SurrealCodec,
 ) : RpcEngine(config, httpClient, codec) {
-
-    override val features: Set<SurrealFeature> = setOf(
-        SurrealFeature.ExportImport,
-        SurrealFeature.SurrealML,
-    )
+    override val features: Set<SurrealFeature> =
+        setOf(
+            SurrealFeature.ExportImport,
+            SurrealFeature.SurrealML,
+        )
 
     @Volatile private var started = false
 
@@ -44,21 +44,22 @@ internal class HttpEngine(
         val payload = codec.encodeHttpPayload(request)
         val contentType = codec.contentTypeHeader()
 
-        val response = httpClient.post(endpoint) {
-            headers {
-                append(HttpHeaders.ContentType, contentType)
-                append(HttpHeaders.Accept, contentType)
-                session.token?.let { append(HttpHeaders.Authorization, "Bearer $it") }
-                session.namespace?.let { append("Surreal-NS", it) }
-                session.database?.let { append("Surreal-DB", it) }
+        val response =
+            httpClient.post(endpoint) {
+                headers {
+                    append(HttpHeaders.ContentType, contentType)
+                    append(HttpHeaders.Accept, contentType)
+                    session.token?.let { append(HttpHeaders.Authorization, "Bearer $it") }
+                    session.namespace?.let { append("Surreal-NS", it) }
+                    session.database?.let { append("Surreal-DB", it) }
+                }
+                setBody(payload)
             }
-            setBody(payload)
-        }
 
         val bytes = response.body<ByteArray>()
         if (!response.status.isSuccess()) {
             throw SurrealTransportException(
-                "SurrealDB request failed with HTTP ${response.status.value}: ${bytes.decodeToString()}"
+                "SurrealDB request failed with HTTP ${response.status.value}: ${bytes.decodeToString()}",
             )
         }
 

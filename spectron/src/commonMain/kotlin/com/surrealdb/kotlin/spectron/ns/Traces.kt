@@ -13,14 +13,20 @@ public class SpectronTraces internal constructor(
 ) {
     private val base = "${enduserBase(contextId)}/traces"
 
-    public suspend fun list(limit: Int? = null, onBehalfOf: String? = null): List<TraceRecordJson> {
+    public suspend fun list(
+        limit: Int? = null,
+        onBehalfOf: String? = null,
+    ): List<TraceRecordJson> {
         val body = transport.get(base, mapOf("limit" to limit), onBehalfOfHeader(onBehalfOf)) ?: return emptyList()
         return transport.json
             .decodeFromJsonElement(TraceListResponseJson.serializer(), body)
             .traces
     }
 
-    public suspend fun get(traceId: String, onBehalfOf: String? = null): TraceRecordJson {
+    public suspend fun get(
+        traceId: String,
+        onBehalfOf: String? = null,
+    ): TraceRecordJson {
         val body = transport.get("$base/${quotePath(traceId)}", headers = onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(TraceRecordJson.serializer(), body!!)
     }

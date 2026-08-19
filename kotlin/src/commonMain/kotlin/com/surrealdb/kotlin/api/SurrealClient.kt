@@ -38,8 +38,7 @@ public class SurrealClient private constructor(
      * Create a new session that shares the underlying connection but has its
      * own namespace, database, auth token and session variables.
      */
-    public suspend fun newSession(): SurrealSession =
-        SurrealSession(controller, controller.newSession())
+    public suspend fun newSession(): SurrealSession = SurrealSession(controller, controller.newSession())
 
     /** Remove a previously created session, cancelling any renewal jobs. */
     public suspend fun closeSession(session: SurrealSession) {

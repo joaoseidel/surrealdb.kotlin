@@ -54,8 +54,9 @@ class SessionLifecycleTest :
                 runTest {
                     val client = client()
 
-                    val ids = setOf(client.newSession(), client.newSession(), client.newSession())
-                        .map { it.sessionId }
+                    val ids =
+                        setOf(client.newSession(), client.newSession(), client.newSession())
+                            .map { it.sessionId }
 
                     ids.toSet().size shouldBe 3
                 }

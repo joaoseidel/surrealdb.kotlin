@@ -9,10 +9,16 @@ package com.surrealdb.kotlin.api.query
  */
 public sealed class ReturnMode {
     public data object None : ReturnMode()
+
     public data object Before : ReturnMode()
+
     public data object After : ReturnMode()
+
     public data object Diff : ReturnMode()
-    public data class Fields(val names: List<String>) : ReturnMode() {
+
+    public data class Fields(
+        val names: List<String>,
+    ) : ReturnMode() {
         init {
             require(names.isNotEmpty()) { "ReturnMode.Fields requires at least one field" }
             names.forEach { Expr.Field(it) }

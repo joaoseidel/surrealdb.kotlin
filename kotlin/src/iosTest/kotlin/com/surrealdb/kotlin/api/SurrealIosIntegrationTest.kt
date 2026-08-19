@@ -21,9 +21,10 @@ class SurrealIosIntegrationTest :
             should("sign in, select a database and answer a query") {
                 if (env("SURREAL_RUN_INTEGRATION") != "true") return@should
 
-                val client = SurrealClient(
-                    SurrealClientConfig(url = env("SURREAL_IOS_ENDPOINT") ?: "http://127.0.0.1:8000"),
-                )
+                val client =
+                    SurrealClient(
+                        SurrealClientConfig(url = env("SURREAL_IOS_ENDPOINT") ?: "http://127.0.0.1:8000"),
+                    )
 
                 client.signin(
                     buildJsonObject {

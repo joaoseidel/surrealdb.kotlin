@@ -28,11 +28,12 @@ public open class SurrealSession internal constructor(
     // Dispatcher used by builder objects. `txn = null` here — a transaction
     // exposes its own session-bound queryable with a non-null txn.
     @PublishedApi
-    internal val sessionDispatcher: QueryDispatcher = object : QueryDispatcher {
-        override val json get() = controller.config.json
-        override suspend fun dispatch(query: BoundQuery): JsonElement =
-            this@SurrealSession.query(query)
-    }
+    internal val sessionDispatcher: QueryDispatcher =
+        object : QueryDispatcher {
+            override val json get() = controller.config.json
+
+            override suspend fun dispatch(query: BoundQuery): JsonElement = this@SurrealSession.query(query)
+        }
     private val queryable = QueryableImpl(sessionDispatcher)
 
     /** Current namespace for this session, or null if none has been selected. */
@@ -45,12 +46,17 @@ public open class SurrealSession internal constructor(
     public suspend fun accessToken(): String? = controller.snapshot(sessionId).token
 
     public suspend fun ping(): JsonElement = withAutoAuthRetry { controller.health(sessionId) }
+
     public suspend fun pingResult(): Result<JsonElement> = runCatching { ping() }
 
     public suspend fun version(): JsonElement = withAutoAuthRetry { controller.version(sessionId) }
+
     public suspend fun versionResult(): Result<JsonElement> = runCatching { version() }
 
-    public suspend fun use(namespace: String, database: String): JsonElement {
+    public suspend fun use(
+        namespace: String,
+        database: String,
+    ): JsonElement {
         val result = withAutoAuthRetry { controller.use(sessionId, namespace, database) }
         controller.update(sessionId) {
             this.namespace = namespace
@@ -59,11 +65,13 @@ public open class SurrealSession internal constructor(
         return result
     }
 
-    public suspend fun useResult(namespace: String, database: String): Result<JsonElement> =
-        runCatching { use(namespace, database) }
+    public suspend fun useResult(
+        namespace: String,
+        database: String,
+    ): Result<JsonElement> = runCatching { use(namespace, database) }
 
-    public suspend fun auth(): JsonElement {
-        return try {
+    public suspend fun auth(): JsonElement =
+        try {
             firstQueryResult(query(BoundQuery("SELECT * FROM ONLY \$auth")))
         } catch (cause: com.surrealdb.kotlin.api.error.SurrealRpcException) {
             // v3.0.5 emits this when `$auth` resolves to zero rows — the
@@ -74,7 +82,6 @@ public open class SurrealSession internal constructor(
                 throw cause
             }
         }
-    }
 
     public suspend fun authResult(): Result<JsonElement> = runCatching { auth() }
 
@@ -132,14 +139,23 @@ public open class SurrealSession internal constructor(
 
     public suspend fun resetResult(): Result<JsonElement> = runCatching { reset() }
 
-    public suspend fun `let`(key: String, value: JsonElement): JsonElement {
+    // Backticked because it is named for the SurrealDB RPC method it calls, and
+    // `let` is a soft keyword here. Renaming it would break every caller, so the
+    // naming rule is suppressed at this one declaration rather than repo-wide.
+    @Suppress("ktlint:standard:function-naming")
+    public suspend fun `let`(
+        key: String,
+        value: JsonElement,
+    ): JsonElement {
         val result = withAutoAuthRetry { controller.set(sessionId, key, value) }
         controller.update(sessionId) { variables[key] = value }
         return result
     }
 
-    public suspend fun letResult(key: String, value: JsonElement): Result<JsonElement> =
-        runCatching { `let`(key, value) }
+    public suspend fun letResult(
+        key: String,
+        value: JsonElement,
+    ): Result<JsonElement> = runCatching { `let`(key, value) }
 
     public suspend fun unset(key: String): JsonElement {
         val result = withAutoAuthRetry { controller.unset(sessionId, key) }
@@ -150,33 +166,57 @@ public open class SurrealSession internal constructor(
     public suspend fun unsetResult(key: String): Result<JsonElement> = runCatching { unset(key) }
 
     /** Dispatch a raw SurrealQL string as the `query` RPC. */
-    override suspend fun query(sql: String, vars: JsonObject?): JsonElement =
-        withAutoAuthRetry { controller.query(sessionId, sql, vars) }
+    override suspend fun query(
+        sql: String,
+        vars: JsonObject?,
+    ): JsonElement = withAutoAuthRetry { controller.query(sessionId, sql, vars) }
 
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
     override suspend fun query(bound: BoundQuery): JsonElement =
         query(bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
 
-    public suspend fun queryResult(sql: String, vars: JsonObject? = null): Result<JsonElement> =
-        runCatching { query(sql, vars) }
+    public suspend fun queryResult(
+        sql: String,
+        vars: JsonObject? = null,
+    ): Result<JsonElement> = runCatching { query(sql, vars) }
 
     override fun select(what: Any): com.surrealdb.kotlin.api.query.SelectQuery = queryable.select(what)
+
     override fun create(what: Any): com.surrealdb.kotlin.api.query.CreateQuery = queryable.create(what)
+
     override fun upsert(what: Any): com.surrealdb.kotlin.api.query.UpsertQuery = queryable.upsert(what)
+
     override fun update(what: Any): com.surrealdb.kotlin.api.query.UpdateQuery = queryable.update(what)
-    override fun merge(what: Any, data: Any): com.surrealdb.kotlin.api.query.MergeQuery =
-        queryable.merge(what, data)
-    override fun patch(what: Any, patches: JsonElement, diff: Boolean): com.surrealdb.kotlin.api.query.PatchQuery =
-        queryable.patch(what, patches, diff)
+
+    override fun merge(
+        what: Any,
+        data: Any,
+    ): com.surrealdb.kotlin.api.query.MergeQuery = queryable.merge(what, data)
+
+    override fun patch(
+        what: Any,
+        patches: JsonElement,
+        diff: Boolean,
+    ): com.surrealdb.kotlin.api.query.PatchQuery = queryable.patch(what, patches, diff)
+
     override fun delete(what: Any): com.surrealdb.kotlin.api.query.DeleteQuery = queryable.delete(what)
-    override fun relate(`in`: Any, relation: Any, out: Any): com.surrealdb.kotlin.api.query.RelateQuery =
-        queryable.relate(`in`, relation, out)
-    override fun insert(into: com.surrealdb.kotlin.api.query.Table, data: JsonElement): com.surrealdb.kotlin.api.query.InsertQuery =
-        queryable.insert(into, data)
+
+    override fun relate(
+        `in`: Any,
+        relation: Any,
+        out: Any,
+    ): com.surrealdb.kotlin.api.query.RelateQuery = queryable.relate(`in`, relation, out)
+
+    override fun insert(
+        into: com.surrealdb.kotlin.api.query.Table,
+        data: JsonElement,
+    ): com.surrealdb.kotlin.api.query.InsertQuery = queryable.insert(into, data)
+
     override fun insertRelation(
         into: com.surrealdb.kotlin.api.query.Table,
         data: JsonElement,
     ): com.surrealdb.kotlin.api.query.InsertRelationQuery = queryable.insertRelation(into, data)
+
     override fun run(function: String): com.surrealdb.kotlin.api.query.RunQuery = queryable.run(function)
 
     /**
@@ -184,13 +224,20 @@ public open class SurrealSession internal constructor(
      * table name or record id — to use complex `LIVE SELECT` SurrealQL, run it
      * via [query] which will return a live query UUID.
      */
-    public suspend fun live(table: String, diff: Boolean? = null): LiveQuerySubscription =
-        withAutoAuthRetry { controller.live(sessionId, table, diff) }
+    public suspend fun live(
+        table: String,
+        diff: Boolean? = null,
+    ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table, diff) }
 
-    public suspend fun liveResult(table: String, diff: Boolean? = null): Result<LiveQuerySubscription> =
-        runCatching { live(table, diff) }
+    public suspend fun liveResult(
+        table: String,
+        diff: Boolean? = null,
+    ): Result<LiveQuerySubscription> = runCatching { live(table, diff) }
 
-    public fun <T> liveEvents(spec: String, decode: (JsonElement) -> T): Flow<LiveQueryEvent<T>> {
+    public fun <T> liveEvents(
+        spec: String,
+        decode: (JsonElement) -> T,
+    ): Flow<LiveQueryEvent<T>> {
         if (SurrealFeature.LiveQueries !in controller.features) {
             throw SurrealFeatureNotSupportedException(
                 "Live queries need a ws:// or wss:// connection; this client is on ${controller.config.url}",
@@ -212,8 +259,7 @@ public open class SurrealSession internal constructor(
     }
 
     /** As [liveEvents], decoding each record with this session's serializer. */
-    public inline fun <reified T> liveEvents(spec: String): Flow<LiveQueryEvent<T>> =
-        liveEvents(spec) { decode(it) }
+    public inline fun <reified T> liveEvents(spec: String): Flow<LiveQueryEvent<T>> = liveEvents(spec) { decode(it) }
 
     public suspend fun kill(liveQueryId: String): JsonElement =
         withAutoAuthRetry { controller.kill(sessionId, liveQueryId) }
@@ -222,10 +268,13 @@ public open class SurrealSession internal constructor(
 
     public val json: kotlinx.serialization.json.Json get() = controller.config.json
 
-    public inline fun <reified T> decode(element: JsonElement): T =
-        json.decodeFromJsonElement(element)
+    public inline fun <reified T> decode(element: JsonElement): T = json.decodeFromJsonElement(element)
 
-    public suspend inline fun <reified T> queryAs(sql: String, vars: JsonObject? = null): T = decode(query(sql, vars))
+    public suspend inline fun <reified T> queryAs(
+        sql: String,
+        vars: JsonObject? = null,
+    ): T = decode(query(sql, vars))
+
     public suspend inline fun <reified T> queryAs(bound: BoundQuery): T = decode(query(bound))
 
     private suspend fun applyTokenResult(result: JsonElement) {
@@ -254,9 +303,10 @@ public open class SurrealSession internal constructor(
         val rt = refresh ?: return
 
         // SurrealDB v2 refresh-token RPC: { rt: <refresh_token> } via signin
-        val params = kotlinx.serialization.json.buildJsonObject {
-            put("rt", kotlinx.serialization.json.JsonPrimitive(rt))
-        }
+        val params =
+            kotlinx.serialization.json.buildJsonObject {
+                put("rt", kotlinx.serialization.json.JsonPrimitive(rt))
+            }
         val result = runCatching { controller.signin(sessionId, params) }.getOrNull() ?: return
         val tokens = extractTokens(result) ?: return
         controller.update(sessionId) {
@@ -266,20 +316,33 @@ public open class SurrealSession internal constructor(
         scheduleRenewalIfPossible()
     }
 
-    private data class TokenPair(val access: String, val refresh: String?)
+    private data class TokenPair(
+        val access: String,
+        val refresh: String?,
+    )
 
-    private fun extractTokens(result: JsonElement): TokenPair? = when {
-        result is kotlinx.serialization.json.JsonPrimitive && result.isString -> TokenPair(result.content, null)
-        result is JsonObject -> {
-            val access = (result["access"] ?: result["token"] ?: result["jwt"])?.jsonPrimitive?.content
-            val refresh = result["refresh"]?.jsonPrimitive?.content
-            access?.let { TokenPair(it, refresh) }
+    private fun extractTokens(result: JsonElement): TokenPair? =
+        when {
+            result is kotlinx.serialization.json.JsonPrimitive && result.isString -> {
+                TokenPair(result.content, null)
+            }
+
+            result is JsonObject -> {
+                val access = (result["access"] ?: result["token"] ?: result["jwt"])?.jsonPrimitive?.content
+                val refresh = result["refresh"]?.jsonPrimitive?.content
+                access?.let { TokenPair(it, refresh) }
+            }
+
+            else -> {
+                null
+            }
         }
-        else -> null
-    }
 
-    private suspend fun <T> withAutoAuthRetry(allowRetry: Boolean = true, block: suspend () -> T): T {
-        return try {
+    private suspend fun <T> withAutoAuthRetry(
+        allowRetry: Boolean = true,
+        block: suspend () -> T,
+    ): T =
+        try {
             block()
         } catch (cause: com.surrealdb.kotlin.api.error.SurrealAuthenticationException) {
             if (!allowRetry || !controller.config.autoAuthenticate) throw cause
@@ -288,7 +351,6 @@ public open class SurrealSession internal constructor(
             applyAuthInput(credential)
             withAutoAuthRetry(allowRetry = false, block = block)
         }
-    }
 
     private suspend fun applyAuthInput(authInput: SurrealAuthInput) {
         when (authInput) {
@@ -296,6 +358,7 @@ public open class SurrealSession internal constructor(
                 val result = controller.signin(sessionId, authInput.params)
                 applyTokenResult(result)
             }
+
             is SurrealAuthInput.Token -> {
                 controller.authenticate(sessionId, authInput.token)
                 controller.update(sessionId) { accessToken = authInput.token }

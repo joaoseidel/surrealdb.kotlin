@@ -54,7 +54,9 @@ class LiveStatementTest :
             }
 
             context("a spec it cannot read") {
-                should("reject it rather than guess, because a wrong guess is a subscription that silently never fires") {
+                should(
+                    "reject it rather than guess, because a wrong guess is a subscription that silently never fires",
+                ) {
                     val failure =
                         shouldThrow<IllegalArgumentException> {
                             toLiveStatement("DELETE FROM book")

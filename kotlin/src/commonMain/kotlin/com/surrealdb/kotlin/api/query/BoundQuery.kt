@@ -27,39 +27,51 @@ public class BoundQuery internal constructor(
 
     /** Append a raw SurrealQL fragment. The literal is not escaped — only
      *  trusted strings (keywords, operators, joiners) should use this path. */
-    public fun appendLiteral(literal: String): BoundQuery = apply {
-        parts.add(literal)
-    }
+    public fun appendLiteral(literal: String): BoundQuery =
+        apply {
+            parts.add(literal)
+        }
 
     /** Append another fragment, merging its bindings. */
-    public fun append(other: BoundQuery): BoundQuery = apply {
-        parts.add(other.surql)
-        binds.putAll(other.binds)
-    }
+    public fun append(other: BoundQuery): BoundQuery =
+        apply {
+            parts.add(other.surql)
+            binds.putAll(other.binds)
+        }
 
     /** Bind [value] to a freshly-generated parameter and emit `$<param>`. */
-    public fun bind(value: JsonElement): BoundQuery = apply {
-        val key = nextParam()
-        binds[key] = value
-        parts.add("\$$key")
-    }
+    public fun bind(value: JsonElement): BoundQuery =
+        apply {
+            val key = nextParam()
+            binds[key] = value
+            parts.add("\$$key")
+        }
 
     /** Bind [value] to [name] (caller-controlled), emit `$<name>`. */
-    public fun bindNamed(name: String, value: JsonElement): BoundQuery = apply {
-        binds[name] = value
-        parts.add("\$$name")
-    }
+    public fun bindNamed(
+        name: String,
+        value: JsonElement,
+    ): BoundQuery =
+        apply {
+            binds[name] = value
+            parts.add("\$$name")
+        }
 
     /** Register a binding by name without emitting a placeholder — used when the
      *  caller has already embedded `$<name>` in the literal SurrealQL. */
-    public fun attachBinding(name: String, value: JsonElement): BoundQuery = apply {
-        binds[name] = value
-    }
+    public fun attachBinding(
+        name: String,
+        value: JsonElement,
+    ): BoundQuery =
+        apply {
+            binds[name] = value
+        }
 
     /** Bindings as a [JsonObject] for the `query` RPC's vars parameter. */
     public fun bindingsAsJsonObject(): JsonObject = JsonObject(binds)
 
     private var counter = 0
+
     private fun nextParam(): String {
         while (true) {
             val candidate = "_${counter++}"
@@ -67,6 +79,5 @@ public class BoundQuery internal constructor(
         }
     }
 
-    override fun toString(): String =
-        if (binds.isEmpty()) surql else "$surql  --  bindings=$binds"
+    override fun toString(): String = if (binds.isEmpty()) surql else "$surql  --  bindings=$binds"
 }

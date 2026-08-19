@@ -19,12 +19,15 @@ public class RunQuery internal constructor(
 ) {
     init {
         require(NAME_REGEX.matches(name)) { "Invalid function name: '$name'" }
-        if (version != null) require(VERSION_REGEX.matches(version)) {
-            "Invalid function version: '$version'"
+        if (version != null) {
+            require(VERSION_REGEX.matches(version)) {
+                "Invalid function version: '$version'"
+            }
         }
     }
 
     public fun version(version: String): RunQuery = RunQuery(dispatcher, name, version, args)
+
     public fun args(vararg args: Any?): RunQuery = RunQuery(dispatcher, name, version, args.toList())
 
     public fun compile(): BoundQuery {
@@ -41,6 +44,7 @@ public class RunQuery internal constructor(
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 
     private companion object {
