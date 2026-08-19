@@ -1,4 +1,4 @@
-package com.surrealdb.kotlin.api.query
+package com.surrealdb.kotlin.api.data
 
 /**
  * A SurrealDB table reference (e.g. `user`).

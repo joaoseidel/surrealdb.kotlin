@@ -1,5 +1,7 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.Table
 import kotlinx.serialization.json.JsonElement
 
 /**

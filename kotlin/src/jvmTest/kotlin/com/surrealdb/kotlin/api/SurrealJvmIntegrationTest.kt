@@ -2,9 +2,9 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.SurrealConnectionEvent
 import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
-import com.surrealdb.kotlin.api.query.RecordId
-import com.surrealdb.kotlin.api.query.Table
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first

@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api
 
+import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.CreateQuery
 import com.surrealdb.kotlin.api.query.DeleteQuery
@@ -13,7 +14,6 @@ import com.surrealdb.kotlin.api.query.RelateQuery
 import com.surrealdb.kotlin.api.query.RunQuery
 import com.surrealdb.kotlin.api.query.SelectQuery
 import com.surrealdb.kotlin.api.query.SurrealQueryable
-import com.surrealdb.kotlin.api.query.Table
 import com.surrealdb.kotlin.api.query.UpdateQuery
 import com.surrealdb.kotlin.api.query.UpsertQuery
 import kotlinx.serialization.json.JsonElement

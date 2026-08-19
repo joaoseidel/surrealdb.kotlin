@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api.live
 
-import com.surrealdb.kotlin.api.query.RecordId
+import com.surrealdb.kotlin.api.data.RecordId
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
