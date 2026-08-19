@@ -51,6 +51,14 @@ the [surrealdb.js](https://github.com/surrealdb/surrealdb.js/tree/main/packages/
 For typed decoding, every builder exposes `awaitAs<T>()` and the raw `query()` family has `queryAs<T>()`. Every call throws on failure; a caller who
 wants a `Result` writes `runCatching { session.ping() }`.
 
+Every write verb takes a `returnMode`, which is the SurrealQL
+`RETURN NONE | BEFORE | AFTER | DIFF | <fields>` clause. That covers `create`, `update`, `upsert`, `merge`, `patch`, `delete` and `relate`.
+
+```kotlin
+db.patch(People, patches).returnMode(ReturnMode.Diff).await()
+db.update(People).content(data).returnMode(ReturnMode.Fields(listOf(People.name))).await()
+```
+
 ## Quick start
 
 ```kotlin

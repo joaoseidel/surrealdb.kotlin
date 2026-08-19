@@ -69,14 +69,12 @@ public fun QueryContext.merge(
 public fun <T, S : Table<T>> QueryContext.patch(
     table: S,
     patches: JsonElement,
-    diff: Boolean = false,
-): PatchQuery<T, S> = PatchQuery(this, table, table, patches, diff)
+): PatchQuery<T, S> = PatchQuery(this, table, table, patches)
 
 public fun QueryContext.patch(
     what: Target,
     patches: JsonElement,
-    diff: Boolean = false,
-): PatchQuery<Nothing, Table<Nothing>> = PatchQuery(this, untypedSchema(what), what, patches, diff)
+): PatchQuery<Nothing, Table<Nothing>> = PatchQuery(this, untypedSchema(what), what, patches)
 
 public fun <T, S : Table<T>> QueryContext.delete(table: S): DeleteQuery<T, S> = DeleteQuery(this, table, table)
 

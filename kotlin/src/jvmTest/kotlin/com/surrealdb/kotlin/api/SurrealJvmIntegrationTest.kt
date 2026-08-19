@@ -5,6 +5,7 @@ import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
+import com.surrealdb.kotlin.api.query.ReturnMode
 import com.surrealdb.kotlin.api.query.create
 import com.surrealdb.kotlin.api.query.delete
 import com.surrealdb.kotlin.api.query.insert
@@ -28,6 +29,7 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -122,6 +124,23 @@ class SurrealJvmIntegrationTest {
                             ),
                         ),
                     ).await()
+
+                val patchedBefore =
+                    db
+                        .patch(
+                            RecordId("person", "chiru"),
+                            JsonArray(
+                                listOf(
+                                    buildJsonObject {
+                                        put("op", JsonPrimitive("replace"))
+                                        put("path", JsonPrimitive("/name"))
+                                        put("value", JsonPrimitive("Chiru E"))
+                                    },
+                                ),
+                            ),
+                        ).returnMode(ReturnMode.Before)
+                        .await()
+                assertEquals("Chiru D", patchedBefore.jsonObject["name"]?.jsonPrimitive?.content)
 
                 db
                     .relate(
