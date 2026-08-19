@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.kotest) apply false
 }
 
+val jdkToolchainVersion = 21
 val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
@@ -65,6 +66,8 @@ subprojects {
 
         configure<KotlinMultiplatformExtension> {
             explicitApi()
+
+            jvmToolchain(jdkToolchainVersion)
 
             androidTarget {
                 publishLibraryVariants("release")
