@@ -14,11 +14,11 @@ max_line_length = 120
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
 
-# Off: it would rename six files that are deliberately named for their topic rather
-# than their one public type -- ns/Traces.kt holding SpectronTraces, api/SurrealAuth.kt
-# holding SurrealAuthInput. Renaming public source files is a change of its own, and
-# the Surreal* names are the subject of an open question with the maintainers; neither
-# belongs inside a formatting pass.
+ktlint_standard_filename = enabled
+
+# Spectron's namespace files are named for the namespace they expose -- ns/Traces.kt
+# is reached as spectron.traces -- so the type name is deliberately the longer one.
+[spectron/src/*/kotlin/com/surrealdb/kotlin/spectron/ns/*.kt]
 ktlint_standard_filename = disabled
 
 [*.{yml,yaml,json}]
