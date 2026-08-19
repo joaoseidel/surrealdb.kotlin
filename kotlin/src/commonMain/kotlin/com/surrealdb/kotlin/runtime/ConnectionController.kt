@@ -77,10 +77,7 @@ internal class ConnectionController(
     @OptIn(ExperimentalUuidApi::class)
     private fun newSessionId(): String = Uuid.random().toString()
 
-    val rootSessionId: String = newSessionId()
-
     init {
-        sessions[rootSessionId] = MutableSessionState()
         if (config.autoConnect) {
             scope.launch { engine.start() }
         }
@@ -97,7 +94,6 @@ internal class ConnectionController(
     }
 
     suspend fun removeSession(sessionId: String) {
-        if (sessionId == rootSessionId) return
         sessionsMutex.withLock {
             sessions.remove(sessionId)?.renewalJob?.cancel()
         }

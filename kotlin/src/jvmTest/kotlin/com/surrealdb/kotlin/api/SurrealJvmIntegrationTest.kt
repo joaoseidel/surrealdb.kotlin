@@ -43,30 +43,31 @@ class SurrealJvmIntegrationTest {
             val endpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
 
             val client = Surreal(Surreal.Config(url = endpoint))
+            val db = client.session()
             try {
                 // Engine capabilities
                 assertTrue(Feature.ExportImport in client.features)
 
-                client.signin(
+                db.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
                         put("pass", JsonPrimitive("root"))
                     },
                 )
-                client.use("main", "main")
-                client.ping()
-                client.version()
-                assertNotNull(client.auth())
+                db.use("main", "main")
+                db.ping()
+                db.version()
+                assertNotNull(db.auth())
 
-                client.query("DEFINE TABLE person SCHEMALESS")
-                client.query("DEFINE TABLE likes SCHEMALESS")
+                db.query("DEFINE TABLE person SCHEMALESS")
+                db.query("DEFINE TABLE likes SCHEMALESS")
                 // Start from an empty table rather than trusting the cleanup at the end of
                 // this test, which does not run when an assertion above it fails.
-                client.query("DELETE person")
-                client.query("DELETE likes")
+                db.query("DELETE person")
+                db.query("DELETE likes")
 
                 // Each CRUD builder compiles to a `query` RPC carrying SurrealQL.
-                client
+                db
                     .create(RecordId("person", "chiru"))
                     .content(
                         buildJsonObject {
@@ -75,7 +76,7 @@ class SurrealJvmIntegrationTest {
                         },
                     ).await()
 
-                client
+                db
                     .insert(
                         Table("person"),
                         buildJsonArray {
@@ -88,7 +89,7 @@ class SurrealJvmIntegrationTest {
                         },
                     ).await()
 
-                client
+                db
                     .upsert(RecordId("person", "chiru"))
                     .content(
                         buildJsonObject {
@@ -97,18 +98,18 @@ class SurrealJvmIntegrationTest {
                         },
                     ).await()
 
-                client
+                db
                     .update(RecordId("person", "chiru"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Chiru C")) })
                     .await()
 
-                client
+                db
                     .merge(
                         RecordId("person", "chiru"),
                         buildJsonObject { put("active", JsonPrimitive(true)) },
                     ).await()
 
-                client
+                db
                     .patch(
                         RecordId("person", "chiru"),
                         JsonArray(
@@ -122,7 +123,7 @@ class SurrealJvmIntegrationTest {
                         ),
                     ).await()
 
-                client
+                db
                     .relate(
                         RecordId("person", "chiru"),
                         Table("likes"),
@@ -130,13 +131,13 @@ class SurrealJvmIntegrationTest {
                     ).content(buildJsonObject { put("strength", JsonPrimitive("high")) })
                     .await()
 
-                client.`let`("tb", JsonPrimitive("person"))
-                val queryResult = client.query("SELECT * FROM type::table(\$tb)")
+                db.`let`("tb", JsonPrimitive("person"))
+                val queryResult = db.query("SELECT * FROM type::table(\$tb)")
                 assertTrue(queryResult.jsonArray.isNotEmpty())
-                client.unset("tb")
+                db.unset("tb")
 
                 // Multi-session — sessionB shares the connection but has independent state
-                val sessionB = client.newSession()
+                val sessionB = client.session()
                 sessionB.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
@@ -147,7 +148,7 @@ class SurrealJvmIntegrationTest {
                 // Both sessions see the same data — compare the inner result, not the
                 // outer envelope (which includes per-call timing).
                 val countA =
-                    client
+                    db
                         .query("SELECT count() FROM person GROUP ALL")
                         .jsonArray[0]
                         .jsonObject["result"]
@@ -159,8 +160,8 @@ class SurrealJvmIntegrationTest {
                 assertEquals(countA.toString(), countB.toString())
                 client.closeSession(sessionB)
 
-                client.delete(RecordId("person", "chiru")).await()
-                client.invalidate()
+                db.delete(RecordId("person", "chiru")).await()
+                db.invalidate()
             } finally {
                 client.close()
             }
@@ -174,27 +175,28 @@ class SurrealJvmIntegrationTest {
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
             val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
+            val db = client.session()
             try {
                 assertTrue(Feature.Transactions in client.features)
 
-                client.signin(
+                db.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
                         put("pass", JsonPrimitive("root"))
                     },
                 )
-                client.use("main", "main")
-                client.query("DEFINE TABLE tx_person SCHEMALESS")
-                client.query("DELETE tx_person")
+                db.use("main", "main")
+                db.query("DEFINE TABLE tx_person SCHEMALESS")
+                db.query("DELETE tx_person")
 
                 // Commit path
-                client.transaction {
+                db.transaction {
                     create(RecordId("tx_person", "alice"))
                         .content(buildJsonObject { put("name", JsonPrimitive("Alice")) })
                         .await()
                 }
                 val afterCommit =
-                    client
+                    db
                         .query("SELECT * FROM tx_person")
                         .jsonArray[0]
                         .jsonObject["result"]!!
@@ -204,7 +206,7 @@ class SurrealJvmIntegrationTest {
                 // Cancel path — the inner exception cancels the transaction.
                 val cancelled =
                     runCatching {
-                        client.transaction {
+                        db.transaction {
                             create(RecordId("tx_person", "bob"))
                                 .content(buildJsonObject { put("name", JsonPrimitive("Bob")) })
                                 .await()
@@ -213,7 +215,7 @@ class SurrealJvmIntegrationTest {
                     }
                 assertTrue(cancelled.isFailure)
                 val afterCancel =
-                    client
+                    db
                         .query("SELECT * FROM tx_person")
                         .jsonArray[0]
                         .jsonObject["result"]!!
@@ -221,14 +223,14 @@ class SurrealJvmIntegrationTest {
                 assertEquals(1, afterCancel.size, "cancel should have rolled back bob")
 
                 // Explicit handle form
-                val tx = client.beginTransaction()
+                val tx = db.beginTransaction()
                 tx
                     .create(RecordId("tx_person", "carol"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Carol")) })
                     .await()
                 tx.commit()
                 val afterExplicit =
-                    client
+                    db
                         .query("SELECT * FROM tx_person")
                         .jsonArray[0]
                         .jsonObject["result"]!!
@@ -247,6 +249,7 @@ class SurrealJvmIntegrationTest {
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
             val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
+            val db = client.session()
             try {
                 assertTrue(Feature.LiveQueries in client.features)
 
@@ -257,23 +260,23 @@ class SurrealJvmIntegrationTest {
                     }
                 assertNotNull(firstEvent)
 
-                client.signin(
+                db.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
                         put("pass", JsonPrimitive("root"))
                     },
                 )
-                client.use("main", "main")
-                client.query("DEFINE TABLE live_person SCHEMALESS")
-                client.query("DELETE live_person")
+                db.use("main", "main")
+                db.query("DEFINE TABLE live_person SCHEMALESS")
+                db.query("DELETE live_person")
 
-                val subscription = client.live("live_person")
+                val subscription = db.live("live_person")
 
                 // Wait on the engine's own record of the subscription rather than sleeping
                 // and hoping — this is what activeLiveQueries is for.
                 withTimeout(5_000) { client.activeLiveQueries.first { subscription.id in it } }
 
-                client
+                db
                     .create(RecordId("live_person", "one"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Live")) })
                     .await()
@@ -281,14 +284,14 @@ class SurrealJvmIntegrationTest {
                 val event = withTimeout(10_000) { subscription.events.first() }
                 assertEquals("CREATE", event.action)
 
-                client.kill(subscription.id)
+                db.kill(subscription.id)
                 assertTrue(
                     subscription.id !in client.activeLiveQueries.value,
                     "kill(id) must stop tracking the query even though it never sees the subscription",
                 )
 
                 subscription.cancel()
-                client.delete(RecordId("live_person", "one")).await()
+                db.delete(RecordId("live_person", "one")).await()
             } finally {
                 client.close()
             }
@@ -302,21 +305,22 @@ class SurrealJvmIntegrationTest {
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
             val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
+            val db = client.session()
             try {
-                client.signin(
+                db.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
                         put("pass", JsonPrimitive("root"))
                     },
                 )
-                client.use("main", "main")
-                client.query("DEFINE TABLE live_book SCHEMALESS")
-                client.query("DELETE live_book")
+                db.use("main", "main")
+                db.query("DEFINE TABLE live_book SCHEMALESS")
+                db.query("DELETE live_book")
 
                 val received = Channel<LiveQueryEvent<JsonElement>>(Channel.UNLIMITED)
                 val collector =
                     launch {
-                        client
+                        db
                             .liveEvents<JsonElement>("SELECT * FROM live_book WHERE pages > 100")
                             .collect { received.send(it) }
                     }
@@ -325,11 +329,11 @@ class SurrealJvmIntegrationTest {
                 // than racing the writes below against the LIVE SELECT.
                 val queryId = withTimeout(5_000) { client.activeLiveQueries.first { it.isNotEmpty() } }.single()
 
-                client
+                db
                     .create(RecordId("live_book", "pamphlet"))
                     .content(buildJsonObject { put("pages", JsonPrimitive(10)) })
                     .await()
-                client
+                db
                     .create(RecordId("live_book", "tome"))
                     .content(buildJsonObject { put("pages", JsonPrimitive(500)) })
                     .await()
@@ -347,8 +351,8 @@ class SurrealJvmIntegrationTest {
                 collector.cancelAndJoin()
                 withTimeout(5_000) { client.activeLiveQueries.first { queryId !in it } }
 
-                client.delete(RecordId("live_book", "pamphlet")).await()
-                client.delete(RecordId("live_book", "tome")).await()
+                db.delete(RecordId("live_book", "pamphlet")).await()
+                db.delete(RecordId("live_book", "tome")).await()
             } finally {
                 client.close()
             }

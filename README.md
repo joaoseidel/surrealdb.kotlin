@@ -14,14 +14,15 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
   engine.
 - Two engines with explicit capability sets (`Feature`). Live queries require a WebSocket URL.
 - WebSocket reconnection with configurable exponential backoff and pending-call replay across drops.
-- Multi-session support: `client.newSession()` returns an isolated session that shares the underlying connection.
+- Client and session are separate: a `Surreal` owns the connection, and `client.session()` hands out sessions that share it and nothing else — each
+  with its own namespace, database, auth token and variables.
 - Connection lifecycle exposed as a `SharedFlow<ConnectionEvent>` (`Connecting`, `Connected`, `Disconnected`, `Reconnecting`, `Error`).
 - Auto authentication: an optional `credentialProvider` callback re-signs in and retries on auth failure.
 - JWT auto-renewal: when a signin response carries a refresh token, renewal is scheduled before the access token's `exp` claim.
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD
   method inside the block is automatically scoped to that transaction.
 - Coroutines `Flow` API for live query notifications.
-- Fluent query builder DSL: `client.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
+- Fluent query builder DSL: `db.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
   acts on with a `Table`, `RecordId` or `RecordIdRange` — the `Target` type, so
   `select("user")` cannot compile into a query for the *string* `"user"` — then
   compiles to local SurrealQL with bound parameters and dispatches via the
@@ -50,21 +51,22 @@ wants a `Result` writes `runCatching { session.ping() }`.
 
 ```kotlin
 val client = Surreal(Surreal.Config(url = "http://localhost:8000"))
+val db = client.session()
 
-client.signin(buildJsonObject {
+db.signin(buildJsonObject {
     put("user", JsonPrimitive("root"))
     put("pass", JsonPrimitive("root"))
 })
-client.use("main", "main")
+db.use("main", "main")
 
 // Raw SurrealQL
-val rows = client.query("SELECT * FROM person")
+val rows = db.query("SELECT * FROM person")
 
 // Or the fluent builder
 @Serializable
 data class Person(val id: String, val name: String, val age: Int)
 
-val adults: List<Person> = client
+val adults: List<Person> = db
     .select(Table("person"))
     .where(field("age") gte 18)
     .limit(50)
@@ -82,7 +84,7 @@ val client = Surreal(Surreal.Config(url = "ws://localhost:8000"))
 `live(table)` subscribes to changes on a single table and returns a subscription whose `events` is a `Flow`:
 
 ```kotlin
-val sub = client.live("person")
+val sub = db.live("person")
 
 val job = scope.launch {
     sub.events.collect { event ->
@@ -91,7 +93,7 @@ val job = scope.launch {
 }
 
 // later
-client.kill(sub.id)
+db.kill(sub.id)
 sub.cancel()
 job.cancel()
 ```
@@ -103,8 +105,8 @@ For complex `LIVE SELECT` queries with `WHERE` clauses, run the SurrealQL throug
 One connection can host many sessions, each with its own namespace, database, auth token, and variables:
 
 ```kotlin
-val tenantA = client.newSession()
-val tenantB = client.newSession()
+val tenantA = client.session()
+val tenantB = client.session()
 
 tenantA.signin(buildJsonObject { put("user", JsonPrimitive("a")) })
 tenantA.use("ns", "db")
@@ -118,7 +120,8 @@ tenantB.query("SELECT * FROM person")  // runs as tenant B, isolated
 client.closeSession(tenantA)
 ```
 
-The `Surreal` client itself is the root session, so the simple single-tenant case keeps using `client.query(...)` directly.
+The client is not itself a session, so there is no ambient one for a query to pick up by accident — a single-tenant caller opens one `session()` and
+holds it, exactly as a multi-tenant one opens several.
 
 ## Transactions
 
@@ -128,7 +131,7 @@ dispatch with that id in the JSON-RPC envelope's `txn` field. `commit` or `cance
 Block form (commits on success, cancels on throw):
 
 ```kotlin
-client.transaction {
+db.transaction {
     create(RecordId("person", "tx")).content(buildJsonObject { put("name", JsonPrimitive("Tx")) }).await()
     update(RecordId("counter", "1")).content(buildJsonObject { put("hits", JsonPrimitive(2)) }).await()
 }
@@ -137,7 +140,7 @@ client.transaction {
 Explicit form for cases where you need finer control:
 
 ```kotlin
-val tx = client.beginTransaction()
+val tx = db.beginTransaction()
 try {
     tx.create(Table("person")).content(buildJsonObject { put("name", JsonPrimitive("Ada")) }).await()
     tx.commit()
@@ -193,7 +196,7 @@ Surreal.Config(
 
 ```kotlin
 if (client.supports(Feature.LiveQueries)) {
-    val sub = client.live("person")
+    val sub = db.live("person")
 }
 ```
 

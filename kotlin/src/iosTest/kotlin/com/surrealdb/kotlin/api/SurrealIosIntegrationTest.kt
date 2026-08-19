@@ -25,15 +25,16 @@ class SurrealIosIntegrationTest :
                     Surreal(
                         Surreal.Config(url = env("SURREAL_IOS_ENDPOINT") ?: "http://127.0.0.1:8000"),
                     )
+                val db = client.session()
 
-                client.signin(
+                db.signin(
                     buildJsonObject {
                         put("user", JsonPrimitive("root"))
                         put("pass", JsonPrimitive("root"))
                     },
                 )
-                client.use("main", "main")
-                val result = client.query("SELECT * FROM person LIMIT 1")
+                db.use("main", "main")
+                val result = db.query("SELECT * FROM person LIMIT 1")
 
                 result.toString().shouldNotBeEmpty()
                 client.close()

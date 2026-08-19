@@ -14,13 +14,13 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
-private fun withServer(block: suspend CoroutineScope.(FakeSurrealServer, Surreal) -> Unit) {
+private fun withServer(block: suspend CoroutineScope.(FakeSurrealServer, Session) -> Unit) {
     val server = FakeSurrealServer()
     server.start()
     try {
         val client = Surreal(Surreal.Config(url = "ws://127.0.0.1:${server.port}"))
         try {
-            runBlocking { block(server, client) }
+            runBlocking { block(server, client.session()) }
         } finally {
             client.close()
         }
@@ -43,8 +43,8 @@ class TransactionScopeTest :
     ShouldSpec({
         context("a statement sent inside a transaction") {
             should("carry the transaction id, so the server applies it inside the transaction") {
-                withServer { server, client ->
-                    val transaction = client.beginTransaction()
+                withServer { server, db ->
+                    val transaction = db.beginTransaction()
 
                     transaction
                         .create(RecordId("person", "alice"))
@@ -57,8 +57,8 @@ class TransactionScopeTest :
             }
 
             should("carry it for a raw SurrealQL string too, because that form is derived from the bound one") {
-                withServer { server, client ->
-                    val transaction = client.beginTransaction()
+                withServer { server, db ->
+                    val transaction = db.beginTransaction()
 
                     transaction.query("CREATE person:bob")
 
@@ -70,10 +70,10 @@ class TransactionScopeTest :
 
         context("a statement sent on the session") {
             should("carry no transaction id, so work outside a transaction is never swept into an open one") {
-                withServer { server, client ->
-                    client.beginTransaction()
+                withServer { server, db ->
+                    db.beginTransaction()
 
-                    client.query("SELECT 1")
+                    db.query("SELECT 1")
 
                     server.lastQuery().txn().shouldBeNull()
                 }
