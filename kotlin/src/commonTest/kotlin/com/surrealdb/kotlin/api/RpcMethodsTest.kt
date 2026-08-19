@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.api
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.People
+import com.surrealdb.kotlin.api.query.ReturnMode
 import com.surrealdb.kotlin.api.query.create
 import com.surrealdb.kotlin.api.query.delete
 import com.surrealdb.kotlin.api.query.insert
@@ -377,11 +378,14 @@ class RpcMethodsTest :
                 }
             }
 
-            should("append RETURN DIFF when the caller asked for a diff") {
+            should("append the RETURN clause a patch's returnMode names") {
                 runTest {
                     val h = builderHarness()
 
-                    h.db.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).await()
+                    h.db
+                        .patch(RecordId("person", "1"), buildJsonObject {})
+                        .returnMode(ReturnMode.Diff)
+                        .await()
 
                     h.lastSurql() shouldEndWith " RETURN DIFF"
                 }

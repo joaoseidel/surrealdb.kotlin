@@ -144,8 +144,8 @@ class QueryBuilderTest {
     }
 
     @Test
-    fun `patch with diff appends RETURN DIFF`() {
-        val q = context.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).compile()
+    fun `patch with a returnMode appends the RETURN clause`() {
+        val q = context.patch(RecordId("person", "1"), buildJsonObject {}).returnMode(ReturnMode.Diff).compile()
         assertTrue(q.surql.endsWith(" RETURN DIFF"))
     }
 
