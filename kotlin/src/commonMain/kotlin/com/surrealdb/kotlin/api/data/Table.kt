@@ -50,50 +50,71 @@ public open class Table<T> internal constructor(
      */
     protected fun recordId(): Field<RecordId> = Field(childPath(groupPath, "id"))
 
-    public infix fun <V> Field<V>.eq(value: V): Condition<T> = Comparison(this, "=", value)
+    public infix fun <V> Field<V>.eq(value: V): Atom<T> = Comparison(this, "=", value)
 
-    public infix fun <V> Field<V>.eq(other: Field<V>): Condition<T> = Comparison(this, "=", other)
+    public infix fun <V> Field<V>.eq(other: Field<V>): Atom<T> = Comparison(this, "=", other)
 
-    public infix fun <V> Field<V>.neq(value: V): Condition<T> = Comparison(this, "!=", value)
+    public infix fun <V> Field<V>.neq(value: V): Atom<T> = Comparison(this, "!=", value)
 
-    public infix fun <V> Field<V>.neq(other: Field<V>): Condition<T> = Comparison(this, "!=", other)
+    public infix fun <V> Field<V>.neq(other: Field<V>): Atom<T> = Comparison(this, "!=", other)
 
-    public infix fun <V : Comparable<V>> Field<V>.greater(value: V): Condition<T> = Comparison(this, ">", value)
+    public infix fun <V : Comparable<V>> Field<V>.greater(value: V): Atom<T> = Comparison(this, ">", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.greaterEq(value: V): Condition<T> = Comparison(this, ">=", value)
+    public infix fun <V : Comparable<V>> Field<V>.greaterEq(value: V): Atom<T> = Comparison(this, ">=", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.less(value: V): Condition<T> = Comparison(this, "<", value)
+    public infix fun <V : Comparable<V>> Field<V>.less(value: V): Atom<T> = Comparison(this, "<", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.lessEq(value: V): Condition<T> = Comparison(this, "<=", value)
+    public infix fun <V : Comparable<V>> Field<V>.lessEq(value: V): Atom<T> = Comparison(this, "<=", value)
 
-    public infix fun <V> Field<V>.inside(values: Collection<V>): Condition<T> = Comparison(this, "IN", values)
+    public infix fun <V> Field<V>.inside(values: Collection<V>): Atom<T> = Comparison(this, "IN", values)
 
-    public infix fun <E> Field<List<E>>.contains(value: E): Condition<T> = Comparison(this, "CONTAINS", value)
+    public infix fun <E> Field<List<E>>.contains(value: E): Atom<T> = Comparison(this, "CONTAINS", value)
 
-    public infix fun <E> Field<List<E>>.containsAll(values: Collection<E>): Condition<T> =
+    public infix fun <E> Field<List<E>>.containsAll(values: Collection<E>): Atom<T> =
         Comparison(this, "CONTAINSALL", values)
 
-    public infix fun <E> Field<List<E>>.containsAny(values: Collection<E>): Condition<T> =
+    public infix fun <E> Field<List<E>>.containsAny(values: Collection<E>): Atom<T> =
         Comparison(this, "CONTAINSANY", values)
 
-    public infix fun Field<String>.startsWith(prefix: String): Condition<T> = FunctionCall(STARTS_WITH, this, prefix)
+    public infix fun Field<String>.startsWith(prefix: String): Atom<T> = FunctionCall(STARTS_WITH, this, prefix)
 
-    public infix fun Field<String>.matches(pattern: String): Condition<T> = FunctionCall(MATCHES, this, pattern)
+    public infix fun Field<String>.matches(pattern: String): Atom<T> = FunctionCall(MATCHES, this, pattern)
 
     /** SurrealDB distinguishes NONE, NULL and absent, so the DSL does too. */
-    public fun Field<*>.isNone(): Condition<T> = FieldTest(this, "IS NONE")
+    public fun Field<*>.isNone(): Atom<T> = FieldTest(this, "IS NONE")
 
-    public fun Field<*>.isNull(): Condition<T> = FieldTest(this, "IS NULL")
+    public fun Field<*>.isNull(): Atom<T> = FieldTest(this, "IS NULL")
 
-    public fun Field<*>.exists(): Condition<T> = FieldTest(this, "IS NOT NONE")
+    public fun Field<*>.exists(): Atom<T> = FieldTest(this, "IS NOT NONE")
 
-    public infix fun Condition<T>.and(other: Condition<T>): Condition<T> =
+    /**
+     * `AND`. Chains freely with itself; mixing it with [or] without an explicit
+     * group does not compile, because Kotlin's one infix precedence level would
+     * otherwise parse the chain differently from the SurrealQL it generates.
+     * See [Conjunctible].
+     */
+    public infix fun Conjunctible<T>.and(other: Conjunctible<T>): Conjunctible<T> =
         Conjunction(flattenConjunction(this) + flattenConjunction(other))
 
-    public infix fun Condition<T>.or(other: Condition<T>): Condition<T> =
+    /** `OR`. See [and]. */
+    public infix fun Disjunctible<T>.or(other: Disjunctible<T>): Disjunctible<T> =
         Disjunction(flattenDisjunction(this) + flattenDisjunction(other))
 
-    public fun not(inner: Condition<T>): Condition<T> = Negation(inner)
+    public fun not(inner: Condition<T>): Atom<T> = Negation(inner)
+
+    /** Every condition must hold. Takes its operands n-ary, so no binding order applies. */
+    public fun all(vararg conditions: Condition<T>): Atom<T> = Grouped(Conjunction(conditions.toRequiredList("all")))
+
+    /** At least one condition must hold. */
+    public fun any(vararg conditions: Condition<T>): Atom<T> = Grouped(Disjunction(conditions.toRequiredList("any")))
+
+    /** No condition may hold. */
+    public fun none(vararg conditions: Condition<T>): Atom<T> = Negation(Disjunction(conditions.toRequiredList("none")))
+
+    private fun Array<out Condition<T>>.toRequiredList(caller: String): List<Condition<T>> {
+        require(isNotEmpty()) { "$caller(...) requires at least one condition" }
+        return toList()
+    }
 
     override fun toString(): String = tableName
 

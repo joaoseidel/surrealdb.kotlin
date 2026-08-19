@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Atom
 import com.surrealdb.kotlin.api.data.Comparison
 import com.surrealdb.kotlin.api.data.Condition
 import com.surrealdb.kotlin.api.data.Conjunction
@@ -7,6 +8,7 @@ import com.surrealdb.kotlin.api.data.Disjunction
 import com.surrealdb.kotlin.api.data.Field
 import com.surrealdb.kotlin.api.data.FieldTest
 import com.surrealdb.kotlin.api.data.FunctionCall
+import com.surrealdb.kotlin.api.data.Grouped
 import com.surrealdb.kotlin.api.data.Negation
 import com.surrealdb.kotlin.api.data.RawCondition
 import com.surrealdb.kotlin.api.data.Table
@@ -53,6 +55,10 @@ internal fun BoundQuery.appendCondition(condition: Condition<*>): BoundQuery =
                 appendLiteral("(")
                 appendFragment(condition.sql, condition.bindings)
                 appendLiteral(")")
+            }
+
+            is Grouped<*> -> {
+                appendCondition(condition.inner)
             }
 
             is Conjunction<*> -> {
@@ -105,7 +111,7 @@ public fun Condition<*>.toSurql(): BoundQuery = BoundQuery().appendCondition(thi
  * where { raw { +"geo::distance(location, "; value(here); +") < "; value(radius) } }
  * ```
  */
-public fun <T> Table<T>.raw(block: SurqlBuilder.() -> Unit): Condition<T> {
+public fun <T> Table<T>.raw(block: SurqlBuilder.() -> Unit): Atom<T> {
     val fragment = surql(block)
     return RawCondition(fragment.surql, fragment.bindings)
 }

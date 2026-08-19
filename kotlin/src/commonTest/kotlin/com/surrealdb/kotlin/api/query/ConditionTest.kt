@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.maps.shouldHaveSize
@@ -104,6 +105,38 @@ class ConditionTest :
 
             should("negate with a leading bang") {
                 with(People) { not(active eq true) }.toSurql().surql shouldBe "!(active = \$_0)"
+            }
+        }
+
+        context("the n-ary groups") {
+            should("render all as a parenthesised conjunction, so no binding order applies") {
+                with(People) { all(age greater 18, active eq true) }
+                    .toSurql()
+                    .surql shouldBe "((age > \$_0) AND (active = \$_1))"
+            }
+
+            should("render any as a parenthesised disjunction") {
+                with(People) { any(age greater 18, active eq true) }
+                    .toSurql()
+                    .surql shouldBe "((age > \$_0) OR (active = \$_1))"
+            }
+
+            should("render none as the negation of a disjunction") {
+                with(People) { none(age greater 18, active eq true) }
+                    .toSurql()
+                    .surql shouldBe "!((age > \$_0) OR (active = \$_1))"
+            }
+
+            should("keep a group intact when it is chained, rather than flattening it away") {
+                with(People) { any(age greater 18, active eq true) and (name eq "Ada") }
+                    .toSurql()
+                    .surql shouldBe "(((age > \$_0) OR (active = \$_1)) AND (name = \$_2))"
+            }
+
+            should("reject an empty group, which would render as an empty clause") {
+                shouldThrow<IllegalArgumentException> { with(People) { all() } }
+                shouldThrow<IllegalArgumentException> { with(People) { any() } }
+                shouldThrow<IllegalArgumentException> { with(People) { none() } }
             }
         }
 
