@@ -64,11 +64,11 @@ public class RelateQuery internal constructor(
         slot: Target,
     ) {
         when (slot) {
-            is Table -> {
-                require(IDENTIFIER.matches(slot.name)) {
-                    "Relation table must be an identifier (got '${slot.name}')"
+            is Table<*> -> {
+                require(IDENTIFIER.matches(slot.tableName)) {
+                    "Relation table must be an identifier (got '${slot.tableName}')"
                 }
-                q.appendLiteral(slot.name)
+                q.appendLiteral(slot.tableName)
             }
 
             is RecordId -> {

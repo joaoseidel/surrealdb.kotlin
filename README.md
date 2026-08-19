@@ -22,11 +22,15 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD
   method inside the block is automatically scoped to that transaction.
 - Coroutines `Flow` API for live query notifications.
-- Fluent query builder DSL: `db.select(Table("user")).where(field("age") gt 18).limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
+- Fluent query builder DSL: `db.select(Users).where { age greater 18 }.limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
   acts on with a `Table`, `RecordId` or `RecordIdRange` — the `Target` type, so
   `select("user")` cannot compile into a query for the *string* `"user"` — then
   compiles to local SurrealQL with bound parameters and dispatches via the
   `query` RPC, mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
+- Typed field references: declaring a `Table<T>` with its serializer checks every field name against
+  the record type as the declaration initialises, so a misspelt or renamed field throws there instead
+  of compiling to a `WHERE` the server answers with an empty result. Inside `where { }` the fields
+  come from the declaration and each operator is typed, so `age greater "18"` does not compile.
 - [Spectron](#spectron) client for memory and knowledge management, shipped as a separate opt-in artifact (`com.surrealdb:kotlin-spectron`).
 
 ## Supported RPC methods
@@ -66,12 +70,34 @@ val rows = db.query("SELECT * FROM person")
 @Serializable
 data class Person(val id: String, val name: String, val age: Int)
 
+object People : Table<Person>("person", Person.serializer()) {
+    val name by field<String>()
+    val age by field<Int>()
+}
+
 val adults: List<Person> = db
-    .select(Table("person"))
-    .where(field("age") gte 18)
+    .select(People)
+    .where { age greaterEq 18 }
     .limit(50)
     .awaitAs()
 ```
+
+The table declaration is what makes the fields typed. `field("agee")` throws as `People`
+initialises, naming the field and listing what `Person` actually serialises — and it reads the
+*serial* names, so a property carrying `@SerialName("first_name")` is declared under that name and
+its Kotlin name is rejected. Nested objects need no declaration of their own:
+
+```kotlin
+object People : Table<Person>("person", Person.serializer()) {
+    val address by nested<Address>()
+}
+
+db.select(People).where { address[Address::city] eq "Cambridge" }
+```
+
+A table with no record type — `Table("person")` — is still a target for every verb. It has no
+fields to name, so a `where { }` over one is written with the `raw { }` escape hatch, which binds
+its interpolated values as parameters like everything else.
 
 Switch to WebSocket transport simply by changing the URL scheme:
 

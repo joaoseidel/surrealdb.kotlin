@@ -33,10 +33,32 @@ public class BoundQuery internal constructor(
         }
 
     /** Append another fragment, merging its bindings. */
-    public fun append(other: BoundQuery): BoundQuery =
+    public fun append(other: BoundQuery): BoundQuery = appendFragment(other.surql, other.binds)
+
+    /**
+     * Append a fragment compiled elsewhere, renaming any parameter whose name
+     * this query has already used.
+     *
+     * A fragment mints `$_0`, `$_1`, … from its own counter, and so does every
+     * query it might be spliced into — and a statement has usually bound its
+     * target as `$_0` before the `WHERE` clause is reached. Merging the maps
+     * would silently overwrite that binding with the fragment's, sending a
+     * query whose table name is whatever the fragment happened to bind first.
+     */
+    internal fun appendFragment(
+        sql: String,
+        bindings: Map<String, JsonElement>,
+    ): BoundQuery =
         apply {
-            parts.add(other.surql)
-            binds.putAll(other.binds)
+            var text = sql
+            for ((name, value) in bindings) {
+                val target = if (name in binds) nextParam() else name
+                if (target != name) {
+                    text = Regex("\\$" + Regex.escape(name) + "(?![A-Za-z0-9_])").replace(text) { "\$$target" }
+                }
+                binds[target] = value
+            }
+            parts.add(text)
         }
 
     /** Bind [value] to a freshly-generated parameter and emit `$<param>`. */

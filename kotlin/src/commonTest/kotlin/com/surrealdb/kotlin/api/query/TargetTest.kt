@@ -27,14 +27,14 @@ private val compileOnly =
  */
 private val verbs: List<Pair<String, (Target) -> Query>> =
     listOf(
-        "select" to { target -> SelectQuery(compileOnly, target) },
-        "create" to { target -> CreateQuery(compileOnly, target) },
-        "upsert" to { target -> UpsertQuery(compileOnly, target) },
-        "update" to { target -> UpdateQuery(compileOnly, target) },
-        "delete" to { target -> DeleteQuery(compileOnly, target) },
-        "merge" to { target -> MergeQuery(compileOnly, target, JsonObject(emptyMap())) },
-        "patch" to { target -> PatchQuery(compileOnly, target, JsonArray(emptyList()), diff = false) },
-        "relate" to { target -> RelateQuery(compileOnly, target, Table("likes"), RecordId("person", "b")) },
+        "select" to { target -> compileOnly.select(target) },
+        "create" to { target -> compileOnly.create(target) },
+        "upsert" to { target -> compileOnly.upsert(target) },
+        "update" to { target -> compileOnly.update(target) },
+        "delete" to { target -> compileOnly.delete(target) },
+        "merge" to { target -> compileOnly.merge(target, JsonObject(emptyMap())) },
+        "patch" to { target -> compileOnly.patch(target, JsonArray(emptyList()), diff = false) },
+        "relate" to { target -> compileOnly.relate(target, Table("likes"), RecordId("person", "b")) },
     )
 
 class TargetTest :

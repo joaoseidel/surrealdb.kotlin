@@ -2,10 +2,9 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.query.People
 import com.surrealdb.kotlin.api.query.create
 import com.surrealdb.kotlin.api.query.delete
-import com.surrealdb.kotlin.api.query.eq
-import com.surrealdb.kotlin.api.query.field
 import com.surrealdb.kotlin.api.query.insert
 import com.surrealdb.kotlin.api.query.insertRelation
 import com.surrealdb.kotlin.api.query.merge
@@ -303,8 +302,8 @@ class RpcMethodsTest :
                     val h = builderHarness()
 
                     h.db
-                        .select(Table("person"))
-                        .where(field("age") eq 30)
+                        .select(People)
+                        .where { age eq 30 }
                         .await()
 
                     h.lastSurql() shouldContain "WHERE"
