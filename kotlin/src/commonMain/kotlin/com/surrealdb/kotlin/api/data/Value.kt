@@ -16,19 +16,6 @@ package com.surrealdb.kotlin.api.data
 public sealed interface Target
 
 /**
- * A SurrealDB table reference (e.g. `user`).
- *
- * Used as a query target — the builder will emit it via `type::table($_n)` with
- * the name bound as a parameter, never inlined into the SurrealQL string, so
- * user-supplied table names cannot be used for injection.
- */
-public data class Table(
-    public val name: String,
-) : Target {
-    override fun toString(): String = name
-}
-
-/**
  * A SurrealDB record id (e.g. `user:alice`).
  *
  * Both `table` and `id` are surfaced verbatim; the builder emits the pair via

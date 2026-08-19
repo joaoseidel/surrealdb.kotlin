@@ -33,7 +33,7 @@ class QueryBuilderTest {
 
     @Test
     fun `select from table emits SELECT FROM ONLY with bound table name`() {
-        val q = SelectQuery(context, Table("person")).compile()
+        val q = context.select(People).compile()
         assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::table("))
         assertEquals(1, q.bindings.size)
         assertEquals(
@@ -47,28 +47,29 @@ class QueryBuilderTest {
 
     @Test
     fun `select from record id binds table and id separately`() {
-        val q = SelectQuery(context, RecordId("person", "alice")).compile()
+        val q = context.select(RecordId("person", "alice")).compile()
         assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::record("))
         assertEquals(2, q.bindings.size)
     }
 
     @Test
     fun `select fields emits comma-separated field list`() {
-        val q = SelectQuery(context, Table("person")).fields("id", "name", "age").compile()
+        val q = context.select(People).fields(People.id, People.name, People.age).compile()
         assertTrue(q.surql.startsWith("SELECT id, name, age FROM ONLY"))
     }
 
     @Test
     fun `select value emits VALUE clause`() {
-        val q = SelectQuery(context, Table("person")).value("name").compile()
+        val q = context.select(People).value(People.name).compile()
         assertTrue(q.surql.startsWith("SELECT VALUE name FROM ONLY"))
     }
 
     @Test
     fun `select where compiles expression with bound value`() {
         val q =
-            SelectQuery(context, Table("person"))
-                .where(field("age") gt 18)
+            context
+                .select(People)
+                .where { age greater 18 }
                 .compile()
         assertTrue(q.surql.contains(" WHERE (age > "))
     }
@@ -76,7 +77,8 @@ class QueryBuilderTest {
     @Test
     fun `select limit and start bind values`() {
         val q =
-            SelectQuery(context, Table("person"))
+            context
+                .select(People)
                 .start(10)
                 .limit(5)
                 .compile()
@@ -87,20 +89,11 @@ class QueryBuilderTest {
     @Test
     fun `select fetch emits comma-separated field list`() {
         val q =
-            SelectQuery(context, Table("post"))
-                .fetch("author", "comments")
+            context
+                .select(Posts)
+                .fetch(Posts.author, Posts.comments)
                 .compile()
         assertTrue(q.surql.endsWith(" FETCH author, comments"))
-    }
-
-    @Test
-    fun `select rejects invalid field identifier`() {
-        try {
-            SelectQuery(context, Table("person")).fields("name; DROP TABLE x; --")
-            error("should have thrown")
-        } catch (_: IllegalArgumentException) {
-            // expected
-        }
     }
 
     // ── create / update / upsert ──
@@ -108,7 +101,8 @@ class QueryBuilderTest {
     @Test
     fun `create content binds the data object`() {
         val q =
-            CreateQuery(context, RecordId("person", "1"))
+            context
+                .create(RecordId("person", "1"))
                 .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                 .compile()
         assertTrue(q.surql.startsWith("CREATE ONLY type::record("))
@@ -118,7 +112,8 @@ class QueryBuilderTest {
     @Test
     fun `update content compiles to UPDATE ONLY CONTENT`() {
         val q =
-            UpdateQuery(context, RecordId("person", "1"))
+            context
+                .update(RecordId("person", "1"))
                 .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                 .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
@@ -128,9 +123,10 @@ class QueryBuilderTest {
     @Test
     fun `upsert with where compiles to UPSERT ONLY then WHERE`() {
         val q =
-            UpsertQuery(context, Table("person"))
+            context
+                .upsert(People)
                 .content(buildJsonObject { put("name", JsonPrimitive("X")) })
-                .where(field("email") eq "x@y.z")
+                .where { email eq "x@y.z" }
                 .compile()
         assertTrue(q.surql.startsWith("UPSERT ONLY type::table("))
         assertTrue(q.surql.contains(" CONTENT "))
@@ -140,7 +136,8 @@ class QueryBuilderTest {
     @Test
     fun `merge compiles to UPDATE ONLY MERGE`() {
         val q =
-            MergeQuery(context, RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
+            context
+                .merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
                 .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
         assertTrue(q.surql.contains(" MERGE "))
@@ -148,15 +145,16 @@ class QueryBuilderTest {
 
     @Test
     fun `patch with diff appends RETURN DIFF`() {
-        val q = PatchQuery(context, RecordId("person", "1"), buildJsonObject {}, diff = true).compile()
+        val q = context.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).compile()
         assertTrue(q.surql.endsWith(" RETURN DIFF"))
     }
 
     @Test
     fun `delete with where compiles to DELETE ONLY then WHERE`() {
         val q =
-            DeleteQuery(context, Table("person"))
-                .where(field("active") eq false)
+            context
+                .delete(People)
+                .where { active eq false }
                 .compile()
         assertTrue(q.surql.startsWith("DELETE ONLY type::table("))
         assertTrue(q.surql.contains(" WHERE (active = "))

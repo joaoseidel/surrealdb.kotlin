@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.Target
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -36,10 +37,10 @@ public fun toJson(value: Any?): JsonElement =
             JsonPrimitive(value)
         }
 
-        is Table -> {
+        is Table<*> -> {
             buildJsonObject {
                 put("\$type", JsonPrimitive("table"))
-                put("name", JsonPrimitive(value.name))
+                put("name", JsonPrimitive(value.tableName))
             }
         }
 
@@ -61,6 +62,10 @@ public fun toJson(value: Any?): JsonElement =
             }
         }
 
+        is Collection<*> -> {
+            JsonArray(value.map { toJson(it) })
+        }
+
         else -> {
             throw IllegalArgumentException(
                 "Cannot bind value of type ${value::class.simpleName}: $value — pass a JsonElement, Table, RecordId or a primitive.",
@@ -79,9 +84,9 @@ private val IDENT = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
     apply {
         when (target) {
-            is Table -> {
+            is Table<*> -> {
                 appendLiteral("type::table(")
-                bind(JsonPrimitive(target.name))
+                bind(JsonPrimitive(target.tableName))
                 appendLiteral(")")
             }
 

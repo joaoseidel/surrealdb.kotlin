@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Field
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import kotlinx.serialization.json.JsonPrimitive
@@ -43,9 +44,8 @@ class SurqlTest {
     }
 
     @Test
-    fun `expr composition produces nested parens`() {
-        val q = BoundQuery()
-        ((field("age") gt 18) and (field("active") eq true)).compile(q)
+    fun `condition composition produces nested parens`() {
+        val q = with(People) { (age greater 18) and (active eq true) }.toSurql()
         assertTrue(q.surql.contains(" AND "))
         assertTrue(q.surql.startsWith("(") && q.surql.endsWith(")"))
     }
@@ -59,9 +59,9 @@ class SurqlTest {
     }
 
     @Test
-    fun `field name validation rejects injection attempts`() {
+    fun `field path validation rejects injection attempts`() {
         try {
-            Expr.Field("name; DROP TABLE x")
+            Field<String>("name; DROP TABLE x")
             error("should have thrown")
         } catch (_: IllegalArgumentException) {
             // expected

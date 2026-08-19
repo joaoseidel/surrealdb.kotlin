@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
  */
 public class InsertQuery internal constructor(
     context: QueryContext,
-    private val into: Table,
+    private val into: Table<*>,
     private val data: JsonElement,
 ) : Query(context) {
     override fun compile(): BoundQuery {
@@ -17,7 +17,7 @@ public class InsertQuery internal constructor(
         // input out of the SurrealQL string.
         val q = BoundQuery()
         q.appendLiteral("INSERT INTO ")
-        q.bind(kotlinx.serialization.json.JsonPrimitive(into.name))
+        q.bind(kotlinx.serialization.json.JsonPrimitive(into.tableName))
         q.appendLiteral(" ")
         q.bind(data)
         return q
@@ -29,13 +29,13 @@ public class InsertQuery internal constructor(
  */
 public class InsertRelationQuery internal constructor(
     context: QueryContext,
-    private val into: Table,
+    private val into: Table<*>,
     private val data: JsonElement,
 ) : Query(context) {
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("INSERT RELATION INTO ")
-        q.bind(kotlinx.serialization.json.JsonPrimitive(into.name))
+        q.bind(kotlinx.serialization.json.JsonPrimitive(into.tableName))
         q.appendLiteral(" ")
         q.bind(data)
         return q

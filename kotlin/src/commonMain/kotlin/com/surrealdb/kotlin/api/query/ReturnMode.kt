@@ -1,11 +1,13 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Field
+
 /**
  * How a write statement's `RETURN` clause should behave.
  *
  * Maps onto the SurrealQL `RETURN NONE | BEFORE | AFTER | DIFF | <fields>` form.
- * For `Fields`, identifiers are validated against the same pattern as
- * [Expr.Field] — anything more exotic should be expressed as a raw `query()`.
+ * For `Fields`, the fields come from a [com.surrealdb.kotlin.api.data.Table]
+ * declaration, so they are ones the record type has.
  */
 public sealed class ReturnMode {
     public data object None : ReturnMode()
@@ -17,11 +19,10 @@ public sealed class ReturnMode {
     public data object Diff : ReturnMode()
 
     public data class Fields(
-        val names: List<String>,
+        val fields: List<Field<*>>,
     ) : ReturnMode() {
         init {
-            require(names.isNotEmpty()) { "ReturnMode.Fields requires at least one field" }
-            names.forEach { Expr.Field(it) }
+            require(fields.isNotEmpty()) { "ReturnMode.Fields requires at least one field" }
         }
     }
 
@@ -32,7 +33,7 @@ public sealed class ReturnMode {
             Before -> into.appendLiteral("BEFORE")
             After -> into.appendLiteral("AFTER")
             Diff -> into.appendLiteral("DIFF")
-            is Fields -> into.appendLiteral(names.joinToString(separator = ", "))
+            is Fields -> into.appendLiteral(fields.joinToString(separator = ", ") { it.path })
         }
     }
 }
