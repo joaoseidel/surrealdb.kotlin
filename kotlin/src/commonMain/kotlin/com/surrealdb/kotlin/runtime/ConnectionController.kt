@@ -1,18 +1,18 @@
 package com.surrealdb.kotlin.runtime
 
-import com.surrealdb.kotlin.api.SurrealClientConfig
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
-import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.ConnectionEvent
+import com.surrealdb.kotlin.api.Feature
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
-import com.surrealdb.kotlin.runtime.codec.SurrealCodec
+import com.surrealdb.kotlin.runtime.codec.Codec
+import com.surrealdb.kotlin.runtime.engine.Engine
 import com.surrealdb.kotlin.runtime.engine.HttpEngine
 import com.surrealdb.kotlin.runtime.engine.LiveQuerySource
 import com.surrealdb.kotlin.runtime.engine.LiveQuerySpec
 import com.surrealdb.kotlin.runtime.engine.SessionSnapshot
-import com.surrealdb.kotlin.runtime.engine.SurrealEngine
 import com.surrealdb.kotlin.runtime.engine.WebSocketEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
@@ -42,23 +42,23 @@ internal class MutableSessionState {
 }
 
 internal class ConnectionController(
-    val config: SurrealClientConfig,
+    val config: Surreal.Config,
 ) : AutoCloseable {
     private val ownsHttpClient = config.httpClientFactory == null
     private val httpClient: HttpClient = config.httpClientFactory?.invoke(config) ?: defaultHttpClient(config)
-    private val codec = SurrealCodec(config)
+    private val codec = Codec(config)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val engine: SurrealEngine =
+    private val engine: Engine =
         when {
             isWsUrl(config.url) -> WebSocketEngine(config, httpClient, codec, scope)
             else -> HttpEngine(config, httpClient, codec)
         }
 
-    val features: Set<SurrealFeature> get() = engine.features
-    val events: SharedFlow<SurrealConnectionEvent> get() = engine.events
+    val features: Set<Feature> get() = engine.features
+    val events: SharedFlow<ConnectionEvent> get() = engine.events
     val activeLiveQueries: StateFlow<Set<String>> get() = engine.activeLiveQueries
-    val liveNotifications: SharedFlow<SurrealLiveNotification> get() = engine.liveNotifications
+    val liveNotifications: SharedFlow<LiveNotification> get() = engine.liveNotifications
     val liveFailures: SharedFlow<LiveQueryFailure> get() = engine.liveFailures
 
     suspend fun trackLive(
@@ -103,7 +103,7 @@ internal class ConnectionController(
         }
     }
 
-    fun supports(feature: SurrealFeature): Boolean = feature in engine.features
+    fun supports(feature: Feature): Boolean = feature in engine.features
 
     // ── Typed protocol passthroughs ──────────────────────────────────────────
 
@@ -157,7 +157,7 @@ internal class ConnectionController(
     // ── Client-side transactions ─────────────────────────────────────────────
 
     private fun requireTransactionSupport() {
-        if (SurrealFeature.Transactions !in engine.features) {
+        if (Feature.Transactions !in engine.features) {
             throw SurrealFeatureNotSupportedException(
                 "Transactions are not supported by the active engine — use a ws:// or wss:// URL",
             )
@@ -190,7 +190,7 @@ internal class ConnectionController(
         table: String,
         diff: Boolean?,
     ): LiveQuerySubscription {
-        if (SurrealFeature.LiveQueries !in engine.features) {
+        if (Feature.LiveQueries !in engine.features) {
             throw SurrealFeatureNotSupportedException(
                 "Live queries are not supported by the active engine — use a ws:// or wss:// URL",
             )
@@ -259,7 +259,7 @@ internal class ConnectionController(
         }
     }
 
-    private fun defaultHttpClient(config: SurrealClientConfig): HttpClient =
+    private fun defaultHttpClient(config: Surreal.Config): HttpClient =
         HttpClient {
             install(WebSockets)
             install(HttpTimeout) {

@@ -10,11 +10,11 @@ import kotlinx.serialization.json.JsonObject
  * concept of raw method-keyed RPCs is intentionally absent here so non
  * JSON-RPC engines (e.g. a future gRPC engine) can implement the same surface.
  *
- * Higher-level consumers (`ConnectionController`, `SurrealSession`,
- * `SurrealTransaction`) communicate to engines through these functions.
+ * Higher-level consumers (`ConnectionController`, `Session`,
+ * `Transaction`) communicate to engines through these functions.
  * `RpcEngine` translates them into JSON-RPC payloads.
  */
-internal interface SurrealProtocol {
+internal interface Protocol {
     // Connection operations
     suspend fun health(session: SessionSnapshot): JsonElement
 

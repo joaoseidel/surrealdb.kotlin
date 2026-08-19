@@ -12,10 +12,10 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
 
 - Single-URL connection. The engine is selected from the protocol: `http://` or `https://` use the HTTP engine; `ws://` or `wss://` use the WebSocket
   engine.
-- Two engines with explicit capability sets (`SurrealFeature`). Live queries require a WebSocket URL.
+- Two engines with explicit capability sets (`Feature`). Live queries require a WebSocket URL.
 - WebSocket reconnection with configurable exponential backoff and pending-call replay across drops.
 - Multi-session support: `client.newSession()` returns an isolated session that shares the underlying connection.
-- Connection lifecycle exposed as a `SharedFlow<SurrealConnectionEvent>` (`Connecting`, `Connected`, `Disconnected`, `Reconnecting`, `Error`).
+- Connection lifecycle exposed as a `SharedFlow<ConnectionEvent>` (`Connecting`, `Connected`, `Disconnected`, `Reconnecting`, `Error`).
 - Auto authentication: an optional `credentialProvider` callback re-signs in and retries on auth failure.
 - JWT auto-renewal: when a signin response carries a refresh token, renewal is scheduled before the access token's `exp` claim.
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD
@@ -47,7 +47,7 @@ with `Result`.
 ## Quick start
 
 ```kotlin
-val client = SurrealClient(SurrealClientConfig(url = "http://localhost:8000"))
+val client = Surreal(Surreal.Config(url = "http://localhost:8000"))
 
 client.signin(buildJsonObject {
     put("user", JsonPrimitive("root"))
@@ -72,7 +72,7 @@ val adults: List<Person> = client
 Switch to WebSocket transport simply by changing the URL scheme:
 
 ```kotlin
-val client = SurrealClient(SurrealClientConfig(url = "ws://localhost:8000"))
+val client = Surreal(Surreal.Config(url = "ws://localhost:8000"))
 ```
 
 ## Live queries
@@ -116,7 +116,7 @@ tenantB.query("SELECT * FROM person")  // runs as tenant B, isolated
 client.closeSession(tenantA)
 ```
 
-The `SurrealClient` itself is the root session, so the simple single-tenant case keeps using `client.query(...)` directly.
+The `Surreal` client itself is the root session, so the simple single-tenant case keeps using `client.query(...)` directly.
 
 ## Transactions
 
@@ -151,12 +151,12 @@ try {
 scope.launch {
     client.connectionEvents.collect { event ->
         when (event) {
-            is SurrealConnectionEvent.Connecting -> println("connecting")
-            is SurrealConnectionEvent.Connected -> println("connected")
-            is SurrealConnectionEvent.Disconnected -> println("disconnected")
-            is SurrealConnectionEvent.Reconnecting ->
+            is ConnectionEvent.Connecting -> println("connecting")
+            is ConnectionEvent.Connected -> println("connected")
+            is ConnectionEvent.Disconnected -> println("disconnected")
+            is ConnectionEvent.Reconnecting ->
                 println("retry ${event.attempt} in ${event.delayMillis}ms")
-            is SurrealConnectionEvent.Error -> println("error ${event.cause.message}")
+            is ConnectionEvent.Error -> println("error ${event.cause.message}")
         }
     }
 }
@@ -165,7 +165,7 @@ scope.launch {
 ## Configuration
 
 ```kotlin
-SurrealClientConfig(
+Surreal.Config(
     url = "wss://example.com",
     autoConnect = true,
     requestTimeoutMillis = 30_000,
@@ -179,7 +179,7 @@ SurrealClientConfig(
     tokenRenewalLeadMillis = 60_000,  // renew 60s before exp
     autoAuthenticate = true,
     credentialProvider = {
-        SurrealAuthInput.SignIn(buildJsonObject {
+        Credentials.SignIn(buildJsonObject {
             put("user", JsonPrimitive("root"))
             put("pass", JsonPrimitive("root"))
         })
@@ -190,7 +190,7 @@ SurrealClientConfig(
 ## Capability checks
 
 ```kotlin
-if (client.supports(SurrealFeature.LiveQueries)) {
+if (client.supports(Feature.LiveQueries)) {
     val sub = client.live("person")
 }
 ```

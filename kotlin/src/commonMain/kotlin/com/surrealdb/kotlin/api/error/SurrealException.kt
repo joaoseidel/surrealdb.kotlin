@@ -19,20 +19,20 @@ public class SurrealProtocolException(
 
 /**
  * A SurrealDB server reported an RPC failure. [kind] carries the server's
- * structured error taxonomy (see [SurrealErrorKind]) so callers can branch on
+ * structured error taxonomy (see [ErrorKind]) so callers can branch on
  * error semantics — e.g. via `when (exception.kind) { is
- * SurrealErrorKind.Query -> ... }` — instead of parsing [message], which is
+ * ErrorKind.Query -> ... }` — instead of parsing [message], which is
  * meant for humans and is not a stable contract.
  *
  * Errors built without wire `kind`/`details` information (e.g. call sites
  * that only have a free-text message, like statement-level query errors)
- * default [kind] to [SurrealErrorKind.Internal].
+ * default [kind] to [ErrorKind.Internal].
  */
 public open class SurrealRpcException(
     public val code: Int?,
     message: String,
     public val data: JsonElement? = null,
-    public val kind: SurrealErrorKind = SurrealErrorKind.Internal,
+    public val kind: ErrorKind = ErrorKind.Internal,
     cause: Throwable? = null,
 ) : SurrealException(message, cause)
 
@@ -47,9 +47,9 @@ public class SurrealAuthenticationException(
     code: Int?,
     message: String,
     data: JsonElement? = null,
-    kind: SurrealErrorKind.NotAllowed,
+    kind: ErrorKind.NotAllowed,
 ) : SurrealRpcException(code = code, message = message, data = data, kind = kind) {
-    private val notAllowed: SurrealErrorKind.NotAllowed get() = kind as SurrealErrorKind.NotAllowed
+    private val notAllowed: ErrorKind.NotAllowed get() = kind as ErrorKind.NotAllowed
 
     /** True if the access token used for this session has expired. */
     public val isTokenExpired: Boolean get() = notAllowed.isTokenExpired
@@ -68,10 +68,10 @@ public class SurrealNotFoundException(
     code: Int?,
     message: String,
     data: JsonElement? = null,
-    kind: SurrealErrorKind.NotFound,
+    kind: ErrorKind.NotFound,
 ) : SurrealRpcException(code = code, message = message, data = data, kind = kind) {
-    public val detail: SurrealErrorKind.NotFound.Detail?
-        get() = (kind as SurrealErrorKind.NotFound).detail
+    public val detail: ErrorKind.NotFound.Detail?
+        get() = (kind as ErrorKind.NotFound).detail
 }
 
 /**
@@ -82,10 +82,10 @@ public class SurrealAlreadyExistsException(
     code: Int?,
     message: String,
     data: JsonElement? = null,
-    kind: SurrealErrorKind.AlreadyExists,
+    kind: ErrorKind.AlreadyExists,
 ) : SurrealRpcException(code = code, message = message, data = data, kind = kind) {
-    public val detail: SurrealErrorKind.AlreadyExists.Detail?
-        get() = (kind as SurrealErrorKind.AlreadyExists).detail
+    public val detail: ErrorKind.AlreadyExists.Detail?
+        get() = (kind as ErrorKind.AlreadyExists).detail
 }
 
 /**
@@ -98,9 +98,9 @@ public class SurrealQueryException(
     code: Int?,
     message: String,
     data: JsonElement? = null,
-    kind: SurrealErrorKind.Query,
+    kind: ErrorKind.Query,
 ) : SurrealRpcException(code = code, message = message, data = data, kind = kind) {
-    private val query: SurrealErrorKind.Query get() = kind as SurrealErrorKind.Query
+    private val query: ErrorKind.Query get() = kind as ErrorKind.Query
 
     /** True if a concurrent transaction wrote to the same data; safe to retry. */
     public val isTransactionConflict: Boolean get() = query.isTransactionConflict

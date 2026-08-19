@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-internal data class SurrealRpcRequest(
+internal data class RpcRequest(
     val id: String,
     val method: String,
     val params: List<JsonElement> = emptyList(),
@@ -13,16 +13,16 @@ internal data class SurrealRpcRequest(
 )
 
 @Serializable
-internal data class SurrealRpcResponse(
+internal data class RpcResponse(
     val id: String? = null,
     val result: JsonElement? = null,
-    val error: SurrealRpcError? = null,
+    val error: RpcError? = null,
     val method: String? = null,
     val params: JsonArray? = null,
 )
 
 @Serializable
-internal data class SurrealRpcError(
+internal data class RpcError(
     val code: Int? = null,
     val message: String,
     // Structured error taxonomy (see `surrealdb_types::Error` / `ErrorDetails`
@@ -30,7 +30,7 @@ internal data class SurrealRpcError(
     // "NotFound") and `details` carries family-specific nested data using the
     // same recursive `{ kind, details? }` shape. Both are optional so older
     // servers/wire formats that only send `code`/`message` still decode.
-    // Parsed into a typed `SurrealErrorKind` by `mapRpcError`.
+    // Parsed into a typed `ErrorKind` by `mapRpcError`.
     val kind: String? = null,
     val details: JsonElement? = null,
     val data: JsonElement? = null,

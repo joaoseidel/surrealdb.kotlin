@@ -24,11 +24,11 @@ import kotlinx.serialization.json.longOrNull
  * server's own forward-compatible fallback to `Internal` for unrecognised
  * kinds.
  */
-public sealed class SurrealErrorKind {
+public sealed class ErrorKind {
     /** Parse error, invalid request, or invalid/malformed parameters. */
     public data class Validation(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object Parse : Detail()
 
@@ -57,7 +57,7 @@ public sealed class SurrealErrorKind {
     /** A requested feature or configuration is not supported by this server. */
     public data class Configuration(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object LiveQueryNotSupported : Detail()
 
@@ -71,12 +71,12 @@ public sealed class SurrealErrorKind {
     }
 
     /** A user-thrown error, e.g. `THROW "reason"` in SurrealQL. */
-    public data object Thrown : SurrealErrorKind()
+    public data object Thrown : ErrorKind()
 
     /** A query failed to execute (as opposed to succeeding with an empty result). */
     public data class Query(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object NotExecuted : Detail()
 
@@ -106,7 +106,7 @@ public sealed class SurrealErrorKind {
     /** Serializing or deserializing a value failed. */
     public data class Serialization(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object Serialization : Detail()
 
@@ -120,7 +120,7 @@ public sealed class SurrealErrorKind {
     /** Permission denied, or a method/function/scripting target is blocked. */
     public data class NotAllowed(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object Scripting : Detail()
 
@@ -192,7 +192,7 @@ public sealed class SurrealErrorKind {
     /** The requested resource does not exist. */
     public data class NotFound(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data class Method(
                 public val name: String,
@@ -225,7 +225,7 @@ public sealed class SurrealErrorKind {
     /** The resource being created already exists. */
     public data class AlreadyExists(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data class Session(
                 public val id: String,
@@ -256,7 +256,7 @@ public sealed class SurrealErrorKind {
      */
     public data class Connection(
         public val detail: Detail? = null,
-    ) : SurrealErrorKind() {
+    ) : ErrorKind() {
         public sealed class Detail {
             public data object Uninitialised : Detail()
 
@@ -267,27 +267,27 @@ public sealed class SurrealErrorKind {
     }
 
     /** Internal or unexpected server error, or an error not covered by the other kinds. */
-    public data object Internal : SurrealErrorKind()
+    public data object Internal : ErrorKind()
 
     /** Context wrapper attached purely for error chaining (see the server's `cause` field). */
-    public data object Context : SurrealErrorKind()
+    public data object Context : ErrorKind()
 
     /** A `kind` string this SDK version does not recognise (forward compatibility). */
     public data class Unknown(
         public val rawKind: String,
-    ) : SurrealErrorKind()
+    ) : ErrorKind()
 
     public companion object {
         /**
          * Parses the wire `kind`/`details` pair reported by the server into a
-         * typed [SurrealErrorKind]. A missing `kind` falls back to [Internal];
+         * typed [ErrorKind]. A missing `kind` falls back to [Internal];
          * an unrecognised `kind` string falls back to [Unknown] — both mirror
          * the server's own forward-compatibility policy.
          */
         internal fun parse(
             kind: String?,
             details: JsonElement?,
-        ): SurrealErrorKind {
+        ): ErrorKind {
             if (kind == null) return Internal
             val tag = details.asTag()
             return when (kind) {
@@ -332,50 +332,50 @@ private fun JsonObject?.string(field: String): String? = (this?.get(field) as? J
 
 private fun JsonObject?.long(field: String): Long? = (this?.get(field) as? JsonPrimitive)?.longOrNull
 
-private fun validationDetail(tag: Tag): SurrealErrorKind.Validation.Detail? {
+private fun validationDetail(tag: Tag): ErrorKind.Validation.Detail? {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
-        "Parse" -> SurrealErrorKind.Validation.Detail.Parse
-        "InvalidRequest" -> SurrealErrorKind.Validation.Detail.InvalidRequest
-        "InvalidParams" -> SurrealErrorKind.Validation.Detail.InvalidParams
-        "NamespaceEmpty" -> SurrealErrorKind.Validation.Detail.NamespaceEmpty
-        "DatabaseEmpty" -> SurrealErrorKind.Validation.Detail.DatabaseEmpty
-        "InvalidParameter" -> d.string("name")?.let { SurrealErrorKind.Validation.Detail.InvalidParameter(it) }
-        "InvalidContent" -> d.string("value")?.let { SurrealErrorKind.Validation.Detail.InvalidContent(it) }
-        "InvalidMerge" -> d.string("value")?.let { SurrealErrorKind.Validation.Detail.InvalidMerge(it) }
+        "Parse" -> ErrorKind.Validation.Detail.Parse
+        "InvalidRequest" -> ErrorKind.Validation.Detail.InvalidRequest
+        "InvalidParams" -> ErrorKind.Validation.Detail.InvalidParams
+        "NamespaceEmpty" -> ErrorKind.Validation.Detail.NamespaceEmpty
+        "DatabaseEmpty" -> ErrorKind.Validation.Detail.DatabaseEmpty
+        "InvalidParameter" -> d.string("name")?.let { ErrorKind.Validation.Detail.InvalidParameter(it) }
+        "InvalidContent" -> d.string("value")?.let { ErrorKind.Validation.Detail.InvalidContent(it) }
+        "InvalidMerge" -> d.string("value")?.let { ErrorKind.Validation.Detail.InvalidMerge(it) }
         else -> null
     }
 }
 
-private fun configurationDetail(tag: Tag): SurrealErrorKind.Configuration.Detail? =
+private fun configurationDetail(tag: Tag): ErrorKind.Configuration.Detail? =
     when (tag.kind) {
-        "LiveQueryNotSupported" -> SurrealErrorKind.Configuration.Detail.LiveQueryNotSupported
-        "BadLiveQueryConfig" -> SurrealErrorKind.Configuration.Detail.BadLiveQueryConfig
-        "BadGraphqlConfig" -> SurrealErrorKind.Configuration.Detail.BadGraphqlConfig
+        "LiveQueryNotSupported" -> ErrorKind.Configuration.Detail.LiveQueryNotSupported
+        "BadLiveQueryConfig" -> ErrorKind.Configuration.Detail.BadLiveQueryConfig
+        "BadGraphqlConfig" -> ErrorKind.Configuration.Detail.BadGraphqlConfig
         else -> null
     }
 
-private fun queryDetail(tag: Tag): SurrealErrorKind.Query.Detail? {
+private fun queryDetail(tag: Tag): ErrorKind.Query.Detail? {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
         "NotExecuted" -> {
-            SurrealErrorKind.Query.Detail.NotExecuted
+            ErrorKind.Query.Detail.NotExecuted
         }
 
         "TimedOut" -> {
             val duration = d?.get("duration") as? JsonObject
-            SurrealErrorKind.Query.Detail.TimedOut(
+            ErrorKind.Query.Detail.TimedOut(
                 seconds = duration.long("secs") ?: 0L,
                 nanos = duration.long("nanos") ?: 0L,
             )
         }
 
         "Cancelled" -> {
-            SurrealErrorKind.Query.Detail.Cancelled
+            ErrorKind.Query.Detail.Cancelled
         }
 
         "TransactionConflict" -> {
-            SurrealErrorKind.Query.Detail.TransactionConflict
+            ErrorKind.Query.Detail.TransactionConflict
         }
 
         else -> {
@@ -384,70 +384,70 @@ private fun queryDetail(tag: Tag): SurrealErrorKind.Query.Detail? {
     }
 }
 
-private fun serializationDetail(tag: Tag): SurrealErrorKind.Serialization.Detail? =
+private fun serializationDetail(tag: Tag): ErrorKind.Serialization.Detail? =
     when (tag.kind) {
-        "Serialization" -> SurrealErrorKind.Serialization.Detail.Serialization
-        "Deserialization" -> SurrealErrorKind.Serialization.Detail.Deserialization
+        "Serialization" -> ErrorKind.Serialization.Detail.Serialization
+        "Deserialization" -> ErrorKind.Serialization.Detail.Deserialization
         else -> null
     }
 
-private fun notAllowedDetail(tag: Tag): SurrealErrorKind.NotAllowed.Detail? {
+private fun notAllowedDetail(tag: Tag): ErrorKind.NotAllowed.Detail? {
     val dObj = tag.details as? JsonObject
     return when (tag.kind) {
-        "Scripting" -> SurrealErrorKind.NotAllowed.Detail.Scripting
-        "Auth" -> tag.details.asTag()?.let { SurrealErrorKind.NotAllowed.Detail.Auth(authReason(it)) }
-        "Method" -> dObj.string("name")?.let { SurrealErrorKind.NotAllowed.Detail.Method(it) }
-        "Function" -> dObj.string("name")?.let { SurrealErrorKind.NotAllowed.Detail.Function(it) }
-        "Target" -> dObj.string("name")?.let { SurrealErrorKind.NotAllowed.Detail.Target(it) }
+        "Scripting" -> ErrorKind.NotAllowed.Detail.Scripting
+        "Auth" -> tag.details.asTag()?.let { ErrorKind.NotAllowed.Detail.Auth(authReason(it)) }
+        "Method" -> dObj.string("name")?.let { ErrorKind.NotAllowed.Detail.Method(it) }
+        "Function" -> dObj.string("name")?.let { ErrorKind.NotAllowed.Detail.Function(it) }
+        "Target" -> dObj.string("name")?.let { ErrorKind.NotAllowed.Detail.Target(it) }
         else -> null
     }
 }
 
-private fun authReason(tag: Tag): SurrealErrorKind.NotAllowed.AuthReason {
+private fun authReason(tag: Tag): ErrorKind.NotAllowed.AuthReason {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
         "TokenExpired" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.TokenExpired
+            ErrorKind.NotAllowed.AuthReason.TokenExpired
         }
 
         "SessionExpired" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.SessionExpired
+            ErrorKind.NotAllowed.AuthReason.SessionExpired
         }
 
         "InvalidAuth" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.InvalidAuth
+            ErrorKind.NotAllowed.AuthReason.InvalidAuth
         }
 
         "UnexpectedAuth" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.UnexpectedAuth
+            ErrorKind.NotAllowed.AuthReason.UnexpectedAuth
         }
 
         "MissingUserOrPass" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.MissingUserOrPass
+            ErrorKind.NotAllowed.AuthReason.MissingUserOrPass
         }
 
         "NoSigninTarget" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.NoSigninTarget
+            ErrorKind.NotAllowed.AuthReason.NoSigninTarget
         }
 
         "InvalidPass" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.InvalidPass
+            ErrorKind.NotAllowed.AuthReason.InvalidPass
         }
 
         "TokenMakingFailed" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.TokenMakingFailed
+            ErrorKind.NotAllowed.AuthReason.TokenMakingFailed
         }
 
         "InvalidSignup" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.InvalidSignup
+            ErrorKind.NotAllowed.AuthReason.InvalidSignup
         }
 
         "InvalidRole" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.InvalidRole(d.string("name") ?: "")
+            ErrorKind.NotAllowed.AuthReason.InvalidRole(d.string("name") ?: "")
         }
 
         "NotAllowed" -> {
-            SurrealErrorKind.NotAllowed.AuthReason.NotPermitted(
+            ErrorKind.NotAllowed.AuthReason.NotPermitted(
                 actor = d.string("actor") ?: "",
                 action = d.string("action") ?: "",
                 resource = d.string("resource") ?: "",
@@ -455,41 +455,41 @@ private fun authReason(tag: Tag): SurrealErrorKind.NotAllowed.AuthReason {
         }
 
         else -> {
-            SurrealErrorKind.NotAllowed.AuthReason.Unrecognized(tag.kind)
+            ErrorKind.NotAllowed.AuthReason.Unrecognized(tag.kind)
         }
     }
 }
 
-private fun notFoundDetail(tag: Tag): SurrealErrorKind.NotFound.Detail? {
+private fun notFoundDetail(tag: Tag): ErrorKind.NotFound.Detail? {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
-        "Method" -> d.string("name")?.let { SurrealErrorKind.NotFound.Detail.Method(it) }
-        "Session" -> SurrealErrorKind.NotFound.Detail.Session(d.string("id"))
-        "Table" -> d.string("name")?.let { SurrealErrorKind.NotFound.Detail.Table(it) }
-        "Record" -> d.string("id")?.let { SurrealErrorKind.NotFound.Detail.Record(it) }
-        "Namespace" -> d.string("name")?.let { SurrealErrorKind.NotFound.Detail.Namespace(it) }
-        "Database" -> d.string("name")?.let { SurrealErrorKind.NotFound.Detail.Database(it) }
-        "Transaction" -> SurrealErrorKind.NotFound.Detail.Transaction
+        "Method" -> d.string("name")?.let { ErrorKind.NotFound.Detail.Method(it) }
+        "Session" -> ErrorKind.NotFound.Detail.Session(d.string("id"))
+        "Table" -> d.string("name")?.let { ErrorKind.NotFound.Detail.Table(it) }
+        "Record" -> d.string("id")?.let { ErrorKind.NotFound.Detail.Record(it) }
+        "Namespace" -> d.string("name")?.let { ErrorKind.NotFound.Detail.Namespace(it) }
+        "Database" -> d.string("name")?.let { ErrorKind.NotFound.Detail.Database(it) }
+        "Transaction" -> ErrorKind.NotFound.Detail.Transaction
         else -> null
     }
 }
 
-private fun alreadyExistsDetail(tag: Tag): SurrealErrorKind.AlreadyExists.Detail? {
+private fun alreadyExistsDetail(tag: Tag): ErrorKind.AlreadyExists.Detail? {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
-        "Session" -> d.string("id")?.let { SurrealErrorKind.AlreadyExists.Detail.Session(it) }
-        "Table" -> d.string("name")?.let { SurrealErrorKind.AlreadyExists.Detail.Table(it) }
-        "Record" -> d.string("id")?.let { SurrealErrorKind.AlreadyExists.Detail.Record(it) }
-        "Namespace" -> d.string("name")?.let { SurrealErrorKind.AlreadyExists.Detail.Namespace(it) }
-        "Database" -> d.string("name")?.let { SurrealErrorKind.AlreadyExists.Detail.Database(it) }
+        "Session" -> d.string("id")?.let { ErrorKind.AlreadyExists.Detail.Session(it) }
+        "Table" -> d.string("name")?.let { ErrorKind.AlreadyExists.Detail.Table(it) }
+        "Record" -> d.string("id")?.let { ErrorKind.AlreadyExists.Detail.Record(it) }
+        "Namespace" -> d.string("name")?.let { ErrorKind.AlreadyExists.Detail.Namespace(it) }
+        "Database" -> d.string("name")?.let { ErrorKind.AlreadyExists.Detail.Database(it) }
         else -> null
     }
 }
 
-private fun connectionDetail(tag: Tag): SurrealErrorKind.Connection.Detail? =
+private fun connectionDetail(tag: Tag): ErrorKind.Connection.Detail? =
     when (tag.kind) {
-        "Uninitialised" -> SurrealErrorKind.Connection.Detail.Uninitialised
-        "AlreadyConnected" -> SurrealErrorKind.Connection.Detail.AlreadyConnected
-        "ConnectionFailed" -> SurrealErrorKind.Connection.Detail.ConnectionFailed
+        "Uninitialised" -> ErrorKind.Connection.Detail.Uninitialised
+        "AlreadyConnected" -> ErrorKind.Connection.Detail.AlreadyConnected
+        "ConnectionFailed" -> ErrorKind.Connection.Detail.ConnectionFailed
         else -> null
     }

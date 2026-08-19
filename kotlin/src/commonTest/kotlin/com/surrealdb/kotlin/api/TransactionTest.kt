@@ -21,7 +21,7 @@ import kotlin.test.assertFailsWith
  * SurrealDB WebSocket.
  */
 class TransactionTest {
-    private fun httpClient(): SurrealClient {
+    private fun httpClient(): Surreal {
         val engine =
             MockEngine { _ ->
                 respond(
@@ -30,8 +30,8 @@ class TransactionTest {
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
             }
-        return SurrealClient(
-            SurrealClientConfig(
+        return Surreal(
+            Surreal.Config(
                 url = "http://localhost:8000",
                 autoConnect = false,
                 httpClientFactory = { _ -> HttpClient(engine) },

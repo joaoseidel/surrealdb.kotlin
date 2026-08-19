@@ -1,8 +1,8 @@
 package com.surrealdb.kotlin.runtime.codec
 
-import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
-import com.surrealdb.kotlin.runtime.SurrealRpcRequest
+import com.surrealdb.kotlin.runtime.RpcRequest
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -14,17 +14,22 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-private val codec = SurrealCodec(SurrealClientConfig(url = "http://localhost:8000"))
+private val codec = Codec(Surreal.Config(url = "http://localhost:8000"))
 
 /** Parses back through Json so assertions are about structure, not string formatting. */
-private fun parse(text: String) = SurrealClientConfig(url = "x").json.parseToJsonElement(text).jsonObject
+private fun parse(text: String) =
+    Surreal
+        .Config(url = "x")
+        .json
+        .parseToJsonElement(text)
+        .jsonObject
 
 class CodecTest :
     ShouldSpec({
-        context("SurrealCodec HTTP") {
+        context("Codec HTTP") {
             should("encode the id, method and params the server dispatches on") {
                 val request =
-                    SurrealRpcRequest(
+                    RpcRequest(
                         id = "abc-123",
                         method = "query",
                         params =
@@ -71,9 +76,9 @@ class CodecTest :
             }
         }
 
-        context("SurrealCodec WebSocket") {
+        context("Codec WebSocket") {
             should("encode a request as JSON the server can dispatch on") {
-                val request = SurrealRpcRequest(id = "ws-1", method = "ping", params = emptyList())
+                val request = RpcRequest(id = "ws-1", method = "ping", params = emptyList())
 
                 val parsed = parse(codec.encodeWsText(request))
 

@@ -1,10 +1,10 @@
 package com.surrealdb.kotlin.api
 
-import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.query.awaitAs
-import com.surrealdb.kotlin.runtime.SurrealRpcResponse
+import com.surrealdb.kotlin.runtime.RpcResponse
 import com.surrealdb.kotlin.runtime.codec.parseLiveNotification
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -29,7 +29,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class SurrealClientTest {
+class SurrealTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -102,12 +102,12 @@ class SurrealClientTest {
                 }
 
             val client =
-                SurrealClient(
-                    SurrealClientConfig(
+                Surreal(
+                    Surreal.Config(
                         url = "http://localhost:8000",
                         autoAuthenticate = true,
                         credentialProvider = {
-                            SurrealAuthInput.SignIn(
+                            Credentials.SignIn(
                                 buildJsonObject {
                                     put("user", JsonPrimitive("root"))
                                     put("pass", JsonPrimitive("root"))
@@ -177,7 +177,7 @@ class SurrealClientTest {
     fun `parses live notification payload`() {
         val response =
             json.decodeFromString(
-                SurrealRpcResponse.serializer(),
+                RpcResponse.serializer(),
                 """{"result":{"action":"CREATE","id":"live-1","result":{"id":"person:1"}}}""",
             )
 
@@ -193,9 +193,9 @@ class SurrealClientTest {
             val engine = MockEngine { respond("{}", HttpStatusCode.OK) }
             val client = testClient(engine = engine)
 
-            assertTrue(SurrealFeature.ExportImport in client.features)
-            assertTrue(SurrealFeature.LiveQueries !in client.features)
-            assertEquals(false, client.supports(SurrealFeature.LiveQueries))
+            assertTrue(Feature.ExportImport in client.features)
+            assertTrue(Feature.LiveQueries !in client.features)
+            assertEquals(false, client.supports(Feature.LiveQueries))
 
             assertFailsWith<SurrealFeatureNotSupportedException> {
                 client.live("person")
@@ -242,9 +242,9 @@ class SurrealClientTest {
             assertNotNull(client.connectionEvents)
         }
 
-    private fun testClient(engine: MockEngine): SurrealClient =
-        SurrealClient(
-            SurrealClientConfig(
+    private fun testClient(engine: MockEngine): Surreal =
+        Surreal(
+            Surreal.Config(
                 url = "http://localhost:8000",
                 autoConnect = false,
                 httpClientFactory = { _ -> HttpClient(engine) },

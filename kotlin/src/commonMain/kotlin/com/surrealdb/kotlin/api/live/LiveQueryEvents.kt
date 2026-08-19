@@ -3,7 +3,7 @@ package com.surrealdb.kotlin.api.live
 import com.surrealdb.kotlin.api.data.RecordId
 import kotlinx.serialization.json.JsonElement
 
-public fun <T> SurrealLiveNotification.toEvent(decode: (JsonElement) -> T): LiveQueryEvent<T> {
+public fun <T> LiveNotification.toEvent(decode: (JsonElement) -> T): LiveQueryEvent<T> {
     val recordId = record?.let(::parseRecordId)
     return when (action.uppercase()) {
         "CREATE" -> LiveQueryEvent.Created(liveQueryId, recordId, decode(result))

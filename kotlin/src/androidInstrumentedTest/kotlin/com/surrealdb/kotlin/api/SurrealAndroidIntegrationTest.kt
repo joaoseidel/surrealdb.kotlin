@@ -35,7 +35,7 @@ class SurrealAndroidIntegrationTest {
         runBlocking {
             requireIntegration()
 
-            val client = SurrealClient(SurrealClientConfig(url = endpoint()))
+            val client = Surreal(Surreal.Config(url = endpoint()))
 
             try {
                 client.signin(rootCredentials)
@@ -80,7 +80,7 @@ class SurrealAndroidIntegrationTest {
                 endpoint()
                     .replace("http://", "ws://")
                     .replace("https://", "wss://")
-            val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+            val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
 
             try {
                 client.signin(rootCredentials)

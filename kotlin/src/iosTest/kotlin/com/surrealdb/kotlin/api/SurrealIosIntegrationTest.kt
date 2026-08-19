@@ -22,8 +22,8 @@ class SurrealIosIntegrationTest :
                 if (env("SURREAL_RUN_INTEGRATION") != "true") return@should
 
                 val client =
-                    SurrealClient(
-                        SurrealClientConfig(url = env("SURREAL_IOS_ENDPOINT") ?: "http://127.0.0.1:8000"),
+                    Surreal(
+                        Surreal.Config(url = env("SURREAL_IOS_ENDPOINT") ?: "http://127.0.0.1:8000"),
                     )
 
                 client.signin(

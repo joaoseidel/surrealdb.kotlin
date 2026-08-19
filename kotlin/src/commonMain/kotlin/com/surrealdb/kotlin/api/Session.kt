@@ -7,8 +7,8 @@ import com.surrealdb.kotlin.api.live.liveEventFlow
 import com.surrealdb.kotlin.api.live.toLiveStatement
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.QueryDispatcher
+import com.surrealdb.kotlin.api.query.Queryable
 import com.surrealdb.kotlin.api.query.QueryableImpl
-import com.surrealdb.kotlin.api.query.SurrealQueryable
 import com.surrealdb.kotlin.api.query.firstQueryResult
 import com.surrealdb.kotlin.runtime.ConnectionController
 import kotlinx.coroutines.flow.Flow
@@ -19,10 +19,10 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-public open class SurrealSession internal constructor(
+public open class Session internal constructor(
     internal val controller: ConnectionController,
     internal val sessionId: String,
-) : SurrealQueryable {
+) : Queryable {
     private val authMutex = Mutex()
 
     // Dispatcher used by builder objects. `txn = null` here — a transaction
@@ -32,7 +32,7 @@ public open class SurrealSession internal constructor(
         object : QueryDispatcher {
             override val json get() = controller.config.json
 
-            override suspend fun dispatch(query: BoundQuery): JsonElement = this@SurrealSession.query(query)
+            override suspend fun dispatch(query: BoundQuery): JsonElement = this@Session.query(query)
         }
     private val queryable = QueryableImpl(sessionDispatcher)
 
@@ -238,7 +238,7 @@ public open class SurrealSession internal constructor(
         spec: String,
         decode: (JsonElement) -> T,
     ): Flow<LiveQueryEvent<T>> {
-        if (SurrealFeature.LiveQueries !in controller.features) {
+        if (Feature.LiveQueries !in controller.features) {
             throw SurrealFeatureNotSupportedException(
                 "Live queries need a ws:// or wss:// connection; this client is on ${controller.config.url}",
             )
@@ -353,14 +353,14 @@ public open class SurrealSession internal constructor(
             withAutoAuthRetry(allowRetry = false, block = block)
         }
 
-    private suspend fun applyAuthInput(authInput: SurrealAuthInput) {
+    private suspend fun applyAuthInput(authInput: Credentials) {
         when (authInput) {
-            is SurrealAuthInput.SignIn -> {
+            is Credentials.SignIn -> {
                 val result = controller.signin(sessionId, authInput.params)
                 applyTokenResult(result)
             }
 
-            is SurrealAuthInput.Token -> {
+            is Credentials.Token -> {
                 controller.authenticate(sessionId, authInput.token)
                 controller.update(sessionId) { accessToken = authInput.token }
                 scheduleRenewalIfPossible()

@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api
 
-public enum class SurrealFeature {
+public enum class Feature {
     LiveQueries,
     Transactions,
     Sessions,

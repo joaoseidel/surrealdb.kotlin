@@ -15,16 +15,16 @@ import kotlin.test.assertTrue
  * fails both when a new one appears and when a listed one disappears — the second so that the
  * list shrinks deliberately rather than rotting.
  *
- * `ConnectionController` is the one entry. It never reaches the published surface: `SurrealSession`
- * holds it as `internal val controller` and `SurrealClient` names it only inside a constructor
+ * `ConnectionController` is the one entry. It never reaches the published surface: `Session`
+ * holds it as `internal val controller` and `Surreal` names it only inside a constructor
  * body, so no runtime type appears in any public signature. Removing it means putting an interface
  * in `api` for `runtime` to implement; until that is worth doing, it is pinned here in the open.
  */
 class ApiRuntimeBoundaryTest {
     private val allowed =
         setOf(
-            "SurrealClient.kt -> com.surrealdb.kotlin.runtime.ConnectionController",
-            "SurrealSession.kt -> com.surrealdb.kotlin.runtime.ConnectionController",
+            "Surreal.kt -> com.surrealdb.kotlin.runtime.ConnectionController",
+            "Session.kt -> com.surrealdb.kotlin.runtime.ConnectionController",
         )
 
     private val apiRoot = File("src/commonMain/kotlin/com/surrealdb/kotlin/api")

@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api
 
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.ConnectionEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ConnectionEventsTest {
-    private fun client(autoConnect: Boolean = false): SurrealClient {
+    private fun client(autoConnect: Boolean = false): Surreal {
         val engine =
             MockEngine { _ ->
                 respond(
@@ -25,8 +25,8 @@ class ConnectionEventsTest {
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
             }
-        return SurrealClient(
-            SurrealClientConfig(
+        return Surreal(
+            Surreal.Config(
                 url = "http://localhost:8000",
                 autoConnect = autoConnect,
                 httpClientFactory = { _ -> HttpClient(engine) },
@@ -40,7 +40,7 @@ class ConnectionEventsTest {
             val c = client(autoConnect = false)
 
             // Start a collector before triggering connect so we don't miss the event.
-            val received = mutableListOf<SurrealConnectionEvent>()
+            val received = mutableListOf<ConnectionEvent>()
             val job =
                 launch {
                     c.connectionEvents.collect { received += it }
@@ -54,7 +54,7 @@ class ConnectionEventsTest {
                 while (received.isEmpty()) kotlinx.coroutines.yield()
             }
 
-            assertTrue(received.first() is SurrealConnectionEvent.Connected, "got ${received.first()}")
+            assertTrue(received.first() is ConnectionEvent.Connected, "got ${received.first()}")
             job.cancel()
         }
 
@@ -63,7 +63,7 @@ class ConnectionEventsTest {
         runBlocking {
             val c = client(autoConnect = false)
 
-            val received = mutableListOf<SurrealConnectionEvent>()
+            val received = mutableListOf<ConnectionEvent>()
             val job =
                 launch {
                     c.connectionEvents.collect { received += it }
@@ -78,7 +78,7 @@ class ConnectionEventsTest {
             // Drain a small grace window in case a duplicate is in flight.
             repeat(8) { kotlinx.coroutines.yield() }
 
-            val connectedCount = received.count { it is SurrealConnectionEvent.Connected }
+            val connectedCount = received.count { it is ConnectionEvent.Connected }
             assertEquals(1, connectedCount, "expected exactly 1 Connected event, got $connectedCount ($received)")
             job.cancel()
         }
@@ -87,7 +87,7 @@ class ConnectionEventsTest {
     fun `http engine publishes Disconnected on close`() =
         runBlocking {
             val c = client(autoConnect = false)
-            val received = mutableListOf<SurrealConnectionEvent>()
+            val received = mutableListOf<ConnectionEvent>()
             val job =
                 launch {
                     c.connectionEvents.collect { received += it }
@@ -96,11 +96,11 @@ class ConnectionEventsTest {
             c.close()
 
             withTimeout(2_000) {
-                while (received.none { it is SurrealConnectionEvent.Disconnected }) {
+                while (received.none { it is ConnectionEvent.Disconnected }) {
                     kotlinx.coroutines.yield()
                 }
             }
-            assertTrue(received.any { it is SurrealConnectionEvent.Disconnected })
+            assertTrue(received.any { it is ConnectionEvent.Disconnected })
             job.cancel()
         }
 }

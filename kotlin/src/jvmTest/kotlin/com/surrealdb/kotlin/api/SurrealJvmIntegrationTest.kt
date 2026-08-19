@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.api
 
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
-import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.ConnectionEvent
+import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
@@ -34,10 +34,10 @@ class SurrealJvmIntegrationTest {
             assumeTrue(System.getenv("SURREAL_RUN_INTEGRATION") == "true")
             val endpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
 
-            val client = SurrealClient(SurrealClientConfig(url = endpoint))
+            val client = Surreal(Surreal.Config(url = endpoint))
             try {
                 // Engine capabilities
-                assertTrue(SurrealFeature.ExportImport in client.features)
+                assertTrue(Feature.ExportImport in client.features)
 
                 client.signin(
                     buildJsonObject {
@@ -165,9 +165,9 @@ class SurrealJvmIntegrationTest {
             val httpEndpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
-            val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+            val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
             try {
-                assertTrue(SurrealFeature.Transactions in client.features)
+                assertTrue(Feature.Transactions in client.features)
 
                 client.signin(
                     buildJsonObject {
@@ -238,14 +238,14 @@ class SurrealJvmIntegrationTest {
             val httpEndpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
-            val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+            val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
             try {
-                assertTrue(SurrealFeature.LiveQueries in client.features)
+                assertTrue(Feature.LiveQueries in client.features)
 
                 // Wait for the engine to publish Connected
                 val firstEvent =
                     withTimeoutOrNull(5_000) {
-                        client.connectionEvents.firstOrNull { it is SurrealConnectionEvent.Connected }
+                        client.connectionEvents.firstOrNull { it is ConnectionEvent.Connected }
                     }
                 assertNotNull(firstEvent)
 
@@ -293,7 +293,7 @@ class SurrealJvmIntegrationTest {
             val httpEndpoint = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
             val wsEndpoint = httpEndpoint.replace("http://", "ws://").replace("https://", "wss://")
 
-            val client = SurrealClient(SurrealClientConfig(url = wsEndpoint, autoConnect = true))
+            val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
             try {
                 client.signin(
                     buildJsonObject {

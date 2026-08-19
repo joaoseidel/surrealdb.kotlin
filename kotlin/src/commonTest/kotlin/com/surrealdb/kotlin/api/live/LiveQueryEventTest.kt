@@ -13,7 +13,7 @@ import kotlinx.serialization.json.jsonPrimitive
 private fun notification(
     action: String,
     record: String? = "book:lq1",
-) = SurrealLiveNotification(
+) = LiveNotification(
     action = action,
     liveQueryId = "1184a6bc-6968-462c-b2d6-8f6ac1ac5fd0",
     result = Json.parseToJsonElement("""{"id":"book:lq1","pages":1,"title":"Live One"}"""),
@@ -28,7 +28,7 @@ private val title: (JsonElement) -> String = {
 
 class LiveQueryEventTest :
     ShouldSpec({
-        context("SurrealLiveNotification.toEvent") {
+        context("LiveNotification.toEvent") {
             context("the action") {
                 should("map CREATE to Created, so a caller branches on a type rather than a string") {
                     notification("CREATE")

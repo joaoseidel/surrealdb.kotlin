@@ -1,15 +1,15 @@
 package com.surrealdb.kotlin.runtime.engine
 
-import com.surrealdb.kotlin.api.SurrealClientConfig
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
+import com.surrealdb.kotlin.api.ConnectionEvent
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
-import com.surrealdb.kotlin.runtime.SurrealRpcRequest
-import com.surrealdb.kotlin.runtime.SurrealRpcResponse
-import com.surrealdb.kotlin.runtime.codec.SurrealCodec
+import com.surrealdb.kotlin.runtime.RpcRequest
+import com.surrealdb.kotlin.runtime.RpcResponse
+import com.surrealdb.kotlin.runtime.codec.Codec
 import com.surrealdb.kotlin.runtime.randomRequestId
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,31 +23,31 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * Base for JSON-RPC transports. Translates each `SurrealProtocol` call into a
+ * Base for JSON-RPC transports. Translates each `Protocol` call into a
  * JSON-RPC envelope and delegates wire delivery to a single [dispatch] hook
  * provided by the subclass. This keeps every JSON-RPC method name in exactly
  * one place — adding a new protocol operation only needs a method here, not
  * changes scattered across the controller and session layers.
  */
 internal abstract class RpcEngine(
-    protected val config: SurrealClientConfig,
+    protected val config: Surreal.Config,
     protected val httpClient: HttpClient,
-    protected val codec: SurrealCodec,
-) : SurrealEngine {
+    protected val codec: Codec,
+) : Engine {
     // replay=1 so a subscriber that joins after the connection has already been
     // established still sees the most recent connection state. extraBufferCapacity
     // absorbs bursts (e.g. a quick Connecting → Connected → Disconnected sequence)
     // without dropping events.
     private val _events =
-        MutableSharedFlow<SurrealConnectionEvent>(
+        MutableSharedFlow<ConnectionEvent>(
             replay = 1,
             extraBufferCapacity = 16,
         )
 
-    final override val events: SharedFlow<SurrealConnectionEvent> = _events.asSharedFlow()
+    final override val events: SharedFlow<ConnectionEvent> = _events.asSharedFlow()
 
-    override val liveNotifications: SharedFlow<SurrealLiveNotification> =
-        MutableSharedFlow<SurrealLiveNotification>()
+    override val liveNotifications: SharedFlow<LiveNotification> =
+        MutableSharedFlow<LiveNotification>()
             .asSharedFlow()
 
     override val liveFailures: SharedFlow<LiveQueryFailure> =
@@ -63,7 +63,7 @@ internal abstract class RpcEngine(
         source: LiveQuerySource,
     ): Unit = Unit
 
-    protected fun publishEvent(event: SurrealConnectionEvent) {
+    protected fun publishEvent(event: ConnectionEvent) {
         _events.tryEmit(event)
     }
 
@@ -71,9 +71,9 @@ internal abstract class RpcEngine(
         method: String,
         params: List<JsonElement>,
         txn: String? = null,
-    ): SurrealRpcRequest = SurrealRpcRequest(id = randomRequestId(), method = method, params = params, txn = txn)
+    ): RpcRequest = RpcRequest(id = randomRequestId(), method = method, params = params, txn = txn)
 
-    protected fun unwrap(response: SurrealRpcResponse): JsonElement {
+    protected fun unwrap(response: RpcResponse): JsonElement {
         response.error?.let { throw mapRpcError(it) }
         return response.result ?: JsonNull
     }
@@ -84,9 +84,9 @@ internal abstract class RpcEngine(
      * returns the raw response — the protocol methods below funnel through here.
      */
     protected abstract suspend fun dispatch(
-        request: SurrealRpcRequest,
+        request: RpcRequest,
         session: SessionSnapshot,
-    ): SurrealRpcResponse
+    ): RpcResponse
 
     // ── Protocol methods ─────────────────────────────────────────────────────
 

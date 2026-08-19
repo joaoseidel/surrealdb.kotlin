@@ -3,7 +3,7 @@ package com.surrealdb.kotlin.api.live
 import com.surrealdb.kotlin.api.data.RecordId
 
 public sealed interface LiveQueryEvent<out T> {
-    /** UUID of the live query that produced this event; the value [kill][com.surrealdb.kotlin.api.SurrealSession.kill] takes. */
+    /** UUID of the live query that produced this event; the value [kill][com.surrealdb.kotlin.api.Session.kill] takes. */
     public val queryId: String
 
     /** The record this event concerns, or `null` if the server did not send one. */
