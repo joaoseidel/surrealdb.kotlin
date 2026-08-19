@@ -122,16 +122,19 @@ internal class WebSocketEngine(
 
         awaitReady()
         applyContext(session())
-        val response = sendBuffered(requestFor(spec))
-        response.error?.let { throw mapRpcError(it) }
-        val id =
-            response.result?.jsonPrimitive?.content
-                ?: throw SurrealProtocolException("Live query did not return a subscription id")
 
-        val events = live.register(id, LiveQuerySource(spec, session))
-        return LiveQuerySubscription(id = id, events = events) {
-            runCatching { kill(id, session()) }
-            live.untrack(id)
+        return live.attributing {
+            val response = sendBuffered(requestFor(spec))
+            response.error?.let { throw mapRpcError(it) }
+            val id =
+                response.result?.jsonPrimitive?.content
+                    ?: throw SurrealProtocolException("Live query did not return a subscription id")
+
+            val events = live.register(id, LiveQuerySource(spec, session))
+            LiveQuerySubscription(id = id, events = events) {
+                runCatching { kill(id, session()) }
+                live.untrack(id)
+            }
         }
     }
 
@@ -231,9 +234,11 @@ internal class WebSocketEngine(
         for (tracked in live.reissuable()) {
             try {
                 applyContext(tracked.source.session())
-                val response = sendBuffered(requestFor(tracked.source.spec))
-                response.error?.let { throw mapRpcError(it) }
-                live.rebind(tracked.id, readSubscriptionId(tracked.source.spec, response))
+                live.attributing {
+                    val response = sendBuffered(requestFor(tracked.source.spec))
+                    response.error?.let { throw mapRpcError(it) }
+                    live.rebind(tracked.id, readSubscriptionId(tracked.source.spec, response))
+                }
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Throwable) {
