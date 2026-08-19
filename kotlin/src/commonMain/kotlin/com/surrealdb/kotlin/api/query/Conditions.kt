@@ -14,13 +14,6 @@ import com.surrealdb.kotlin.api.data.RawCondition
 import com.surrealdb.kotlin.api.data.Table
 
 /**
- * Render [condition] into [into].
- *
- * Every condition is compiled here, so what `select` filters on and what
- * `delete` filters on cannot drift, and the `when` is exhaustive over
- * [Condition] — a new kind of condition will not compile until this has been
- * told about it. Same shape as `appendTarget` for query targets.
- *
  * Field paths are the one thing written into the SurrealQL rather than bound:
  * SurrealQL has no parameter form for an identifier. They are validated against
  * the record type's descriptor at declaration and against an identifier pattern
@@ -95,11 +88,7 @@ private fun BoundQuery.appendOperand(operand: Any?) {
     }
 }
 
-/**
- * The SurrealQL this condition renders to, with its bindings — public so
- * operators can be covered by asserting on the generated query rather than by
- * round-tripping each one through a server.
- */
+/** The SurrealQL this condition renders to, with its bindings. */
 public fun Condition<*>.toSurql(): BoundQuery = BoundQuery().appendCondition(this)
 
 /**

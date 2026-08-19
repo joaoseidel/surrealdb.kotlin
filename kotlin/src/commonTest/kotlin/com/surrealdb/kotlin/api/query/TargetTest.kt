@@ -38,10 +38,6 @@ private val verbs: List<Pair<String, (Target) -> Query>> =
         "relate" to { target -> compileOnly.relate(target, Table("likes"), RecordId("person", "b")) },
     )
 
-/**
- * RELATE is the one exception: SurrealQL does not parse a range in either of
- * its positions, so the builder rejects one rather than rendering it.
- */
 private val rangeVerbs: List<Pair<String, (Target) -> Query>> = verbs.filterNot { it.first == "relate" }
 
 class TargetTest :

@@ -4,10 +4,6 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 
-/**
- * Marks the condition-builder receivers, so a nested block cannot silently
- * resolve a field against an enclosing table.
- */
 @DslMarker
 public annotation class SurqlDsl
 
@@ -17,9 +13,7 @@ public annotation class SurqlDsl
  * against.
  *
  * `field("pagse")` throws when the declaration initialises, naming the field
- * and listing what the record type actually serialises — rather than compiling
- * to a `WHERE` on a field the server does not have, which answers with an empty
- * result and no error.
+ * and listing what the record type actually serialises.
  */
 @SurqlDsl
 public abstract class Fields internal constructor(

@@ -10,7 +10,6 @@ import io.kotest.matchers.string.shouldContain
 /**
  * A `WHERE` on a field the record does not have returns an empty result, not an
  * error — so an unchecked field name is a query that silently matches nothing.
- * These cases hold the declaration to the record type's serial descriptor.
  */
 class TableFieldTest :
     ShouldSpec({

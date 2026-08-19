@@ -5,15 +5,8 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlin.reflect.KProperty1
 
 /**
- * A typed reference to a field of [Table]'s record type.
- *
- * The type parameter is what makes an operator available only where it means
- * something — `greater` on a `Field<Int>` takes an `Int` — and [path] is the
+ * A typed reference to a field of [Table]'s record type, where [path] is the
  * SurrealQL that names it, already qualified with any enclosing groups.
- *
- * Instances come from a [Table] declaration, which validates the name against
- * the record type's serial descriptor, so a `Field` in hand is one the class
- * being decoded actually has.
  */
 public class Field<V> internal constructor(
     public val path: String,
@@ -47,9 +40,8 @@ public class Field<V> internal constructor(
  * Books.address[Address::city]        // Field<String> at "address.city"
  * ```
  *
- * The property reference is resolved by the compiler, so there is no name to
- * misspell. What remains is `@SerialName` drift — a property serialised under a
- * different name — and [get] throws on that, naming the property.
+ * [get] throws when a property is serialised under a different name
+ * (`@SerialName`), naming the property.
  */
 public class Nested<V> internal constructor(
     internal val path: String,
@@ -80,12 +72,6 @@ private fun SerialDescriptor.isWalkable(): Boolean = kind == StructureKind.CLASS
 
 private fun SerialDescriptor.knownNames(): List<String> = (0 until elementsCount).map { getElementName(it) }
 
-/**
- * The index of [name] in [descriptor], or `null` when the descriptor cannot be
- * walked — a contextual, polymorphic or primitive shape we cannot see inside.
- * Throws when the descriptor *is* walkable and has no such element, which is
- * the misspelt-field case.
- */
 private fun indexOf(
     descriptor: SerialDescriptor?,
     name: String,
@@ -107,11 +93,6 @@ internal fun elementDescriptor(
     return descriptor?.getElementDescriptor(index)
 }
 
-/**
- * Check that [name] is a field of [descriptor] and return it. A property
- * reference carries the *Kotlin* name; when it is absent and the descriptor is
- * walkable, the cause is almost always `@SerialName`, so the message says so.
- */
 internal fun resolveName(
     descriptor: SerialDescriptor?,
     name: String,
@@ -125,12 +106,6 @@ internal fun resolveName(
     return name
 }
 
-/**
- * Walk a dotted path such as `address.city` or `tags[0]` from [root],
- * validating every segment it can see and returning the descriptor it lands on.
- * A segment that cannot be descended into stops the walk and is accepted: the
- * check must not invent failures for shapes it cannot see through.
- */
 internal fun walkPath(
     root: SerialDescriptor?,
     path: String,
