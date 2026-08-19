@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.runtime.engine
 
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -25,11 +25,11 @@ internal class LiveNotificationRouter {
     private val serverIds = mutableMapOf<String, String>()
 
     private var registrationsInFlight = 0
-    private val held = ArrayDeque<SurrealLiveNotification>()
+    private val held = ArrayDeque<LiveNotification>()
 
     private class Entry(
         val id: String,
-        val channel: Channel<SurrealLiveNotification>?,
+        val channel: Channel<LiveNotification>?,
         val source: LiveQuerySource?,
         var serverId: String,
     )
@@ -40,8 +40,8 @@ internal class LiveNotificationRouter {
     )
 
     private class Dispatch(
-        val notification: SurrealLiveNotification?,
-        val channel: Channel<SurrealLiveNotification>?,
+        val notification: LiveNotification?,
+        val channel: Channel<LiveNotification>?,
     )
 
     // DROP_OLDEST, never SUSPEND: this is emitted into from the socket read loop,
@@ -50,7 +50,7 @@ internal class LiveNotificationRouter {
     // own subscription. The buffer absorbs a burst; past it the slowest collector
     // loses the oldest notification and the rest are unaffected.
     private val _notifications =
-        MutableSharedFlow<SurrealLiveNotification>(
+        MutableSharedFlow<LiveNotification>(
             extraBufferCapacity = 64,
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
@@ -63,7 +63,7 @@ internal class LiveNotificationRouter {
 
     private val _activeQueries = MutableStateFlow<Set<String>>(emptySet())
 
-    val notifications: SharedFlow<SurrealLiveNotification> = _notifications.asSharedFlow()
+    val notifications: SharedFlow<LiveNotification> = _notifications.asSharedFlow()
 
     val failures: SharedFlow<LiveQueryFailure> = _failures.asSharedFlow()
 
@@ -107,7 +107,7 @@ internal class LiveNotificationRouter {
         source: LiveQuerySource? = null,
     ) {
         val entry = Entry(liveQueryId, channel = null, source = source, serverId = liveQueryId)
-        var previous: Channel<SurrealLiveNotification>? = null
+        var previous: Channel<LiveNotification>? = null
         val claimed =
             mutex.withLock {
                 previous = put(entry)
@@ -121,9 +121,9 @@ internal class LiveNotificationRouter {
     suspend fun register(
         liveQueryId: String,
         source: LiveQuerySource? = null,
-    ): Flow<SurrealLiveNotification> {
-        val channel = Channel<SurrealLiveNotification>(capacity = Channel.BUFFERED)
-        var previous: Channel<SurrealLiveNotification>? = null
+    ): Flow<LiveNotification> {
+        val channel = Channel<LiveNotification>(capacity = Channel.BUFFERED)
+        var previous: Channel<LiveNotification>? = null
         val claimed =
             mutex.withLock {
                 previous = put(Entry(liveQueryId, channel, source, serverId = liveQueryId))
@@ -157,7 +157,7 @@ internal class LiveNotificationRouter {
         liveQueryId: String,
         serverId: String,
     ) {
-        var channel: Channel<SurrealLiveNotification>? = null
+        var channel: Channel<LiveNotification>? = null
         val claimed =
             mutex.withLock {
                 val entry = entries[liveQueryId] ?: return@withLock emptyList()
@@ -183,7 +183,7 @@ internal class LiveNotificationRouter {
         _failures.tryEmit(LiveQueryFailure(removed.id, cause))
     }
 
-    suspend fun route(notification: SurrealLiveNotification) {
+    suspend fun route(notification: LiveNotification) {
         val dispatch =
             mutex.withLock {
                 val entry = serverIds[notification.liveQueryId]?.let(entries::get)
@@ -201,7 +201,7 @@ internal class LiveNotificationRouter {
     }
 
     suspend fun closeAll(cause: Throwable? = null) {
-        var released: List<SurrealLiveNotification> = emptyList()
+        var released: List<LiveNotification> = emptyList()
         val open =
             mutex.withLock {
                 val all = entries.values.toList()
@@ -221,13 +221,13 @@ internal class LiveNotificationRouter {
 
     private fun relabelled(
         entry: Entry,
-        notification: SurrealLiveNotification,
+        notification: LiveNotification,
     ) = when (entry.id) {
         notification.liveQueryId -> notification
         else -> notification.copy(liveQueryId = entry.id)
     }
 
-    private fun hold(notification: SurrealLiveNotification): SurrealLiveNotification? {
+    private fun hold(notification: LiveNotification): LiveNotification? {
         held.addLast(notification)
         return if (held.size > HELD_NOTIFICATION_LIMIT) held.removeFirst() else null
     }
@@ -235,7 +235,7 @@ internal class LiveNotificationRouter {
     private fun claim(
         serverId: String,
         stableId: String,
-    ): List<SurrealLiveNotification> {
+    ): List<LiveNotification> {
         if (held.isEmpty()) return emptyList()
         val mine = held.filter { it.liveQueryId == serverId }
         if (mine.isEmpty()) return emptyList()
@@ -244,14 +244,14 @@ internal class LiveNotificationRouter {
         return if (serverId == stableId) mine else mine.map { it.copy(liveQueryId = stableId) }
     }
 
-    private fun drainHeld(): List<SurrealLiveNotification> {
+    private fun drainHeld(): List<LiveNotification> {
         if (held.isEmpty()) return emptyList()
         val all = held.toList()
         held.clear()
         return all
     }
 
-    private fun put(entry: Entry): Channel<SurrealLiveNotification>? {
+    private fun put(entry: Entry): Channel<LiveNotification>? {
         val previous = entries.put(entry.id, entry)
         previous?.let { serverIds.remove(it.serverId) }
         serverIds[entry.serverId] = entry.id

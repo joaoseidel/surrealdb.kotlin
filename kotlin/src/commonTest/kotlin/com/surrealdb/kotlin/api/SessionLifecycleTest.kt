@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 /** A client whose every call answers with a token, so these specs are about session state only. */
-private fun client(): SurrealClient {
+private fun client(): Surreal {
     val engine =
         MockEngine { _ ->
             respond(
@@ -26,8 +26,8 @@ private fun client(): SurrealClient {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-    return SurrealClient(
-        SurrealClientConfig(
+    return Surreal(
+        Surreal.Config(
             url = "http://localhost:8000",
             autoConnect = false,
             httpClientFactory = { _ -> HttpClient(engine) },
@@ -39,7 +39,7 @@ private fun credentials(user: String) = buildJsonObject { put("user", JsonPrimit
 
 class SessionLifecycleTest :
     ShouldSpec({
-        context("SurrealClient.newSession") {
+        context("Surreal.newSession") {
             should("hand back an id distinct from the root, since the root is itself a session") {
                 runTest {
                     val client = client()
@@ -125,7 +125,7 @@ class SessionLifecycleTest :
             }
         }
 
-        context("SurrealClient.closeSession") {
+        context("Surreal.closeSession") {
             should("ignore an attempt to close the root, which must stay usable") {
                 runTest {
                     val client = client()

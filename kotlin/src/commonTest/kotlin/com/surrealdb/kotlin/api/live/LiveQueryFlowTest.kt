@@ -27,7 +27,7 @@ private fun notification(
     liveQueryId: String,
     action: String = "CREATE",
     payload: String = "one",
-) = SurrealLiveNotification(
+) = LiveNotification(
     action = action,
     liveQueryId = liveQueryId,
     result = JsonPrimitive(payload),
@@ -39,7 +39,7 @@ private val content: (kotlinx.serialization.json.JsonElement) -> String = { it.j
 private class FakeEngine(
     private val startFails: Throwable? = null,
 ) {
-    val notifications = MutableSharedFlow<SurrealLiveNotification>(extraBufferCapacity = 8)
+    val notifications = MutableSharedFlow<LiveNotification>(extraBufferCapacity = 8)
     val failures = MutableSharedFlow<LiveQueryFailure>(extraBufferCapacity = 8)
     val started = mutableListOf<String>()
     val stopped = mutableListOf<String>()

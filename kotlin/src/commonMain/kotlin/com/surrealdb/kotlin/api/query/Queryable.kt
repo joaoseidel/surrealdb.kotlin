@@ -6,13 +6,13 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Common surface shared by [com.surrealdb.kotlin.api.SurrealSession] and
- * [com.surrealdb.kotlin.api.SurrealTransaction]: every CRUD method assembles a
+ * Common surface shared by [com.surrealdb.kotlin.api.Session] and
+ * [com.surrealdb.kotlin.api.Transaction]: every CRUD method assembles a
  * SurrealQL query locally and dispatches it via the `query` RPC. When this
  * queryable is a transaction, the query is sent with the transaction id at
  * the RPC envelope level so the server scopes it correctly.
  */
-public interface SurrealQueryable {
+public interface Queryable {
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
     public suspend fun query(bound: BoundQuery): JsonElement
 
@@ -63,16 +63,16 @@ public interface SurrealQueryable {
 }
 
 /**
- * Default implementation of [SurrealQueryable] driven by a single
+ * Default implementation of [Queryable] driven by a single
  * [QueryDispatcher] that knows how to send a [BoundQuery] (with optional txn).
  *
- * Both [com.surrealdb.kotlin.api.SurrealSession] and
- * [com.surrealdb.kotlin.api.SurrealTransaction] delegate to this via Kotlin
+ * Both [com.surrealdb.kotlin.api.Session] and
+ * [com.surrealdb.kotlin.api.Transaction] delegate to this via Kotlin
  * delegation so the CRUD surface lives in exactly one place.
  */
 internal class QueryableImpl(
     internal val dispatcher: QueryDispatcher,
-) : SurrealQueryable {
+) : Queryable {
     override suspend fun query(bound: BoundQuery): JsonElement = dispatcher.dispatch(bound)
 
     override suspend fun query(

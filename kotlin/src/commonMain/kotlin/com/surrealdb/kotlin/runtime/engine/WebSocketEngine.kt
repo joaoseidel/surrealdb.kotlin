@@ -1,18 +1,18 @@
 package com.surrealdb.kotlin.runtime.engine
 
-import com.surrealdb.kotlin.api.SurrealClientConfig
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
-import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.ConnectionEvent
+import com.surrealdb.kotlin.api.Feature
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealLiveQueryException
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.api.error.SurrealTransportException
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.api.query.firstQueryResult
-import com.surrealdb.kotlin.runtime.SurrealRpcRequest
-import com.surrealdb.kotlin.runtime.SurrealRpcResponse
-import com.surrealdb.kotlin.runtime.codec.SurrealCodec
+import com.surrealdb.kotlin.runtime.RpcRequest
+import com.surrealdb.kotlin.runtime.RpcResponse
+import com.surrealdb.kotlin.runtime.codec.Codec
 import com.surrealdb.kotlin.runtime.codec.parseLiveNotification
 import com.surrealdb.kotlin.runtime.deriveWsEndpoint
 import io.ktor.client.HttpClient
@@ -42,19 +42,19 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlin.concurrent.Volatile
 
 internal class WebSocketEngine(
-    config: SurrealClientConfig,
+    config: Surreal.Config,
     httpClient: HttpClient,
-    codec: SurrealCodec,
+    codec: Codec,
     private val scope: CoroutineScope,
 ) : RpcEngine(config, httpClient, codec) {
-    override val features: Set<SurrealFeature> =
+    override val features: Set<Feature> =
         setOf(
-            SurrealFeature.LiveQueries,
-            SurrealFeature.Sessions,
-            SurrealFeature.Transactions,
-            SurrealFeature.RefreshTokens,
-            SurrealFeature.ExportImport,
-            SurrealFeature.SurrealML,
+            Feature.LiveQueries,
+            Feature.Sessions,
+            Feature.Transactions,
+            Feature.RefreshTokens,
+            Feature.ExportImport,
+            Feature.SurrealML,
         )
 
     private val reconnect = ReconnectContext(config.reconnect)
@@ -71,7 +71,7 @@ internal class WebSocketEngine(
     private val pendingRequests = mutableMapOf<String, BufferedCall>()
 
     private val live = LiveNotificationRouter()
-    override val liveNotifications: SharedFlow<SurrealLiveNotification> = live.notifications
+    override val liveNotifications: SharedFlow<LiveNotification> = live.notifications
 
     override val liveFailures: SharedFlow<LiveQueryFailure> = live.failures
 
@@ -92,8 +92,8 @@ internal class WebSocketEngine(
     @Volatile private var readyDeferred: CompletableDeferred<Unit> = CompletableDeferred()
 
     private data class BufferedCall(
-        val request: SurrealRpcRequest,
-        val deferred: CompletableDeferred<SurrealRpcResponse>,
+        val request: RpcRequest,
+        val deferred: CompletableDeferred<RpcResponse>,
     )
 
     override suspend fun start() {
@@ -105,9 +105,9 @@ internal class WebSocketEngine(
     }
 
     override suspend fun dispatch(
-        request: SurrealRpcRequest,
+        request: RpcRequest,
         session: SessionSnapshot,
-    ): SurrealRpcResponse {
+    ): RpcResponse {
         awaitReady()
         applyContext(session)
         return sendBuffered(request)
@@ -157,20 +157,20 @@ internal class WebSocketEngine(
     private suspend fun connectLoop() {
         try {
             while (!terminated) {
-                publishEvent(SurrealConnectionEvent.Connecting)
+                publishEvent(ConnectionEvent.Connecting)
                 val newSession =
                     try {
                         httpClient.webSocketSession(urlString = deriveWsEndpoint(config.url))
                     } catch (cause: CancellationException) {
                         throw cause
                     } catch (cause: Throwable) {
-                        publishEvent(SurrealConnectionEvent.Error(cause))
+                        publishEvent(ConnectionEvent.Error(cause))
                         if (!reconnect.allowed) {
                             failAllPending(SurrealTransportException("Failed to connect", cause))
                             return
                         }
                         val delayMs = reconnect.nextDelay()
-                        publishEvent(SurrealConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
+                        publishEvent(ConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
                         delay(delayMs)
                         continue
                     }
@@ -183,7 +183,7 @@ internal class WebSocketEngine(
                 resetAppliedContext()
                 replayPending(newSession)
 
-                publishEvent(SurrealConnectionEvent.Connected)
+                publishEvent(ConnectionEvent.Connected)
                 ready = true
                 readyDeferred.complete(Unit)
                 reconnect.reset()
@@ -199,9 +199,9 @@ internal class WebSocketEngine(
                 stateMutex.withLock { if (wsSession === newSession) wsSession = null }
                 resetAppliedContext()
 
-                publishEvent(SurrealConnectionEvent.Disconnected)
+                publishEvent(ConnectionEvent.Disconnected)
                 if (cause != null && cause !is CancellationException) {
-                    publishEvent(SurrealConnectionEvent.Error(cause))
+                    publishEvent(ConnectionEvent.Error(cause))
                 }
 
                 if (terminated || !reconnect.allowed) {
@@ -210,7 +210,7 @@ internal class WebSocketEngine(
                 }
 
                 val delayMs = reconnect.nextDelay()
-                publishEvent(SurrealConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
+                publishEvent(ConnectionEvent.Reconnecting(reconnect.attempt, delayMs))
                 delay(delayMs)
             }
         } finally {
@@ -272,7 +272,7 @@ internal class WebSocketEngine(
 
     private fun readSubscriptionId(
         spec: LiveQuerySpec,
-        response: SurrealRpcResponse,
+        response: RpcResponse,
     ): String {
         val result =
             when (spec) {
@@ -295,7 +295,7 @@ internal class WebSocketEngine(
         throw SurrealTransportException("WebSocket closed unexpectedly")
     }
 
-    private suspend fun routeIncoming(response: SurrealRpcResponse) {
+    private suspend fun routeIncoming(response: RpcResponse) {
         val responseId = response.id
         if (responseId != null) {
             val pending = stateMutex.withLock { pendingRequests.remove(responseId) }
@@ -307,8 +307,8 @@ internal class WebSocketEngine(
 
     // ── Sending ──────────────────────────────────────────────────────────────
 
-    private suspend fun sendBuffered(request: SurrealRpcRequest): SurrealRpcResponse {
-        val deferred = CompletableDeferred<SurrealRpcResponse>()
+    private suspend fun sendBuffered(request: RpcRequest): RpcResponse {
+        val deferred = CompletableDeferred<RpcResponse>()
         val call = BufferedCall(request, deferred)
 
         val socket =
@@ -403,6 +403,6 @@ internal class WebSocketEngine(
             }
         live.closeAll()
         sessionToClose?.close(CloseReason(CloseReason.Codes.NORMAL, "Client closed"))
-        publishEvent(SurrealConnectionEvent.Disconnected)
+        publishEvent(ConnectionEvent.Disconnected)
     }
 }

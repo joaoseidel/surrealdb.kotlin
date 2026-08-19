@@ -57,8 +57,8 @@ private class Harness {
         }
 
     val client =
-        SurrealClient(
-            SurrealClientConfig(
+        Surreal(
+            Surreal.Config(
                 url = "http://localhost:8000",
                 autoConnect = false,
                 httpClientFactory = { _ -> HttpClient(engine) },

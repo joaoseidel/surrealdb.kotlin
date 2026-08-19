@@ -2,12 +2,12 @@ package com.surrealdb.kotlin.api
 
 import kotlinx.serialization.json.JsonObject
 
-public sealed interface SurrealAuthInput {
+public sealed interface Credentials {
     public data class SignIn(
         public val params: JsonObject,
-    ) : SurrealAuthInput
+    ) : Credentials
 
     public data class Token(
         public val token: String,
-    ) : SurrealAuthInput
+    ) : Credentials
 }

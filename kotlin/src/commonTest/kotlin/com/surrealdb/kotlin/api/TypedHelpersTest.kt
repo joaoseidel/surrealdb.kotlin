@@ -32,7 +32,7 @@ class TypedHelpersTest {
         val age: Int = 0,
     )
 
-    private fun client(stub: String): SurrealClient {
+    private fun client(stub: String): Surreal {
         val engine =
             MockEngine { _ ->
                 respond(
@@ -41,8 +41,8 @@ class TypedHelpersTest {
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
             }
-        return SurrealClient(
-            SurrealClientConfig(
+        return Surreal(
+            Surreal.Config(
                 url = "http://localhost:8000",
                 autoConnect = false,
                 httpClientFactory = { _ -> HttpClient(engine) },

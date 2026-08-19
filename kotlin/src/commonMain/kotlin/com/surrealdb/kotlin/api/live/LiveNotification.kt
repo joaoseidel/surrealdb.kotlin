@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-public data class SurrealLiveNotification(
+public data class LiveNotification(
     val action: String,
     @SerialName("id") val liveQueryId: String,
     val result: JsonElement,

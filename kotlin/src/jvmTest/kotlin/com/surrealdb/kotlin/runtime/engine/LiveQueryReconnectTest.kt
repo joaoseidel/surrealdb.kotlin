@@ -1,11 +1,10 @@
 package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.ReconnectConfig
-import com.surrealdb.kotlin.api.SurrealClient
-import com.surrealdb.kotlin.api.SurrealClientConfig
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealLiveQueryException
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
@@ -28,8 +27,8 @@ private suspend fun awaiting(condition: () -> Boolean) {
 }
 
 private fun clientFor(server: FakeSurrealServer) =
-    SurrealClient(
-        SurrealClientConfig(
+    Surreal(
+        Surreal.Config(
             url = "ws://127.0.0.1:${server.port}",
             // Short delays because the test waits on the reconnect rather than sleeping
             // past it; the defaults would add a quarter second to every case.
@@ -41,7 +40,7 @@ private fun clientFor(server: FakeSurrealServer) =
 private fun withServer(
     liveQueriesBeforeRejecting: Int = Int.MAX_VALUE,
     notifyOnStart: String? = null,
-    block: suspend CoroutineScope.(FakeSurrealServer, SurrealClient) -> Unit,
+    block: suspend CoroutineScope.(FakeSurrealServer, Surreal) -> Unit,
 ) {
     val server = FakeSurrealServer(liveQueriesBeforeRejecting, notifyOnStart)
     server.start()
@@ -76,7 +75,7 @@ class LiveQueryReconnectTest :
             should("keep delivering to the same subscription, under the id it was given first") {
                 withServer { server, client ->
                     val subscription = client.live("book")
-                    val received = mutableListOf<SurrealLiveNotification>()
+                    val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
 
                     server.notify(server.issued[0].liveQueryId, "before")
@@ -150,7 +149,7 @@ class LiveQueryReconnectTest :
             should("reach the subscription, which had no id to attribute it to when the frame arrived") {
                 withServer(notifyOnStart = "before-the-reply") { server, client ->
                     val subscription = client.live("book")
-                    val received = mutableListOf<SurrealLiveNotification>()
+                    val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
 
                     awaiting { received.size == 1 }
@@ -164,7 +163,7 @@ class LiveQueryReconnectTest :
             should("reach it again after a reconnect, the same window opening on the re-issued statement") {
                 withServer(notifyOnStart = "before-the-reply") { server, client ->
                     val subscription = client.live("book")
-                    val received = mutableListOf<SurrealLiveNotification>()
+                    val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
                     awaiting { received.size == 1 }
 

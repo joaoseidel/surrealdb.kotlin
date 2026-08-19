@@ -1,8 +1,8 @@
 package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.error.SurrealTransportException
+import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
-import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -21,7 +21,7 @@ import kotlinx.serialization.json.JsonPrimitive
 private fun notification(
     liveQueryId: String = "lq-1",
     action: String = "CREATE",
-) = SurrealLiveNotification(
+) = LiveNotification(
     action = action,
     liveQueryId = liveQueryId,
     result = JsonPrimitive("$liveQueryId/$action"),

@@ -1,12 +1,12 @@
 package com.surrealdb.kotlin.runtime.engine
 
+import com.surrealdb.kotlin.api.error.ErrorKind
 import com.surrealdb.kotlin.api.error.SurrealAlreadyExistsException
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
-import com.surrealdb.kotlin.api.error.SurrealErrorKind
 import com.surrealdb.kotlin.api.error.SurrealNotFoundException
 import com.surrealdb.kotlin.api.error.SurrealQueryException
 import com.surrealdb.kotlin.api.error.SurrealRpcException
-import com.surrealdb.kotlin.runtime.SurrealRpcError
+import com.surrealdb.kotlin.runtime.RpcError
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
@@ -26,7 +26,7 @@ class ErrorMappingTest {
 
     /** Decodes a raw wire error payload — exactly as it would arrive over HTTP/WS — and maps it. */
     private fun mapWire(rawErrorJson: String): SurrealRpcException =
-        mapRpcError(wireJson.decodeFromString(SurrealRpcError.serializer(), rawErrorJson))
+        mapRpcError(wireJson.decodeFromString(RpcError.serializer(), rawErrorJson))
 
     // ── token-expired vs. generic invalid-auth ──────────────────────────────
 
@@ -83,11 +83,11 @@ class ErrorMappingTest {
         assertFalse(ex.isInvalidAuth)
 
         val kind = ex.kind
-        assertIs<SurrealErrorKind.NotAllowed>(kind)
+        assertIs<ErrorKind.NotAllowed>(kind)
         val detail = kind.detail
-        assertIs<SurrealErrorKind.NotAllowed.Detail.Auth>(detail)
+        assertIs<ErrorKind.NotAllowed.Detail.Auth>(detail)
         val reason = detail.reason
-        assertIs<SurrealErrorKind.NotAllowed.AuthReason.NotPermitted>(reason)
+        assertIs<ErrorKind.NotAllowed.AuthReason.NotPermitted>(reason)
         assertEquals("user:tobie", reason.actor)
         assertEquals("select", reason.action)
         assertEquals("table:secret", reason.resource)
@@ -103,7 +103,7 @@ class ErrorMappingTest {
         assertFalse(ex is SurrealAuthenticationException)
 
         val kind = ex.kind
-        assertIs<SurrealErrorKind.NotAllowed>(kind)
+        assertIs<ErrorKind.NotAllowed>(kind)
         assertTrue(kind.isScriptingBlocked)
     }
 
@@ -114,7 +114,7 @@ class ErrorMappingTest {
         // classification without a structured `kind`.
         val ex = mapWire("""{"code":-32000,"message":"Some unrelated server error"}""")
         assertFalse(ex is SurrealAuthenticationException)
-        assertEquals(SurrealErrorKind.Internal, ex.kind)
+        assertEquals(ErrorKind.Internal, ex.kind)
     }
 
     // ── not-found vs. already-exists ────────────────────────────────────────
@@ -129,7 +129,7 @@ class ErrorMappingTest {
         assertIs<SurrealNotFoundException>(ex)
 
         val detail = ex.detail
-        assertIs<SurrealErrorKind.NotFound.Detail.Record>(detail)
+        assertIs<ErrorKind.NotFound.Detail.Record>(detail)
         assertEquals("person:chiru", detail.id)
     }
 
@@ -143,7 +143,7 @@ class ErrorMappingTest {
         assertIs<SurrealAlreadyExistsException>(ex)
 
         val detail = ex.detail
-        assertIs<SurrealErrorKind.AlreadyExists.Detail.Record>(detail)
+        assertIs<ErrorKind.AlreadyExists.Detail.Record>(detail)
         assertEquals("person:chiru", detail.id)
     }
 
@@ -188,9 +188,9 @@ class ErrorMappingTest {
         assertTrue(ex.isTimedOut)
 
         val kind = ex.kind
-        assertIs<SurrealErrorKind.Query>(kind)
+        assertIs<ErrorKind.Query>(kind)
         val detail = kind.detail
-        assertIs<SurrealErrorKind.Query.Detail.TimedOut>(detail)
+        assertIs<ErrorKind.Query.Detail.TimedOut>(detail)
         assertEquals(5L, detail.seconds)
         assertEquals(0L, detail.nanos)
     }
@@ -213,8 +213,8 @@ class ErrorMappingTest {
 
     @Test
     fun `missing kind falls back to Internal and a plain rpc exception`() {
-        val ex = mapRpcError(SurrealRpcError(code = -32000, message = "legacy server error"))
-        assertEquals(SurrealErrorKind.Internal, ex.kind)
+        val ex = mapRpcError(RpcError(code = -32000, message = "legacy server error"))
+        assertEquals(ErrorKind.Internal, ex.kind)
         assertEquals(SurrealRpcException::class, ex::class)
     }
 
@@ -223,7 +223,7 @@ class ErrorMappingTest {
         val ex = mapWire("""{"message":"from a newer server","kind":"SomeFutureKind"}""")
 
         val kind = ex.kind
-        assertIs<SurrealErrorKind.Unknown>(kind)
+        assertIs<ErrorKind.Unknown>(kind)
         assertEquals("SomeFutureKind", kind.rawKind)
     }
 
@@ -231,8 +231,8 @@ class ErrorMappingTest {
     fun `Thrown and Internal kinds map to a plain rpc exception`() {
         val thrown = mapWire("""{"message":"custom throw","kind":"Thrown"}""")
         val internal = mapWire("""{"message":"boom","kind":"Internal"}""")
-        assertEquals(SurrealErrorKind.Thrown, thrown.kind)
-        assertEquals(SurrealErrorKind.Internal, internal.kind)
+        assertEquals(ErrorKind.Thrown, thrown.kind)
+        assertEquals(ErrorKind.Internal, internal.kind)
         assertEquals(SurrealRpcException::class, thrown::class)
         assertEquals(SurrealRpcException::class, internal::class)
     }
@@ -242,7 +242,7 @@ class ErrorMappingTest {
     @Test
     fun `code message and data are forwarded to the exception`() {
         val error =
-            SurrealRpcError(
+            RpcError(
                 code = -32603,
                 message = "Invalid params",
                 data = JsonPrimitive("details"),

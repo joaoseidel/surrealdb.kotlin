@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonObject
 
 /**
  * A SurrealQL string paired with its bindings. Produced by the query builder
- * DSL and consumed by [com.surrealdb.kotlin.api.SurrealSession.query]. The string
+ * DSL and consumed by [com.surrealdb.kotlin.api.Session.query]. The string
  * never contains user-supplied values directly — those are always bound to
  * `$_n` parameters so the query is safe to send as-is.
  *

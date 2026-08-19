@@ -1,12 +1,12 @@
 package com.surrealdb.kotlin.runtime.engine
 
-import com.surrealdb.kotlin.api.SurrealClientConfig
-import com.surrealdb.kotlin.api.SurrealConnectionEvent
-import com.surrealdb.kotlin.api.SurrealFeature
+import com.surrealdb.kotlin.api.ConnectionEvent
+import com.surrealdb.kotlin.api.Feature
+import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealTransportException
-import com.surrealdb.kotlin.runtime.SurrealRpcRequest
-import com.surrealdb.kotlin.runtime.SurrealRpcResponse
-import com.surrealdb.kotlin.runtime.codec.SurrealCodec
+import com.surrealdb.kotlin.runtime.RpcRequest
+import com.surrealdb.kotlin.runtime.RpcResponse
+import com.surrealdb.kotlin.runtime.codec.Codec
 import com.surrealdb.kotlin.runtime.normalizeRpcEndpoint
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -18,14 +18,14 @@ import io.ktor.http.isSuccess
 import kotlin.concurrent.Volatile
 
 internal class HttpEngine(
-    config: SurrealClientConfig,
+    config: Surreal.Config,
     httpClient: HttpClient,
-    codec: SurrealCodec,
+    codec: Codec,
 ) : RpcEngine(config, httpClient, codec) {
-    override val features: Set<SurrealFeature> =
+    override val features: Set<Feature> =
         setOf(
-            SurrealFeature.ExportImport,
-            SurrealFeature.SurrealML,
+            Feature.ExportImport,
+            Feature.SurrealML,
         )
 
     @Volatile private var started = false
@@ -33,13 +33,13 @@ internal class HttpEngine(
     override suspend fun start() {
         if (started) return
         started = true
-        publishEvent(SurrealConnectionEvent.Connected)
+        publishEvent(ConnectionEvent.Connected)
     }
 
     override suspend fun dispatch(
-        request: SurrealRpcRequest,
+        request: RpcRequest,
         session: SessionSnapshot,
-    ): SurrealRpcResponse {
+    ): RpcResponse {
         val endpoint = normalizeRpcEndpoint(config.url)
         val payload = codec.encodeHttpPayload(request)
         val contentType = codec.contentTypeHeader()
@@ -67,6 +67,6 @@ internal class HttpEngine(
     }
 
     override fun close() {
-        publishEvent(SurrealConnectionEvent.Disconnected)
+        publishEvent(ConnectionEvent.Disconnected)
     }
 }

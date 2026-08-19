@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
 
 internal fun <T> liveEventFlow(
-    notifications: SharedFlow<SurrealLiveNotification>,
+    notifications: SharedFlow<LiveNotification>,
     failures: SharedFlow<LiveQueryFailure>,
     start: suspend () -> String,
     stop: suspend (String) -> Unit,
