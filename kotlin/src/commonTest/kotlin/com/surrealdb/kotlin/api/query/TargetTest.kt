@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.Target
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.string.shouldContain
@@ -37,8 +38,28 @@ private val verbs: List<Pair<String, (Target) -> Query>> =
         "relate" to { target -> compileOnly.relate(target, Table("likes"), RecordId("person", "b")) },
     )
 
+/**
+ * RELATE is the one exception: SurrealQL does not parse a range in either of
+ * its positions, so the builder rejects one rather than rendering it.
+ */
+private val rangeVerbs: List<Pair<String, (Target) -> Query>> = verbs.filterNot { it.first == "relate" }
+
 class TargetTest :
     ShouldSpec({
+        context("a RecordIdRange in a RELATE position") {
+            should("be rejected while building, because the server cannot parse a range there") {
+                val range = RecordIdRange("person", "a", "z")
+
+                shouldThrow<IllegalArgumentException> {
+                    compileOnly.relate(range, Table("likes"), RecordId("person", "b")).compile()
+                }
+
+                shouldThrow<IllegalArgumentException> {
+                    compileOnly.relate(RecordId("person", "a"), range, RecordId("person", "b")).compile()
+                }
+            }
+        }
+
         context("a Target given to a statement") {
             should("render the same in every verb, because one renderer serves them all") {
                 val targets =
@@ -50,8 +71,9 @@ class TargetTest :
 
                 for (target in targets) {
                     val rendered = BoundQuery().appendTarget(target).surql
+                    val applicable = if (target is RecordIdRange) rangeVerbs else verbs
 
-                    for ((verb, build) in verbs) {
+                    for ((verb, build) in applicable) {
                         withClue("$verb should name $target as `$rendered`") {
                             build(target).compile().surql shouldContain rendered
                         }

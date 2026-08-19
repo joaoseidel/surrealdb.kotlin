@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
@@ -53,8 +54,12 @@ public class RelateQuery internal constructor(
                 q.appendLiteral(")")
             }
 
-            else -> {
+            is Table<*> -> {
                 q.appendTarget(operand)
+            }
+
+            is RecordIdRange -> {
+                rejectRange("RELATE operand")
             }
         }
     }
@@ -75,11 +80,22 @@ public class RelateQuery internal constructor(
                 renderRelateOperand(q, slot)
             }
 
-            else -> {
-                q.appendTarget(slot)
+            is RecordIdRange -> {
+                rejectRange("RELATE relation")
             }
         }
     }
+
+    /**
+     * A range does not parse in either RELATE position — the server answers
+     * `Unexpected token '..', expected a relation arrow`. Rejecting it here
+     * turns a parse error that only appears once the statement is sent into one
+     * the caller gets while building it.
+     */
+    private fun rejectRange(position: String): Nothing =
+        throw IllegalArgumentException(
+            "A RecordIdRange cannot be a $position — SurrealQL does not parse a range there.",
+        )
 
     private fun copy(
         data: JsonElement? = this.data,
