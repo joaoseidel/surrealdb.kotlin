@@ -40,6 +40,8 @@ class TypedHelpersTest {
         val age: Int = 0,
     )
 
+    private suspend fun session(stub: String): Session = client(stub).session()
+
     private fun client(stub: String): Surreal {
         val engine =
             MockEngine { _ ->
@@ -65,7 +67,7 @@ class TypedHelpersTest {
     fun `select awaitAs decodes single record`() =
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":30}""")
-            val person: Person = client(stub).select(RecordId("person", "1")).awaitAs()
+            val person: Person = session(stub).select(RecordId("person", "1")).awaitAs()
             assertEquals("Ada", person.name)
             assertEquals(30, person.age)
         }
@@ -75,7 +77,7 @@ class TypedHelpersTest {
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":30}""")
             val person: Person =
-                client(stub)
+                session(stub)
                     .create(RecordId("person", "1"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                     .awaitAs()
@@ -87,7 +89,7 @@ class TypedHelpersTest {
         runTest {
             val stub = envelope("""[{"id":"person:1","name":"Ada","age":30}]""")
             val people: List<Person> =
-                client(stub)
+                session(stub)
                     .insert(
                         Table("person"),
                         buildJsonArray { add(buildJsonObject { put("name", JsonPrimitive("Ada")) }) },
@@ -101,7 +103,7 @@ class TypedHelpersTest {
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":30}""")
             val person: Person =
-                client(stub)
+                session(stub)
                     .upsert(RecordId("person", "1"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                     .awaitAs()
@@ -113,7 +115,7 @@ class TypedHelpersTest {
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":30}""")
             val person: Person =
-                client(stub)
+                session(stub)
                     .update(RecordId("person", "1"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                     .awaitAs()
@@ -125,7 +127,7 @@ class TypedHelpersTest {
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":31}""")
             val person: Person =
-                client(stub)
+                session(stub)
                     .merge(RecordId("person", "1"), buildJsonObject { put("age", JsonPrimitive(31)) })
                     .awaitAs()
             assertEquals(31, person.age)
@@ -135,7 +137,7 @@ class TypedHelpersTest {
     fun `delete awaitAs decodes the deleted record`() =
         runTest {
             val stub = envelope("""{"id":"person:1","name":"Ada","age":30}""")
-            val person: Person = client(stub).delete(RecordId("person", "1")).awaitAs()
+            val person: Person = session(stub).delete(RecordId("person", "1")).awaitAs()
             assertEquals("person:1", person.id)
         }
 
@@ -148,7 +150,7 @@ class TypedHelpersTest {
                 val result: T,
             )
             val stub = """{"id":"1","result":[{"status":"OK","result":[{"id":"person:1","name":"Ada","age":30}]}]}"""
-            val results: List<StatementResult<List<Person>>> = client(stub).queryAs("SELECT * FROM person")
+            val results: List<StatementResult<List<Person>>> = session(stub).queryAs("SELECT * FROM person")
             assertEquals(1, results.size)
             assertEquals("OK", results[0].status)
             assertEquals("Ada", results[0].result[0].name)

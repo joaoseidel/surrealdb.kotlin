@@ -76,6 +76,11 @@ private class Harness {
             ),
         )
 
+    lateinit var db: Session
+        private set
+
+    suspend fun open(): Harness = apply { db = client.session() }
+
     fun lastSurql(): String = lastParams?.get(0)?.jsonPrimitive?.content ?: error("no SurrealQL in last params")
 
     fun paramCount(): Int = lastParams?.size ?: 0
@@ -86,7 +91,9 @@ private class Harness {
 /** The `[{status, result}]` envelope the server wraps a `query` result in. */
 private fun envelope(stub: String = "null") = """{"id":"1","result":[{"status":"OK","time":"1ms","result":$stub}]}"""
 
-private fun builderHarness() = Harness().apply { stubResult = envelope() }
+private suspend fun harness() = Harness().open()
+
+private suspend fun builderHarness() = Harness().apply { stubResult = envelope() }.open()
 
 /**
  * Wire-format specs for every public RPC method: what method name and params reach the transport.
@@ -99,9 +106,9 @@ class RpcMethodsTest :
         context("server methods") {
             should("send ping with no params") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.ping()
+                    h.db.ping()
 
                     h.lastMethod shouldBe "ping"
                     h.paramCount() shouldBe 0
@@ -110,9 +117,9 @@ class RpcMethodsTest :
 
             should("send version with no params") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.version()
+                    h.db.version()
 
                     h.lastMethod shouldBe "version"
                     h.paramCount() shouldBe 0
@@ -121,9 +128,9 @@ class RpcMethodsTest :
 
             should("send namespace and database as two params, not one pair") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.use("ns1", "db1")
+                    h.db.use("ns1", "db1")
 
                     h.lastMethod shouldBe "use"
                     h.paramCount() shouldBe 2
@@ -134,10 +141,10 @@ class RpcMethodsTest :
 
             should("answer who-am-I through query, because there is no auth RPC") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
                     h.stubResult = """{"id":"1","result":[{"status":"OK","result":{"id":"u:1"}}]}"""
 
-                    h.client.auth()
+                    h.db.auth()
 
                     h.lastMethod shouldBe "query"
                     h.lastSurql() shouldBe "SELECT * FROM ONLY \$auth"
@@ -148,9 +155,9 @@ class RpcMethodsTest :
         context("auth methods") {
             should("send signup with the credentials object intact") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
+                    h.db.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
 
                     h.lastMethod shouldBe "signup"
                     h
@@ -164,9 +171,9 @@ class RpcMethodsTest :
 
             should("send signin with the credentials object intact") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
+                    h.db.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
 
                     h.lastMethod shouldBe "signin"
                     h
@@ -180,9 +187,9 @@ class RpcMethodsTest :
 
             should("send authenticate with the raw token string") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.authenticate("jwt-here")
+                    h.db.authenticate("jwt-here")
 
                     h.lastMethod shouldBe "authenticate"
                     h.param(0)?.jsonPrimitive?.content shouldBe "jwt-here"
@@ -191,9 +198,9 @@ class RpcMethodsTest :
 
             should("send invalidate with no params") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.invalidate()
+                    h.db.invalidate()
 
                     h.lastMethod shouldBe "invalidate"
                     h.paramCount() shouldBe 0
@@ -202,9 +209,9 @@ class RpcMethodsTest :
 
             should("send reset with no params") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.reset()
+                    h.db.reset()
 
                     h.lastMethod shouldBe "reset"
                     h.paramCount() shouldBe 0
@@ -215,9 +222,9 @@ class RpcMethodsTest :
         context("session variables") {
             should("send let with key and value as separate params") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.`let`("k", JsonPrimitive("v"))
+                    h.db.`let`("k", JsonPrimitive("v"))
 
                     h.lastMethod shouldBe "let"
                     h.param(0)?.jsonPrimitive?.content shouldBe "k"
@@ -227,9 +234,9 @@ class RpcMethodsTest :
 
             should("send unset with the key alone") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.unset("k")
+                    h.db.unset("k")
 
                     h.lastMethod shouldBe "unset"
                     h.paramCount() shouldBe 1
@@ -241,9 +248,9 @@ class RpcMethodsTest :
         context("query") {
             should("omit the vars param when the caller passed none") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.query("SELECT 1")
+                    h.db.query("SELECT 1")
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 1
@@ -253,9 +260,9 @@ class RpcMethodsTest :
 
             should("send bindings as a second param, so they are never inlined into the SQL") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
 
-                    h.client.query(
+                    h.db.query(
                         "SELECT type::table(\$tb)",
                         buildJsonObject { put("tb", JsonPrimitive("person")) },
                     )
@@ -277,7 +284,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.select(Table("person")).await()
+                    h.db.select(Table("person")).await()
 
                     h.lastMethod shouldBe "query"
                     h.lastSurql() shouldStartWith "SELECT * FROM ONLY type::table("
@@ -295,7 +302,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .select(Table("person"))
                         .where(field("age") eq 30)
                         .await()
@@ -309,7 +316,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .create(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                         .await()
@@ -323,7 +330,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .update(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("New")) })
                         .await()
@@ -336,7 +343,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .upsert(RecordId("person", "1"))
                         .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                         .await()
@@ -349,7 +356,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .merge(RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
                         .await()
 
@@ -362,7 +369,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .patch(RecordId("person", "1"), buildJsonObject { put("op", JsonPrimitive("replace")) })
                         .await()
 
@@ -375,7 +382,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).await()
+                    h.db.patch(RecordId("person", "1"), buildJsonObject {}, diff = true).await()
 
                     h.lastSurql() shouldEndWith " RETURN DIFF"
                 }
@@ -385,7 +392,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.delete(RecordId("person", "1")).await()
+                    h.db.delete(RecordId("person", "1")).await()
 
                     h.lastSurql() shouldStartWith "DELETE ONLY type::record("
                 }
@@ -397,7 +404,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.relate(RecordId("person", "a"), Table("likes"), RecordId("person", "b")).await()
+                    h.db.relate(RecordId("person", "a"), Table("likes"), RecordId("person", "b")).await()
 
                     h.lastSurql() shouldStartWith "RELATE "
                     h.lastSurql() shouldContain "->"
@@ -408,7 +415,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client.insert(Table("person"), buildJsonObject { put("name", JsonPrimitive("A")) }).await()
+                    h.db.insert(Table("person"), buildJsonObject { put("name", JsonPrimitive("A")) }).await()
 
                     h.lastSurql() shouldStartWith "INSERT INTO $"
                 }
@@ -418,7 +425,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .insertRelation(Table("likes"), buildJsonObject { put("in", JsonPrimitive("p:a")) })
                         .await()
 
@@ -430,7 +437,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .run("fn::greet")
                         .args("world")
                         .await()
@@ -444,7 +451,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = builderHarness()
 
-                    h.client
+                    h.db
                         .run("fn::greet")
                         .version("1.0")
                         .args("world")
@@ -458,28 +465,28 @@ class RpcMethodsTest :
         context("result propagation") {
             should("hand back JsonNull rather than null, so callers need no null check") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
                     h.stubResult = """{"id":"1","result":null}"""
 
-                    h.client.ping().shouldBeInstanceOf<JsonNull>()
+                    h.db.ping().shouldBeInstanceOf<JsonNull>()
                 }
             }
 
             should("hand back a complex result verbatim, without reshaping it") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
                     h.stubResult = """{"id":"1","result":[{"a":1},{"b":2}]}"""
 
-                    h.client.ping().jsonArray shouldHaveSize 2
+                    h.db.ping().jsonArray shouldHaveSize 2
                 }
             }
 
             should("tolerate a response with no id, which live-capable servers may send") {
                 runTest {
-                    val h = Harness()
+                    val h = harness()
                     h.stubResult = """{"result":{"ok":true}}"""
 
-                    h.client
+                    h.db
                         .ping()
                         .jsonObject["ok"]
                         ?.jsonPrimitive

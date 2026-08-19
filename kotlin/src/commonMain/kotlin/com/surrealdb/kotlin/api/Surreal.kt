@@ -6,11 +6,18 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.Json
 
+/**
+ * A connection to SurrealDB.
+ *
+ * The client owns the transport and nothing else: it connects, reports what the
+ * engine can do, and hands out sessions. Namespace, database, auth and session
+ * variables all live on a [Session], obtained from [session] — the client is not
+ * itself one, so there is no ambient context for a query to pick up by accident.
+ */
 public class Surreal private constructor(
     public val config: Config,
-    rootController: ConnectionController,
-) : Session(rootController, rootController.rootSessionId),
-    AutoCloseable {
+    private val controller: ConnectionController,
+) : AutoCloseable {
     public constructor(config: Config) : this(config, ConnectionController(config))
 
     /** Stream of connection lifecycle events from the underlying engine. */
@@ -37,14 +44,14 @@ public class Surreal private constructor(
     }
 
     /**
-     * Create a new session that shares the underlying connection but has its
-     * own namespace, database, auth token and session variables.
+     * Open a session on this connection. Sessions share the transport and
+     * nothing else — each has its own namespace, database, auth token and
+     * variables.
      */
-    public suspend fun newSession(): Session = Session(controller, controller.newSession())
+    public suspend fun session(): Session = Session(controller, controller.newSession())
 
-    /** Remove a previously created session, cancelling any renewal jobs. */
+    /** Discard a session, cancelling any token-renewal job it scheduled. */
     public suspend fun closeSession(session: Session) {
-        if (session === this) return
         controller.removeSession(session.sessionId)
     }
 

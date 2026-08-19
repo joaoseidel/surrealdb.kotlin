@@ -17,7 +17,14 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-public open class Session internal constructor(
+/**
+ * A namespace, database, auth token and set of variables on a [Surreal]
+ * connection.
+ *
+ * Obtained from [Surreal.session]. Sessions on one client share the transport
+ * and nothing else, so signing in on one leaves the others untouched.
+ */
+public class Session internal constructor(
     internal val controller: ConnectionController,
     internal val sessionId: String,
 ) : QueryContext {

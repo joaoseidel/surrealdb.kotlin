@@ -49,7 +49,7 @@ class SurrealTest {
                 }
 
             val client = testClient(engine = engine)
-            val result = client.ping().jsonObject
+            val result = client.session().ping().jsonObject
 
             assertEquals(true, result["ok"]?.jsonPrimitive?.content?.toBooleanStrict())
         }
@@ -119,7 +119,7 @@ class SurrealTest {
                     ),
                 )
 
-            val result = client.query("SELECT * FROM person")
+            val result = client.session().query("SELECT * FROM person")
             val status =
                 result.jsonArray[0]
                     .jsonObject["status"]
@@ -145,7 +145,7 @@ class SurrealTest {
             val client = testClient(engine = engine)
 
             assertFailsWith<SurrealAuthenticationException> {
-                client.query("SELECT * FROM person")
+                client.session().query("SELECT * FROM person")
             }
         }
 
@@ -166,6 +166,7 @@ class SurrealTest {
             val client = testClient(engine = engine)
             val person: Person =
                 client
+                    .session()
                     .select(
                         com.surrealdb.kotlin.api.data
                             .RecordId("person", "1"),
@@ -199,12 +200,12 @@ class SurrealTest {
             assertEquals(false, client.supports(Feature.LiveQueries))
 
             assertFailsWith<SurrealFeatureNotSupportedException> {
-                client.live("person")
+                client.session().live("person")
             }
         }
 
     @Test
-    fun `newSession returns isolated session sharing the connection`() =
+    fun `session returns isolated sessions sharing the connection`() =
         runTest {
             val seenAuth = mutableListOf<String?>()
             val engine =
@@ -218,8 +219,8 @@ class SurrealTest {
                 }
 
             val client = testClient(engine = engine)
-            val sessionA = client
-            val sessionB = client.newSession()
+            val sessionA = client.session()
+            val sessionB = client.session()
 
             sessionA.signin(buildJsonObject { put("user", JsonPrimitive("a")) })
             // sessionB should NOT see sessionA's token

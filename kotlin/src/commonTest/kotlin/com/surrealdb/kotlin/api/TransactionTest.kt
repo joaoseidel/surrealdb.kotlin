@@ -22,6 +22,8 @@ import kotlin.test.assertFailsWith
  * SurrealDB WebSocket.
  */
 class TransactionTest {
+    private suspend fun httpSession(): Session = httpClient().session()
+
     private fun httpClient(): Surreal {
         val engine =
             MockEngine { _ ->
@@ -44,16 +46,16 @@ class TransactionTest {
     fun `beginTransaction on http engine reports feature not supported`() =
         runTest {
             assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
-                httpClient().beginTransaction()
+                httpSession().beginTransaction()
             }
         }
 
     @Test
     fun `transaction block on http engine surfaces the feature error`() =
         runTest {
-            val client = httpClient()
+            val db = httpSession()
             assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
-                client.transaction {
+                db.transaction {
                     create(Table("person")).content(buildJsonObject {}).await()
                 }
             }

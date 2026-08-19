@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.ReconnectConfig
+import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.error.SurrealLiveQueryException
 import com.surrealdb.kotlin.api.live.LiveNotification
@@ -40,14 +41,14 @@ private fun clientFor(server: FakeSurrealServer) =
 private fun withServer(
     liveQueriesBeforeRejecting: Int = Int.MAX_VALUE,
     notifyOnStart: String? = null,
-    block: suspend CoroutineScope.(FakeSurrealServer, Surreal) -> Unit,
+    block: suspend CoroutineScope.(FakeSurrealServer, Surreal, Session) -> Unit,
 ) {
     val server = FakeSurrealServer(liveQueriesBeforeRejecting, notifyOnStart)
     server.start()
     try {
         val client = clientFor(server)
         try {
-            runBlocking { block(server, client) }
+            runBlocking { block(server, client, client.session()) }
         } finally {
             client.close()
         }
@@ -61,8 +62,8 @@ class LiveQueryReconnectTest :
         context("a live query whose connection drops") {
 
             should("be started again on the new connection, the server having forgotten it with the session") {
-                withServer { server, client ->
-                    client.live("book")
+                withServer { server, client, db ->
+                    db.live("book")
                     awaiting { server.issued.size == 1 }
 
                     server.dropConnection()
@@ -73,8 +74,8 @@ class LiveQueryReconnectTest :
             }
 
             should("keep delivering to the same subscription, under the id it was given first") {
-                withServer { server, client ->
-                    val subscription = client.live("book")
+                withServer { server, client, db ->
+                    val subscription = db.live("book")
                     val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
 
@@ -95,8 +96,8 @@ class LiveQueryReconnectTest :
             }
 
             should("stay listed under the id a caller holds, so that id is still one it can kill") {
-                withServer { server, client ->
-                    val subscription = client.live("book")
+                withServer { server, client, db ->
+                    val subscription = db.live("book")
                     awaiting { server.issued.size == 1 }
 
                     server.dropConnection()
@@ -107,9 +108,9 @@ class LiveQueryReconnectTest :
             }
 
             should("carry on for a query started as a LIVE SELECT, which the client re-runs as a statement") {
-                withServer { server, client ->
+                withServer { server, client, db ->
                     val events = mutableListOf<LiveQueryEvent<JsonElement>>()
-                    val collector = launch { client.liveEvents<JsonElement>("book").collect { events += it } }
+                    val collector = launch { db.liveEvents<JsonElement>("book").collect { events += it } }
 
                     // Waits for the client to have taken ownership of the query, not just
                     // for the server to have started it: dropping in between replays the
@@ -130,8 +131,8 @@ class LiveQueryReconnectTest :
             }
 
             should("fail its collector when it cannot be started again, rather than going quiet") {
-                withServer(liveQueriesBeforeRejecting = 1) { server, client ->
-                    val subscription = client.live("book")
+                withServer(liveQueriesBeforeRejecting = 1) { server, client, db ->
+                    val subscription = db.live("book")
                     awaiting { server.issued.size == 1 }
 
                     server.dropConnection()
@@ -147,8 +148,8 @@ class LiveQueryReconnectTest :
         context("a notification the server pushes before the reply naming its subscription") {
 
             should("reach the subscription, which had no id to attribute it to when the frame arrived") {
-                withServer(notifyOnStart = "before-the-reply") { server, client ->
-                    val subscription = client.live("book")
+                withServer(notifyOnStart = "before-the-reply") { server, client, db ->
+                    val subscription = db.live("book")
                     val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
 
@@ -161,8 +162,8 @@ class LiveQueryReconnectTest :
             }
 
             should("reach it again after a reconnect, the same window opening on the re-issued statement") {
-                withServer(notifyOnStart = "before-the-reply") { server, client ->
-                    val subscription = client.live("book")
+                withServer(notifyOnStart = "before-the-reply") { server, client, db ->
+                    val subscription = db.live("book")
                     val received = mutableListOf<LiveNotification>()
                     val collector: Job = launch { subscription.events.collect { received += it } }
                     awaiting { received.size == 1 }
@@ -178,9 +179,9 @@ class LiveQueryReconnectTest :
             }
 
             should("reach the flow form too, whose id filter would otherwise never match the re-issued id") {
-                withServer(notifyOnStart = "before-the-reply") { server, client ->
+                withServer(notifyOnStart = "before-the-reply") { server, client, db ->
                     val events = mutableListOf<LiveQueryEvent<JsonElement>>()
-                    val collector = launch { client.liveEvents<JsonElement>("book").collect { events += it } }
+                    val collector = launch { db.liveEvents<JsonElement>("book").collect { events += it } }
 
                     awaiting { client.activeLiveQueries.value.isNotEmpty() }
                     val queryId = client.activeLiveQueries.value.single()

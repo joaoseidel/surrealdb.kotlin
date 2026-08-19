@@ -38,22 +38,23 @@ class SurrealAndroidIntegrationTest {
             requireIntegration()
 
             val client = Surreal(Surreal.Config(url = endpoint()))
+            val db = client.session()
 
             try {
-                client.signin(rootCredentials)
-                client.use("main", "main")
-                client.ping()
+                db.signin(rootCredentials)
+                db.use("main", "main")
+                db.ping()
 
-                client.query("DEFINE TABLE android_person SCHEMALESS")
-                client.query("DELETE android_person")
+                db.query("DEFINE TABLE android_person SCHEMALESS")
+                db.query("DELETE android_person")
 
-                client
+                db
                     .create(RecordId("android_person", "ada"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                     .await()
 
                 val rows =
-                    client
+                    db
                         .query("SELECT * FROM android_person")
                         .jsonArray[0]
                         .jsonObject["result"]!!
@@ -67,7 +68,7 @@ class SurrealAndroidIntegrationTest {
                         .jsonPrimitive.content,
                 )
 
-                client.delete(RecordId("android_person", "ada")).await()
+                db.delete(RecordId("android_person", "ada")).await()
             } finally {
                 client.close()
             }
@@ -83,17 +84,18 @@ class SurrealAndroidIntegrationTest {
                     .replace("http://", "ws://")
                     .replace("https://", "wss://")
             val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
+            val db = client.session()
 
             try {
-                client.signin(rootCredentials)
-                client.use("main", "main")
-                client.query("DEFINE TABLE android_live SCHEMALESS")
-                client.query("DELETE android_live")
+                db.signin(rootCredentials)
+                db.use("main", "main")
+                db.query("DEFINE TABLE android_live SCHEMALESS")
+                db.query("DELETE android_live")
 
-                val subscription = client.live("android_live")
+                val subscription = db.live("android_live")
                 withTimeout(10_000) { client.activeLiveQueries.first { subscription.id in it } }
 
-                client
+                db
                     .create(RecordId("android_live", "one"))
                     .content(buildJsonObject { put("name", JsonPrimitive("Live")) })
                     .await()
@@ -103,7 +105,7 @@ class SurrealAndroidIntegrationTest {
                 assertEquals("CREATE", event.action)
 
                 subscription.cancel()
-                client.delete(RecordId("android_live", "one")).await()
+                db.delete(RecordId("android_live", "one")).await()
             } finally {
                 client.close()
             }
