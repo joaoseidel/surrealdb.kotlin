@@ -51,6 +51,10 @@ class SurrealJvmIntegrationTest {
 
             client.query("DEFINE TABLE person SCHEMALESS")
             client.query("DEFINE TABLE likes SCHEMALESS")
+            // Start from an empty table rather than trusting the cleanup at the end of
+            // this test, which does not run when an assertion above it fails.
+            client.query("DELETE person")
+            client.query("DELETE likes")
 
             // Each CRUD builder compiles to a `query` RPC carrying SurrealQL.
             client.create(RecordId("person", "chiru"))
@@ -219,6 +223,7 @@ class SurrealJvmIntegrationTest {
             )
             client.use("main", "main")
             client.query("DEFINE TABLE live_person SCHEMALESS")
+            client.query("DELETE live_person")
 
             val subscription = client.live("live_person")
 
@@ -262,6 +267,7 @@ class SurrealJvmIntegrationTest {
             )
             client.use("main", "main")
             client.query("DEFINE TABLE live_book SCHEMALESS")
+            client.query("DELETE live_book")
 
             val received = Channel<LiveQueryEvent<JsonElement>>(Channel.UNLIMITED)
             val collector = launch {
