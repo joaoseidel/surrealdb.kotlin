@@ -103,9 +103,9 @@ internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
                 }
                 appendLiteral(value.table)
                 appendLiteral(":")
-                if (value.start != null) bind(JsonPrimitive(value.start)) else appendLiteral("..")
-                if (value.start != null) appendLiteral(if (value.includeEnd) "..=" else "..")
-                if (value.end != null) bind(JsonPrimitive(value.end))
+                value.start?.let { bind(JsonPrimitive(it)) }
+                appendLiteral(if (value.includeEnd) "..=" else "..")
+                value.end?.let { bind(JsonPrimitive(it)) }
             }
 
             else -> {
