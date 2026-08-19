@@ -10,18 +10,18 @@ import kotlinx.serialization.json.JsonElement
 private val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 
 public class RelateQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val `in`: Any,
     private val relation: Any,
     private val out: Any,
     private val data: JsonElement? = null,
     private val returnMode: ReturnMode? = null,
-) {
+) : Query(context) {
     public fun content(data: JsonElement): RelateQuery = copy(data = data)
 
     public fun returnMode(mode: ReturnMode): RelateQuery = copy(returnMode = mode)
 
-    public fun compile(): BoundQuery {
+    override fun compile(): BoundQuery {
         // RELATE positions don't accept bare `type::record(...)` function
         // calls, but they do accept parenthesised expressions. The relation
         // slot must be either a literal table identifier (e.g. `likes`) or a
@@ -79,10 +79,6 @@ public class RelateQuery internal constructor(
             }
         }
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         data: JsonElement? = this.data,

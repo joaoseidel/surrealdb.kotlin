@@ -7,11 +7,11 @@ import kotlinx.serialization.json.JsonPrimitive
  * Builder for `SELECT` queries. Ports the surface of surrealdb.js's
  * [`SelectPromise`](https://github.com/surrealdb/surrealdb.js/blob/ca8dae20ba439b6b4242ff2822b271a2e5aaaa60/packages/sdk/src/query/select.ts).
  *
- * The terminal call is [await] / [awaitFirst] / [awaitAs]. Each chain method
- * returns a fresh instance so builders are safe to share or pin to a variable.
+ * Each chain method returns a fresh instance so builders are safe to share or
+ * pin to a variable.
  */
 public class SelectQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val what: Any,
     private val selection: Selection = Selection.All,
     private val fields: List<String> = emptyList(),
@@ -21,7 +21,7 @@ public class SelectQuery internal constructor(
     private val fetchFields: List<String> = emptyList(),
     private val timeoutSeconds: Double? = null,
     private val versionAt: String? = null,
-) {
+) : Query(context) {
     internal enum class Selection { All, Fields, Value }
 
     /** Select only the named fields. */
@@ -53,7 +53,7 @@ public class SelectQuery internal constructor(
     public fun version(literal: String): SelectQuery = copy(versionAt = literal)
 
     /** Compile this query without dispatching it. */
-    public fun compile(): BoundQuery {
+    override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("SELECT")
         when (selection) {
@@ -80,12 +80,6 @@ public class SelectQuery internal constructor(
         versionAt?.let { q.appendLiteral(" VERSION $it") }
         return q
     }
-
-    /** Dispatch the query and return the unwrapped first-statement result. */
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    /** Dispatch and return the raw `[{ status, result, time, type }]` envelope. */
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         selection: Selection = this.selection,

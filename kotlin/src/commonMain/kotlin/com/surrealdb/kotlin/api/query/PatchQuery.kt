@@ -9,15 +9,15 @@ import kotlinx.serialization.json.JsonElement
  * (`RETURN DIFF` is appended).
  */
 public class PatchQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val what: Any,
     private val patches: JsonElement,
     private val diff: Boolean,
     private val cond: Expr? = null,
-) {
+) : Query(context) {
     public fun where(expr: Expr): PatchQuery = PatchQuery(context, what, patches, diff, expr)
 
-    public fun compile(): BoundQuery {
+    override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPDATE ONLY ")
         q.appendValue(what)
@@ -30,8 +30,4 @@ public class PatchQuery internal constructor(
         if (diff) q.appendLiteral(" RETURN DIFF")
         return q
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 }

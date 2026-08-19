@@ -6,19 +6,19 @@ import kotlinx.serialization.json.JsonElement
  * Builder for `UPSERT` queries.
  */
 public class UpsertQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val what: Any,
     private val data: JsonElement? = null,
     private val cond: Expr? = null,
     private val returnMode: ReturnMode? = null,
-) {
+) : Query(context) {
     public fun content(data: JsonElement): UpsertQuery = copy(data = data)
 
     public fun where(expr: Expr): UpsertQuery = copy(cond = expr)
 
     public fun returnMode(mode: ReturnMode): UpsertQuery = copy(returnMode = mode)
 
-    public fun compile(): BoundQuery {
+    override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPSERT ONLY ")
         q.appendValue(what)
@@ -33,10 +33,6 @@ public class UpsertQuery internal constructor(
         returnMode?.render(q)
         return q
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         data: JsonElement? = this.data,
