@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonElement
  * Builder for `UPDATE … MERGE …` queries.
  */
 public class MergeQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val what: Any,
     private val data: Any,
     private val cond: Expr? = null,
@@ -30,12 +30,12 @@ public class MergeQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         cond: Expr? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-    ): MergeQuery = MergeQuery(dispatcher, what, data, cond, returnMode)
+    ): MergeQuery = MergeQuery(context, what, data, cond, returnMode)
 }

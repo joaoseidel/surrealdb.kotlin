@@ -2,6 +2,13 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.awaitAs
+import com.surrealdb.kotlin.api.query.create
+import com.surrealdb.kotlin.api.query.delete
+import com.surrealdb.kotlin.api.query.insert
+import com.surrealdb.kotlin.api.query.merge
+import com.surrealdb.kotlin.api.query.select
+import com.surrealdb.kotlin.api.query.update
+import com.surrealdb.kotlin.api.query.upsert
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonObject
  * Builder for `CREATE` queries.
  */
 public class CreateQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val what: Any,
     private val data: JsonElement? = null,
     private val returnMode: ReturnMode? = null,
@@ -28,12 +28,12 @@ public class CreateQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         data: JsonElement? = this.data,
         returnMode: ReturnMode? = this.returnMode,
-    ): CreateQuery = CreateQuery(dispatcher, what, data, returnMode)
+    ): CreateQuery = CreateQuery(context, what, data, returnMode)
 }

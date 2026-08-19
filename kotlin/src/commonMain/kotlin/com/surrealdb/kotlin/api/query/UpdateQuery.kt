@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonElement
  * `UPDATE ... MERGE` / `UPDATE ... PATCH` respectively.
  */
 public class UpdateQuery internal constructor(
-    @PublishedApi internal val dispatcher: QueryDispatcher,
+    @PublishedApi internal val context: QueryContext,
     private val what: Any,
     private val data: JsonElement? = null,
     private val cond: Expr? = null,
@@ -37,13 +37,13 @@ public class UpdateQuery internal constructor(
         return q
     }
 
-    public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
 
-    public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
+    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         data: JsonElement? = this.data,
         cond: Expr? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-    ): UpdateQuery = UpdateQuery(dispatcher, what, data, cond, returnMode)
+    ): UpdateQuery = UpdateQuery(context, what, data, cond, returnMode)
 }
