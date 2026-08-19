@@ -33,6 +33,11 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
 
+        jvmTest.dependencies {
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.websockets)
+        }
+
         androidInstrumentedTest.dependencies {
             implementation(libs.bundles.androidx.test)
         }
