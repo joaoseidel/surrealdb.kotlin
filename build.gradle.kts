@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kotest) apply false
 }
@@ -16,12 +16,14 @@ plugins {
 val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
-
-// Read out here: inside allprojects the type-safe catalog accessor resolves
-// against the wrong receiver.
 val ktlintVersion =
     libs.versions.ktlint.cli
         .get()
+
+dependencies {
+    dokka(project(":kotlin"))
+    dokka(project(":spectron"))
+}
 
 val expectedArtifactSuffixes =
     listOf(
@@ -47,14 +49,9 @@ allprojects {
     group = providers.gradleProperty("GROUP").get()
     version = providers.gradleProperty("VERSION_NAME").get()
 
-    // Applied to every project, not only the ones with Kotlin source, so the build
-    // scripts are linted too. What "formatted" means lives in .editorconfig, which
-    // IntelliJ and a bare ktlint binary read as well -- one answer, not three.
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
     configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-        // The plugin version pins the plugin, not the formatter. Without this the
-        // ktlint release that decides the layout can change under a plain rebuild.
         version.set(ktlintVersion)
     }
 }
@@ -143,9 +140,19 @@ fun Project.configurePublishing() {
     val pomName = prop("POM_NAME")
     val pomDescription = prop("POM_DESCRIPTION")
 
+    val javadocJar =
+        tasks.register<Jar>("javadocJar") {
+            group = "documentation"
+            description = "Packages the Dokka HTML output as the publishable -javadoc.jar."
+            archiveClassifier.set("javadoc")
+            from(tasks.named("dokkaGeneratePublicationHtml"))
+        }
+
     afterEvaluate {
         configure<PublishingExtension> {
             publications.withType<MavenPublication>().configureEach {
+                artifact(javadocJar)
+
                 artifactId =
                     when (name) {
                         "kotlinMultiplatform" -> artifactBase
@@ -191,6 +198,25 @@ fun Project.configurePublishing() {
             val skipped =
                 if (onApple) emptySet() else appleArtifactSuffixes.map { "$base$it" }.toSortedSet()
             val actual = publications.withType<MavenPublication>().map { it.artifactId }.toSortedSet()
+
+            val publicationSet = publications.withType<MavenPublication>()
+
+            tasks.register("verifyPublicationJavadoc") {
+                group = "verification"
+                description = "Fails if a publication would be released without a -javadoc.jar."
+                doLast {
+                    val withoutJavadoc =
+                        publicationSet
+                            .filter { pub -> pub.artifacts.none { it.classifier == "javadoc" } }
+                            .map { it.name }
+                            .sorted()
+
+                    check(withoutJavadoc.isEmpty()) {
+                        "$path has publications with no javadoc artifact: $withoutJavadoc. " +
+                            "Maven Central rejects a release without one."
+                    }
+                }
+            }
 
             tasks.register("verifyPublicationCoordinates") {
                 group = "verification"
