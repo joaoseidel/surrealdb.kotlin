@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -36,31 +37,31 @@ public interface QueryContext {
         )
 }
 
-public fun QueryContext.select(what: Any): SelectQuery = SelectQuery(this, what)
+public fun QueryContext.select(what: Target): SelectQuery = SelectQuery(this, what)
 
-public fun QueryContext.create(what: Any): CreateQuery = CreateQuery(this, what)
+public fun QueryContext.create(what: Target): CreateQuery = CreateQuery(this, what)
 
-public fun QueryContext.upsert(what: Any): UpsertQuery = UpsertQuery(this, what)
+public fun QueryContext.upsert(what: Target): UpsertQuery = UpsertQuery(this, what)
 
-public fun QueryContext.update(what: Any): UpdateQuery = UpdateQuery(this, what)
+public fun QueryContext.update(what: Target): UpdateQuery = UpdateQuery(this, what)
 
 public fun QueryContext.merge(
-    what: Any,
-    data: Any,
+    what: Target,
+    data: JsonElement,
 ): MergeQuery = MergeQuery(this, what, data)
 
 public fun QueryContext.patch(
-    what: Any,
+    what: Target,
     patches: JsonElement,
     diff: Boolean = false,
 ): PatchQuery = PatchQuery(this, what, patches, diff)
 
-public fun QueryContext.delete(what: Any): DeleteQuery = DeleteQuery(this, what)
+public fun QueryContext.delete(what: Target): DeleteQuery = DeleteQuery(this, what)
 
 public fun QueryContext.relate(
-    `in`: Any,
-    relation: Any,
-    out: Any,
+    `in`: Target,
+    relation: Target,
+    out: Target,
 ): RelateQuery = RelateQuery(this, `in`, relation, out)
 
 public fun QueryContext.insert(

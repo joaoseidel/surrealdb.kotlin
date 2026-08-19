@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -10,7 +11,7 @@ import kotlinx.serialization.json.JsonElement
  */
 public class PatchQuery internal constructor(
     context: QueryContext,
-    private val what: Any,
+    private val what: Target,
     private val patches: JsonElement,
     private val diff: Boolean,
     private val cond: Expr? = null,
@@ -20,7 +21,7 @@ public class PatchQuery internal constructor(
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPDATE ONLY ")
-        q.appendValue(what)
+        q.appendTarget(what)
         q.appendLiteral(" PATCH ")
         q.bind(patches)
         cond?.let {

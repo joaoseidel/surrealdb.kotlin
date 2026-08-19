@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.api.query
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -67,20 +68,20 @@ public fun toJson(value: Any?): JsonElement =
         }
     }
 
-/**
- * Append [value] to the query, choosing the right SurrealQL expression based
- * on the value's type. Strings/numbers/booleans become bound parameters;
- * [Table], [RecordId], and [RecordIdRange] expand into the SurrealQL type
- * constructors with their fields bound separately.
- */
 private val IDENT = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 
-internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
+/**
+ * Append [target] as the SurrealQL expression naming it. Every statement that
+ * takes a target renders it here, so what `select` and `delete` point at is
+ * described in exactly one place, and the `when` is exhaustive over [Target]
+ * so a new kind of target cannot be added without this seeing it.
+ */
+internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
     apply {
-        when (value) {
+        when (target) {
             is Table -> {
                 appendLiteral("type::table(")
-                bind(JsonPrimitive(value.name))
+                bind(JsonPrimitive(target.name))
                 appendLiteral(")")
             }
 
@@ -88,9 +89,9 @@ internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
                 // SurrealDB v3 calls this `type::record`; the older `type::thing`
                 // is gone. We bind both halves so callers can't inject.
                 appendLiteral("type::record(")
-                bind(JsonPrimitive(value.table))
+                bind(JsonPrimitive(target.table))
                 appendLiteral(", ")
-                bind(JsonPrimitive(value.id))
+                bind(JsonPrimitive(target.id))
                 appendLiteral(")")
             }
 
@@ -98,19 +99,32 @@ internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
                 // Range literals in v3 are `tb:start..end` — there's no
                 // type::range constructor that accepts table+start+end. Inline
                 // the table after validating it as an identifier.
-                require(IDENT.matches(value.table)) {
-                    "RecordIdRange.table must be a plain identifier (got '${value.table}')"
+                require(IDENT.matches(target.table)) {
+                    "RecordIdRange.table must be a plain identifier (got '${target.table}')"
                 }
-                appendLiteral(value.table)
+                appendLiteral(target.table)
                 appendLiteral(":")
-                value.start?.let { bind(JsonPrimitive(it)) }
-                appendLiteral(if (value.includeEnd) "..=" else "..")
-                value.end?.let { bind(JsonPrimitive(it)) }
+                target.start?.let { bind(JsonPrimitive(it)) }
+                appendLiteral(if (target.includeEnd) "..=" else "..")
+                target.end?.let { bind(JsonPrimitive(it)) }
             }
+        }
+    }
 
-            else -> {
-                bind(toJson(value))
-            }
+/**
+ * Append [value] to the query, choosing the right SurrealQL expression based
+ * on the value's type. Strings/numbers/booleans become bound parameters; a
+ * [Target] expands into the SurrealQL expression naming it.
+ *
+ * This is the value path — expression operands and function arguments, where
+ * anything bindable is legitimate. A statement's target goes through
+ * [appendTarget] instead.
+ */
+internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
+    apply {
+        when (value) {
+            is Target -> appendTarget(value)
+            else -> bind(toJson(value))
         }
     }
 

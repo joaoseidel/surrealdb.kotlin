@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -11,9 +12,9 @@ private val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 
 public class RelateQuery internal constructor(
     context: QueryContext,
-    private val `in`: Any,
-    private val relation: Any,
-    private val out: Any,
+    private val `in`: Target,
+    private val relation: Target,
+    private val out: Target,
     private val data: JsonElement? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
@@ -43,24 +44,24 @@ public class RelateQuery internal constructor(
 
     private fun renderRelateOperand(
         q: BoundQuery,
-        operand: Any,
+        operand: Target,
     ) {
         when (operand) {
             is RecordId -> {
                 q.appendLiteral("(")
-                q.appendValue(operand)
+                q.appendTarget(operand)
                 q.appendLiteral(")")
             }
 
             else -> {
-                q.appendValue(operand)
+                q.appendTarget(operand)
             }
         }
     }
 
     private fun renderRelationSlot(
         q: BoundQuery,
-        slot: Any,
+        slot: Target,
     ) {
         when (slot) {
             is Table -> {
@@ -75,7 +76,7 @@ public class RelateQuery internal constructor(
             }
 
             else -> {
-                q.appendValue(slot)
+                q.appendTarget(slot)
             }
         }
     }
