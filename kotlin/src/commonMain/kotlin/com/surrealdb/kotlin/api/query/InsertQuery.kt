@@ -7,11 +7,11 @@ import kotlinx.serialization.json.JsonElement
  * Builder for `INSERT INTO <table> $data` queries.
  */
 public class InsertQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val into: Table,
     private val data: JsonElement,
-) {
-    public fun compile(): BoundQuery {
+) : Query(context) {
+    override fun compile(): BoundQuery {
         // INSERT INTO requires a table reference; `type::table($tb)` doesn't
         // parse here, but a bound table name does. Bindings still keep user
         // input out of the SurrealQL string.
@@ -22,21 +22,17 @@ public class InsertQuery internal constructor(
         q.bind(data)
         return q
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 }
 
 /**
  * Builder for `INSERT RELATION INTO <table> $data` queries.
  */
 public class InsertRelationQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val into: Table,
     private val data: JsonElement,
-) {
-    public fun compile(): BoundQuery {
+) : Query(context) {
+    override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("INSERT RELATION INTO ")
         q.bind(kotlinx.serialization.json.JsonPrimitive(into.name))
@@ -44,8 +40,4 @@ public class InsertRelationQuery internal constructor(
         q.bind(data)
         return q
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 }

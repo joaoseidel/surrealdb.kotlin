@@ -6,16 +6,16 @@ import kotlinx.serialization.json.JsonElement
  * Builder for `DELETE` queries.
  */
 public class DeleteQuery internal constructor(
-    @PublishedApi internal val context: QueryContext,
+    context: QueryContext,
     private val what: Any,
     private val cond: Expr? = null,
     private val returnMode: ReturnMode? = null,
-) {
+) : Query(context) {
     public fun where(expr: Expr): DeleteQuery = copy(cond = expr)
 
     public fun returnMode(mode: ReturnMode): DeleteQuery = copy(returnMode = mode)
 
-    public fun compile(): BoundQuery {
+    override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("DELETE ONLY ")
         q.appendValue(what)
@@ -26,10 +26,6 @@ public class DeleteQuery internal constructor(
         returnMode?.render(q)
         return q
     }
-
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
-
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
 
     private fun copy(
         cond: Expr? = this.cond,
