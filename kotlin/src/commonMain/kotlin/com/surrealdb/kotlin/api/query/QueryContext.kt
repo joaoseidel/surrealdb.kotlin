@@ -101,12 +101,6 @@ public fun QueryContext.insertRelation(
 
 public fun QueryContext.run(function: String): RunQuery = RunQuery(this, function)
 
-/**
- * The condition-builder receiver for a target that carries no declared record
- * type — a bare table, a record id, a range. It names the same table and has no
- * fields, so a `where { }` over it can only use `raw { }`. That keeps the block
- * form total: there is no query whose `where` throws for want of a schema.
- */
 internal fun untypedSchema(what: Target): Table<Nothing> =
     when (what) {
         is Table<*> -> Table(what.tableName)

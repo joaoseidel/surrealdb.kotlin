@@ -21,20 +21,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
  * ```
  *
  * The serializer is passed rather than resolved from `T`, because Kotlin cannot
- * pass a reified argument to a supertype constructor — and because taking it in
- * the constructor means the descriptor exists before any `field(...)` in the
- * body runs, which is what lets a misspelt name throw at declaration.
- *
- * `Table("user")` still names a table with no declared fields: it resolves to
- * the same-named function below, not to a constructor, so no type argument has
- * to be inferred from nothing.
- *
- * The comparison operators are **members**, which is what binds their result to
- * `T`: a condition written here cannot be handed to a query over another table.
- *
- * The table's own name is [tableName], not `name`, because a declaration body
- * puts the record's fields in the same scope: `val name by field<String>()` is
- * an ordinary thing to write, and it would otherwise collide with the table's.
+ * pass a reified argument to a supertype constructor.
  */
 public open class Table<T> internal constructor(
     public val tableName: String,
@@ -87,12 +74,7 @@ public open class Table<T> internal constructor(
 
     public fun Field<*>.exists(): Atom<T> = FieldTest(this, "IS NOT NONE")
 
-    /**
-     * `AND`. Chains freely with itself; mixing it with [or] without an explicit
-     * group does not compile, because Kotlin's one infix precedence level would
-     * otherwise parse the chain differently from the SurrealQL it generates.
-     * See [Conjunctible].
-     */
+    /** `AND`. Mixing with [or] without an explicit group does not compile; see [Conjunctible]. */
     public infix fun Conjunctible<T>.and(other: Conjunctible<T>): Conjunctible<T> =
         Conjunction(flattenConjunction(this) + flattenConjunction(other))
 
@@ -102,7 +84,7 @@ public open class Table<T> internal constructor(
 
     public fun not(inner: Condition<T>): Atom<T> = Negation(inner)
 
-    /** Every condition must hold. Takes its operands n-ary, so no binding order applies. */
+    /** Every condition must hold. */
     public fun all(vararg conditions: Condition<T>): Atom<T> = Grouped(Conjunction(conditions.toRequiredList("all")))
 
     /** At least one condition must hold. */

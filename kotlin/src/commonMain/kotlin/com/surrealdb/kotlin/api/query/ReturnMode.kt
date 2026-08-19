@@ -6,8 +6,6 @@ import com.surrealdb.kotlin.api.data.Field
  * How a write statement's `RETURN` clause should behave.
  *
  * Maps onto the SurrealQL `RETURN NONE | BEFORE | AFTER | DIFF | <fields>` form.
- * For `Fields`, the fields come from a [com.surrealdb.kotlin.api.data.Table]
- * declaration, so they are ones the record type has.
  */
 public sealed class ReturnMode {
     public data object None : ReturnMode()

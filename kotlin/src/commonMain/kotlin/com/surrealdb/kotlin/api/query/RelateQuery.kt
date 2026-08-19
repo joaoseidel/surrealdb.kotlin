@@ -88,9 +88,7 @@ public class RelateQuery internal constructor(
 
     /**
      * A range does not parse in either RELATE position — the server answers
-     * `Unexpected token '..', expected a relation arrow`. Rejecting it here
-     * turns a parse error that only appears once the statement is sent into one
-     * the caller gets while building it.
+     * `Unexpected token '..', expected a relation arrow`.
      */
     private fun rejectRange(position: String): Nothing =
         throw IllegalArgumentException(

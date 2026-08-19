@@ -10,10 +10,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
-/**
- * Every operator is covered by the SurrealQL it renders and the bindings it
- * carries, without a server — which is what `toSurql()` being public is for.
- */
 class ConditionTest :
     ShouldSpec({
         context("comparison operators") {

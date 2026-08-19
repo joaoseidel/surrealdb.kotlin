@@ -38,12 +38,6 @@ public class BoundQuery internal constructor(
     /**
      * Append a fragment compiled elsewhere, renaming any parameter whose name
      * this query has already used.
-     *
-     * A fragment mints `$_0`, `$_1`, … from its own counter, and so does every
-     * query it might be spliced into — and a statement has usually bound its
-     * target as `$_0` before the `WHERE` clause is reached. Merging the maps
-     * would silently overwrite that binding with the fragment's, sending a
-     * query whose table name is whatever the fragment happened to bind first.
      */
     internal fun appendFragment(
         sql: String,
