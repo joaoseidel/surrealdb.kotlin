@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.runtime.engine
 
 import com.surrealdb.kotlin.api.error.SurrealTransportException
+import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -25,6 +26,11 @@ private fun notification(
     liveQueryId = liveQueryId,
     result = JsonPrimitive("$liveQueryId/$action"),
 )
+
+private fun source(sql: String = "LIVE SELECT * FROM book") =
+    LiveQuerySource(LiveQuerySpec.Statement(sql)) {
+        SessionSnapshot(token = null, namespace = "test", database = "test")
+    }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private fun <T> TestScope.collectInto(flow: Flow<T>): MutableList<T> {
@@ -151,6 +157,163 @@ class LiveNotificationRouterTest :
                 }
             }
 
+            context("a subscription re-issued on a new connection") {
+                should("keep delivering to the same collector under the id the new statement returned") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val events = router.register("lq-1", source())
+
+                        router.rebind("lq-1", "lq-9")
+                        router.route(notification(liveQueryId = "lq-9"))
+
+                        events.first().action shouldBe "CREATE"
+                    }
+                }
+
+                should(
+                    "relabel the notification with the id the subscription has always had, so a collector filtering on that id is not left behind",
+                ) {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.notifications)
+                        router.track("lq-1", source())
+
+                        router.rebind("lq-1", "lq-9")
+                        router.route(notification(liveQueryId = "lq-9"))
+
+                        seen.single().liveQueryId shouldBe "lq-1"
+                    }
+                }
+
+                should("ignore the id the server issued before the reconnect, which now names nothing") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val events = router.register("lq-1", source())
+
+                        router.rebind("lq-1", "lq-9")
+                        router.route(notification(liveQueryId = "lq-1"))
+                        router.route(notification(liveQueryId = "lq-9", action = "DELETE"))
+
+                        events.first().action shouldBe "DELETE"
+                    }
+                }
+
+                should("stay listed under its original id, so a caller holding that id still has a live query") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1", source())
+
+                        router.rebind("lq-1", "lq-9")
+
+                        router.activeQueries.value shouldBe setOf("lq-1")
+                    }
+                }
+
+                should("be killed by the id the server issued most recently, which is the only one it knows") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1", source())
+
+                        router.rebind("lq-1", "lq-9")
+
+                        router.serverIdFor("lq-1") shouldBe "lq-9"
+                    }
+                }
+
+                should(
+                    "be untracked by its current server id too, so a kill written against a raw LIVE SELECT clears it",
+                ) {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1", source())
+                        router.rebind("lq-1", "lq-9")
+
+                        router.untrack("lq-9")
+
+                        router.activeQueries.value.shouldBeEmpty()
+                    }
+                }
+            }
+
+            context("serverIdFor") {
+                should(
+                    "give back an id it does not know, so killing an untracked live query still reaches the server",
+                ) {
+                    runTest {
+                        LiveNotificationRouter().serverIdFor("lq-unknown") shouldBe "lq-unknown"
+                    }
+                }
+            }
+
+            context("reissuable") {
+                should("list a subscription that carries the statement to run again") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.register("lq-1", source())
+
+                        router.reissuable().map { it.id } shouldContainExactly listOf("lq-1")
+                    }
+                }
+
+                should("skip one registered without a source, there being no statement to run again") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.register("lq-1")
+                        router.track("lq-2")
+
+                        router.reissuable().shouldBeEmpty()
+                    }
+                }
+            }
+
+            context("fail") {
+                should("throw the cause into a subscription's collector, so it learns instead of going quiet") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val events = router.register("lq-1", source())
+
+                        router.fail("lq-1", SurrealTransportException("could not be re-established"))
+
+                        shouldThrow<SurrealTransportException> { events.toList() }
+                    }
+                }
+
+                should("announce the failure, so a collector that opened no channel also learns of it") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.failures)
+                        router.track("lq-1", source())
+
+                        router.fail("lq-1", SurrealTransportException("could not be re-established"))
+
+                        seen.single().liveQueryId shouldBe "lq-1"
+                    }
+                }
+
+                should("drop the query, since after a failed re-issue nothing is running under that id") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        router.track("lq-1", source())
+                        router.track("lq-2", source())
+
+                        router.fail("lq-1", SurrealTransportException("could not be re-established"))
+
+                        router.activeQueries.value shouldBe setOf("lq-2")
+                    }
+                }
+
+                should("announce nothing for an id it never had, so a failure cannot be reported twice") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.failures)
+
+                        router.fail("lq-1", SurrealTransportException("could not be re-established"))
+
+                        seen.shouldBeEmpty()
+                    }
+                }
+            }
+
             context("activeQueries") {
                 should("start empty, so nothing is reported running before anything is") {
                     runTest {
@@ -240,6 +403,32 @@ class LiveNotificationRouterTest :
                         router.closeAll(SurrealTransportException("WebSocket terminated"))
 
                         shouldThrow<SurrealTransportException> { events.toList() }
+                    }
+                }
+
+                should(
+                    "announce a failure for a query tracked without a channel, so the flow form is not left quiet either",
+                ) {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.failures)
+                        router.track("lq-1", source())
+
+                        router.closeAll(SurrealTransportException("WebSocket terminated"))
+
+                        seen.single().liveQueryId shouldBe "lq-1"
+                    }
+                }
+
+                should("announce nothing when the client closed deliberately, a close being no failure") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val seen = collectInto(router.failures)
+                        router.track("lq-1", source())
+
+                        router.closeAll()
+
+                        seen.shouldBeEmpty()
                     }
                 }
 

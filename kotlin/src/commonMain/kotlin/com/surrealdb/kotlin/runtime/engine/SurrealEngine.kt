@@ -8,6 +8,7 @@ import com.surrealdb.kotlin.api.error.SurrealErrorKind
 import com.surrealdb.kotlin.api.error.SurrealNotFoundException
 import com.surrealdb.kotlin.api.error.SurrealQueryException
 import com.surrealdb.kotlin.api.error.SurrealRpcException
+import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.SurrealLiveNotification
 import com.surrealdb.kotlin.runtime.SurrealRpcError
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,9 +28,13 @@ internal interface SurrealEngine :
     val features: Set<SurrealFeature>
     val events: SharedFlow<SurrealConnectionEvent>
     val liveNotifications: SharedFlow<SurrealLiveNotification>
+    val liveFailures: SharedFlow<LiveQueryFailure>
     val activeLiveQueries: StateFlow<Set<String>>
 
-    suspend fun trackLiveQuery(liveQueryId: String)
+    suspend fun trackLiveQuery(
+        liveQueryId: String,
+        source: LiveQuerySource,
+    )
 
     suspend fun start()
 }
