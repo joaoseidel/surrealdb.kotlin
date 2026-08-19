@@ -25,26 +25,44 @@ import kotlinx.serialization.json.longOrNull
  * kinds.
  */
 public sealed class SurrealErrorKind {
-
     /** Parse error, invalid request, or invalid/malformed parameters. */
-    public data class Validation(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class Validation(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object Parse : Detail()
+
             public data object InvalidRequest : Detail()
+
             public data object InvalidParams : Detail()
+
             public data object NamespaceEmpty : Detail()
+
             public data object DatabaseEmpty : Detail()
-            public data class InvalidParameter(public val name: String) : Detail()
-            public data class InvalidContent(public val value: String) : Detail()
-            public data class InvalidMerge(public val value: String) : Detail()
+
+            public data class InvalidParameter(
+                public val name: String,
+            ) : Detail()
+
+            public data class InvalidContent(
+                public val value: String,
+            ) : Detail()
+
+            public data class InvalidMerge(
+                public val value: String,
+            ) : Detail()
         }
     }
 
     /** A requested feature or configuration is not supported by this server. */
-    public data class Configuration(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class Configuration(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object LiveQueryNotSupported : Detail()
+
             public data object BadLiveQueryConfig : Detail()
+
             public data object BadGraphqlConfig : Detail()
         }
 
@@ -56,11 +74,19 @@ public sealed class SurrealErrorKind {
     public data object Thrown : SurrealErrorKind()
 
     /** A query failed to execute (as opposed to succeeding with an empty result). */
-    public data class Query(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class Query(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object NotExecuted : Detail()
-            public data class TimedOut(public val seconds: Long, public val nanos: Long) : Detail()
+
+            public data class TimedOut(
+                public val seconds: Long,
+                public val nanos: Long,
+            ) : Detail()
+
             public data object Cancelled : Detail()
+
             public data object TransactionConflict : Detail()
         }
 
@@ -78,9 +104,12 @@ public sealed class SurrealErrorKind {
     }
 
     /** Serializing or deserializing a value failed. */
-    public data class Serialization(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class Serialization(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object Serialization : Detail()
+
             public data object Deserialization : Detail()
         }
 
@@ -89,27 +118,53 @@ public sealed class SurrealErrorKind {
     }
 
     /** Permission denied, or a method/function/scripting target is blocked. */
-    public data class NotAllowed(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class NotAllowed(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object Scripting : Detail()
-            public data class Auth(public val reason: AuthReason) : Detail()
-            public data class Method(public val name: String) : Detail()
-            public data class Function(public val name: String) : Detail()
-            public data class Target(public val name: String) : Detail()
+
+            public data class Auth(
+                public val reason: AuthReason,
+            ) : Detail()
+
+            public data class Method(
+                public val name: String,
+            ) : Detail()
+
+            public data class Function(
+                public val name: String,
+            ) : Detail()
+
+            public data class Target(
+                public val name: String,
+            ) : Detail()
         }
 
         /** The specific authentication/authorization failure behind an [Detail.Auth] error. */
         public sealed class AuthReason {
             public data object TokenExpired : AuthReason()
+
             public data object SessionExpired : AuthReason()
+
             public data object InvalidAuth : AuthReason()
+
             public data object UnexpectedAuth : AuthReason()
+
             public data object MissingUserOrPass : AuthReason()
+
             public data object NoSigninTarget : AuthReason()
+
             public data object InvalidPass : AuthReason()
+
             public data object TokenMakingFailed : AuthReason()
+
             public data object InvalidSignup : AuthReason()
-            public data class InvalidRole(public val name: String) : AuthReason()
+
+            public data class InvalidRole(
+                public val name: String,
+            ) : AuthReason()
+
             public data class NotPermitted(
                 public val actor: String,
                 public val action: String,
@@ -117,7 +172,9 @@ public sealed class SurrealErrorKind {
             ) : AuthReason()
 
             /** An auth-failure reason this SDK version does not recognise yet. */
-            public data class Unrecognized(public val rawReason: String) : AuthReason()
+            public data class Unrecognized(
+                public val rawReason: String,
+            ) : AuthReason()
         }
 
         /** True if this failure was caused by an expired access token — reconnect and retry. */
@@ -133,26 +190,62 @@ public sealed class SurrealErrorKind {
     }
 
     /** The requested resource does not exist. */
-    public data class NotFound(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class NotFound(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
-            public data class Method(public val name: String) : Detail()
-            public data class Session(public val id: String?) : Detail()
-            public data class Table(public val name: String) : Detail()
-            public data class Record(public val id: String) : Detail()
-            public data class Namespace(public val name: String) : Detail()
-            public data class Database(public val name: String) : Detail()
+            public data class Method(
+                public val name: String,
+            ) : Detail()
+
+            public data class Session(
+                public val id: String?,
+            ) : Detail()
+
+            public data class Table(
+                public val name: String,
+            ) : Detail()
+
+            public data class Record(
+                public val id: String,
+            ) : Detail()
+
+            public data class Namespace(
+                public val name: String,
+            ) : Detail()
+
+            public data class Database(
+                public val name: String,
+            ) : Detail()
+
             public data object Transaction : Detail()
         }
     }
 
     /** The resource being created already exists. */
-    public data class AlreadyExists(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class AlreadyExists(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
-            public data class Session(public val id: String) : Detail()
-            public data class Table(public val name: String) : Detail()
-            public data class Record(public val id: String) : Detail()
-            public data class Namespace(public val name: String) : Detail()
-            public data class Database(public val name: String) : Detail()
+            public data class Session(
+                public val id: String,
+            ) : Detail()
+
+            public data class Table(
+                public val name: String,
+            ) : Detail()
+
+            public data class Record(
+                public val id: String,
+            ) : Detail()
+
+            public data class Namespace(
+                public val name: String,
+            ) : Detail()
+
+            public data class Database(
+                public val name: String,
+            ) : Detail()
         }
     }
 
@@ -161,10 +254,14 @@ public sealed class SurrealErrorKind {
      * transport failure). Part of the server's shared error taxonomy, but not
      * currently expected over the wire — included for forward compatibility.
      */
-    public data class Connection(public val detail: Detail? = null) : SurrealErrorKind() {
+    public data class Connection(
+        public val detail: Detail? = null,
+    ) : SurrealErrorKind() {
         public sealed class Detail {
             public data object Uninitialised : Detail()
+
             public data object AlreadyConnected : Detail()
+
             public data object ConnectionFailed : Detail()
         }
     }
@@ -176,7 +273,9 @@ public sealed class SurrealErrorKind {
     public data object Context : SurrealErrorKind()
 
     /** A `kind` string this SDK version does not recognise (forward compatibility). */
-    public data class Unknown(public val rawKind: String) : SurrealErrorKind()
+    public data class Unknown(
+        public val rawKind: String,
+    ) : SurrealErrorKind()
 
     public companion object {
         /**
@@ -185,7 +284,10 @@ public sealed class SurrealErrorKind {
          * an unrecognised `kind` string falls back to [Unknown] — both mirror
          * the server's own forward-compatibility policy.
          */
-        internal fun parse(kind: String?, details: JsonElement?): SurrealErrorKind {
+        internal fun parse(
+            kind: String?,
+            details: JsonElement?,
+        ): SurrealErrorKind {
             if (kind == null) return Internal
             val tag = details.asTag()
             return when (kind) {
@@ -215,7 +317,10 @@ public sealed class SurrealErrorKind {
 // extraction helper is shared across all error families below.
 // -----------------------------------------------------------------------------
 
-private class Tag(val kind: String, val details: JsonElement?)
+private class Tag(
+    val kind: String,
+    val details: JsonElement?,
+)
 
 private fun JsonElement?.asTag(): Tag? {
     val obj = this as? JsonObject ?: return null
@@ -223,11 +328,9 @@ private fun JsonElement?.asTag(): Tag? {
     return Tag(kind, obj["details"])
 }
 
-private fun JsonObject?.string(field: String): String? =
-    (this?.get(field) as? JsonPrimitive)?.contentOrNull
+private fun JsonObject?.string(field: String): String? = (this?.get(field) as? JsonPrimitive)?.contentOrNull
 
-private fun JsonObject?.long(field: String): Long? =
-    (this?.get(field) as? JsonPrimitive)?.longOrNull
+private fun JsonObject?.long(field: String): Long? = (this?.get(field) as? JsonPrimitive)?.longOrNull
 
 private fun validationDetail(tag: Tag): SurrealErrorKind.Validation.Detail? {
     val d = tag.details as? JsonObject
@@ -244,17 +347,21 @@ private fun validationDetail(tag: Tag): SurrealErrorKind.Validation.Detail? {
     }
 }
 
-private fun configurationDetail(tag: Tag): SurrealErrorKind.Configuration.Detail? = when (tag.kind) {
-    "LiveQueryNotSupported" -> SurrealErrorKind.Configuration.Detail.LiveQueryNotSupported
-    "BadLiveQueryConfig" -> SurrealErrorKind.Configuration.Detail.BadLiveQueryConfig
-    "BadGraphqlConfig" -> SurrealErrorKind.Configuration.Detail.BadGraphqlConfig
-    else -> null
-}
+private fun configurationDetail(tag: Tag): SurrealErrorKind.Configuration.Detail? =
+    when (tag.kind) {
+        "LiveQueryNotSupported" -> SurrealErrorKind.Configuration.Detail.LiveQueryNotSupported
+        "BadLiveQueryConfig" -> SurrealErrorKind.Configuration.Detail.BadLiveQueryConfig
+        "BadGraphqlConfig" -> SurrealErrorKind.Configuration.Detail.BadGraphqlConfig
+        else -> null
+    }
 
 private fun queryDetail(tag: Tag): SurrealErrorKind.Query.Detail? {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
-        "NotExecuted" -> SurrealErrorKind.Query.Detail.NotExecuted
+        "NotExecuted" -> {
+            SurrealErrorKind.Query.Detail.NotExecuted
+        }
+
         "TimedOut" -> {
             val duration = d?.get("duration") as? JsonObject
             SurrealErrorKind.Query.Detail.TimedOut(
@@ -262,17 +369,27 @@ private fun queryDetail(tag: Tag): SurrealErrorKind.Query.Detail? {
                 nanos = duration.long("nanos") ?: 0L,
             )
         }
-        "Cancelled" -> SurrealErrorKind.Query.Detail.Cancelled
-        "TransactionConflict" -> SurrealErrorKind.Query.Detail.TransactionConflict
-        else -> null
+
+        "Cancelled" -> {
+            SurrealErrorKind.Query.Detail.Cancelled
+        }
+
+        "TransactionConflict" -> {
+            SurrealErrorKind.Query.Detail.TransactionConflict
+        }
+
+        else -> {
+            null
+        }
     }
 }
 
-private fun serializationDetail(tag: Tag): SurrealErrorKind.Serialization.Detail? = when (tag.kind) {
-    "Serialization" -> SurrealErrorKind.Serialization.Detail.Serialization
-    "Deserialization" -> SurrealErrorKind.Serialization.Detail.Deserialization
-    else -> null
-}
+private fun serializationDetail(tag: Tag): SurrealErrorKind.Serialization.Detail? =
+    when (tag.kind) {
+        "Serialization" -> SurrealErrorKind.Serialization.Detail.Serialization
+        "Deserialization" -> SurrealErrorKind.Serialization.Detail.Deserialization
+        else -> null
+    }
 
 private fun notAllowedDetail(tag: Tag): SurrealErrorKind.NotAllowed.Detail? {
     val dObj = tag.details as? JsonObject
@@ -289,22 +406,57 @@ private fun notAllowedDetail(tag: Tag): SurrealErrorKind.NotAllowed.Detail? {
 private fun authReason(tag: Tag): SurrealErrorKind.NotAllowed.AuthReason {
     val d = tag.details as? JsonObject
     return when (tag.kind) {
-        "TokenExpired" -> SurrealErrorKind.NotAllowed.AuthReason.TokenExpired
-        "SessionExpired" -> SurrealErrorKind.NotAllowed.AuthReason.SessionExpired
-        "InvalidAuth" -> SurrealErrorKind.NotAllowed.AuthReason.InvalidAuth
-        "UnexpectedAuth" -> SurrealErrorKind.NotAllowed.AuthReason.UnexpectedAuth
-        "MissingUserOrPass" -> SurrealErrorKind.NotAllowed.AuthReason.MissingUserOrPass
-        "NoSigninTarget" -> SurrealErrorKind.NotAllowed.AuthReason.NoSigninTarget
-        "InvalidPass" -> SurrealErrorKind.NotAllowed.AuthReason.InvalidPass
-        "TokenMakingFailed" -> SurrealErrorKind.NotAllowed.AuthReason.TokenMakingFailed
-        "InvalidSignup" -> SurrealErrorKind.NotAllowed.AuthReason.InvalidSignup
-        "InvalidRole" -> SurrealErrorKind.NotAllowed.AuthReason.InvalidRole(d.string("name") ?: "")
-        "NotAllowed" -> SurrealErrorKind.NotAllowed.AuthReason.NotPermitted(
-            actor = d.string("actor") ?: "",
-            action = d.string("action") ?: "",
-            resource = d.string("resource") ?: "",
-        )
-        else -> SurrealErrorKind.NotAllowed.AuthReason.Unrecognized(tag.kind)
+        "TokenExpired" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.TokenExpired
+        }
+
+        "SessionExpired" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.SessionExpired
+        }
+
+        "InvalidAuth" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.InvalidAuth
+        }
+
+        "UnexpectedAuth" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.UnexpectedAuth
+        }
+
+        "MissingUserOrPass" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.MissingUserOrPass
+        }
+
+        "NoSigninTarget" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.NoSigninTarget
+        }
+
+        "InvalidPass" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.InvalidPass
+        }
+
+        "TokenMakingFailed" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.TokenMakingFailed
+        }
+
+        "InvalidSignup" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.InvalidSignup
+        }
+
+        "InvalidRole" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.InvalidRole(d.string("name") ?: "")
+        }
+
+        "NotAllowed" -> {
+            SurrealErrorKind.NotAllowed.AuthReason.NotPermitted(
+                actor = d.string("actor") ?: "",
+                action = d.string("action") ?: "",
+                resource = d.string("resource") ?: "",
+            )
+        }
+
+        else -> {
+            SurrealErrorKind.NotAllowed.AuthReason.Unrecognized(tag.kind)
+        }
     }
 }
 
@@ -334,9 +486,10 @@ private fun alreadyExistsDetail(tag: Tag): SurrealErrorKind.AlreadyExists.Detail
     }
 }
 
-private fun connectionDetail(tag: Tag): SurrealErrorKind.Connection.Detail? = when (tag.kind) {
-    "Uninitialised" -> SurrealErrorKind.Connection.Detail.Uninitialised
-    "AlreadyConnected" -> SurrealErrorKind.Connection.Detail.AlreadyConnected
-    "ConnectionFailed" -> SurrealErrorKind.Connection.Detail.ConnectionFailed
-    else -> null
-}
+private fun connectionDetail(tag: Tag): SurrealErrorKind.Connection.Detail? =
+    when (tag.kind) {
+        "Uninitialised" -> SurrealErrorKind.Connection.Detail.Uninitialised
+        "AlreadyConnected" -> SurrealErrorKind.Connection.Detail.AlreadyConnected
+        "ConnectionFailed" -> SurrealErrorKind.Connection.Detail.ConnectionFailed
+        else -> null
+    }

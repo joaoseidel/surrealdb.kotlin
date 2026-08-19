@@ -17,7 +17,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SpectronScopeTest {
-
     @Test
     fun noneAndEmpty() {
         assertEquals(emptyList(), scopePaths(emptyList()))
@@ -92,50 +91,58 @@ class SpectronScopeTest {
     }
 
     @Test
-    fun scopesAreSentAsNestedDnfArray() = runTest {
-        val recorded = mutableListOf<HttpRequestData>()
-        val engine = MockEngine { req ->
-            recorded += req
-            respond(
-                """{"id":"sess-1","scopes":[["org/acme"]],"createdAt":"now"}""",
-                HttpStatusCode.OK,
-                headersOf(HttpHeaders.ContentType, "application/json"),
-            )
+    fun scopesAreSentAsNestedDnfArray() =
+        runTest {
+            val recorded = mutableListOf<HttpRequestData>()
+            val engine =
+                MockEngine { req ->
+                    recorded += req
+                    respond(
+                        """{"id":"sess-1","scopes":[["org/acme"]],"createdAt":"now"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
+            // One AND-clause across two paths, with a duplicate and an empty dropped.
+            val session = s.sessions.create(scopes = scopeSet(listOf("org/acme", "team/eng", "org/acme", "")))
+            val bodyText =
+                (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)
+                    .bytes()
+                    .decodeToString()
+            val scopes = Json.parseToJsonElement(bodyText).jsonObject["scopes"] as JsonArray
+            assertEquals(1, scopes.size)
+            val clause = scopes[0].jsonArray
+            assertEquals(2, clause.size)
+            assertEquals("org/acme", clause[0].jsonPrimitive.content)
+            assertEquals("team/eng", clause[1].jsonPrimitive.content)
+            // The response decodes the nested shape onto the session info.
+            assertEquals(listOf(listOf("org/acme")), session.info.scopes)
         }
-        val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
-        // One AND-clause across two paths, with a duplicate and an empty dropped.
-        val session = s.sessions.create(scopes = scopeSet(listOf("org/acme", "team/eng", "org/acme", "")))
-        val bodyText = (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)
-            .bytes().decodeToString()
-        val scopes = Json.parseToJsonElement(bodyText).jsonObject["scopes"] as JsonArray
-        assertEquals(1, scopes.size)
-        val clause = scopes[0].jsonArray
-        assertEquals(2, clause.size)
-        assertEquals("org/acme", clause[0].jsonPrimitive.content)
-        assertEquals("team/eng", clause[1].jsonPrimitive.content)
-        // The response decodes the nested shape onto the session info.
-        assertEquals(listOf(listOf("org/acme")), session.info.scopes)
-    }
 
     @Test
-    fun lensIsSentAsNestedDnfArray() = runTest {
-        val recorded = mutableListOf<HttpRequestData>()
-        val engine = MockEngine { req ->
-            recorded += req
-            respond(
-                """{"hits":[]}""",
-                HttpStatusCode.OK,
-                headersOf(HttpHeaders.ContentType, "application/json"),
-            )
+    fun lensIsSentAsNestedDnfArray() =
+        runTest {
+            val recorded = mutableListOf<HttpRequestData>()
+            val engine =
+                MockEngine { req ->
+                    recorded += req
+                    respond(
+                        """{"hits":[]}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
+            // OR of two clauses: org/apple OR (org/beta AND region/eu).
+            s.recall("incidents", lens = scopeSets(listOf("org/apple"), listOf("org/beta", "region/eu")))
+            val bodyText =
+                (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)
+                    .bytes()
+                    .decodeToString()
+            val lens = Json.parseToJsonElement(bodyText).jsonObject["lens"] as JsonArray
+            assertEquals(2, lens.size)
+            assertEquals(listOf("org/apple"), lens[0].jsonArray.map { it.jsonPrimitive.content })
+            assertEquals(listOf("org/beta", "region/eu"), lens[1].jsonArray.map { it.jsonPrimitive.content })
         }
-        val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
-        // OR of two clauses: org/apple OR (org/beta AND region/eu).
-        s.recall("incidents", lens = scopeSets(listOf("org/apple"), listOf("org/beta", "region/eu")))
-        val bodyText = (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)
-            .bytes().decodeToString()
-        val lens = Json.parseToJsonElement(bodyText).jsonObject["lens"] as JsonArray
-        assertEquals(2, lens.size)
-        assertEquals(listOf("org/apple"), lens[0].jsonArray.map { it.jsonPrimitive.content })
-        assertEquals(listOf("org/beta", "region/eu"), lens[1].jsonArray.map { it.jsonPrimitive.content })
-    }
 }

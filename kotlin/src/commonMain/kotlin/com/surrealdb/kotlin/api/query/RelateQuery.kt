@@ -16,6 +16,7 @@ public class RelateQuery internal constructor(
     private val returnMode: ReturnMode? = null,
 ) {
     public fun content(data: JsonElement): RelateQuery = copy(data = data)
+
     public fun returnMode(mode: ReturnMode): RelateQuery = copy(returnMode = mode)
 
     public fun compile(): BoundQuery {
@@ -38,18 +39,27 @@ public class RelateQuery internal constructor(
         return q
     }
 
-    private fun renderRelateOperand(q: BoundQuery, operand: Any) {
+    private fun renderRelateOperand(
+        q: BoundQuery,
+        operand: Any,
+    ) {
         when (operand) {
             is RecordId -> {
                 q.appendLiteral("(")
                 q.appendValue(operand)
                 q.appendLiteral(")")
             }
-            else -> q.appendValue(operand)
+
+            else -> {
+                q.appendValue(operand)
+            }
         }
     }
 
-    private fun renderRelationSlot(q: BoundQuery, slot: Any) {
+    private fun renderRelationSlot(
+        q: BoundQuery,
+        slot: Any,
+    ) {
         when (slot) {
             is Table -> {
                 require(IDENTIFIER.matches(slot.name)) {
@@ -57,12 +67,19 @@ public class RelateQuery internal constructor(
                 }
                 q.appendLiteral(slot.name)
             }
-            is RecordId -> renderRelateOperand(q, slot)
-            else -> q.appendValue(slot)
+
+            is RecordId -> {
+                renderRelateOperand(q, slot)
+            }
+
+            else -> {
+                q.appendValue(slot)
+            }
         }
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 
     private fun copy(

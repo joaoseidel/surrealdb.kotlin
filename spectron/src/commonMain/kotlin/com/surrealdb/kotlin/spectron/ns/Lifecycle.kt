@@ -30,11 +30,12 @@ public class SpectronLifecycle internal constructor(
         maxResults: Int? = null,
         onBehalfOf: String? = null,
     ): FsckReportJson {
-        val payload = buildJsonObject {
-            check?.let { put("check", it) }
-            duplicateThreshold?.let { put("duplicateThreshold", it) }
-            maxResults?.let { put("maxResults", it) }
-        }
+        val payload =
+            buildJsonObject {
+                check?.let { put("check", it) }
+                duplicateThreshold?.let { put("duplicateThreshold", it) }
+                maxResults?.let { put("maxResults", it) }
+            }
         val body = transport.post("$ctxBase/fsck", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(FsckReportJson.serializer(), body!!)
     }

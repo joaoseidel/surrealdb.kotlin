@@ -36,17 +36,21 @@ public class SpectronSession internal constructor(
         offset: Int? = null,
         onBehalfOf: String? = null,
     ): List<TurnResponseJson> {
-        val body = transport.get(
-            "$base/turns",
-            mapOf("limit" to limit, "offset" to offset),
-            onBehalfOfHeader(onBehalfOf),
-        ) ?: return emptyList()
+        val body =
+            transport.get(
+                "$base/turns",
+                mapOf("limit" to limit, "offset" to offset),
+                onBehalfOfHeader(onBehalfOf),
+            ) ?: return emptyList()
         return transport.json
             .decodeFromJsonElement(TurnListResponseJson.serializer(), body)
             .turns
     }
 
-    public suspend fun context(query: String, onBehalfOf: String? = null): SessionContextResponseJson {
+    public suspend fun context(
+        query: String,
+        onBehalfOf: String? = null,
+    ): SessionContextResponseJson {
         val payload = buildJsonObject { put("query", query) }
         val body = transport.post("$base/context", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(SessionContextResponseJson.serializer(), body!!)
@@ -102,18 +106,23 @@ public class SpectronSessions internal constructor(
         metadata: JsonObject? = null,
         onBehalfOf: String? = null,
     ): SpectronSession {
-        val payload = buildJsonObject {
-            putScopeSets("scopes", scopes)
-            metadata?.let { put("metadata", it) }
-        }
-        val body = transport.post(base, payload, onBehalfOfHeader(onBehalfOf))
-            ?: error("Expected JSON object from session create, got null")
+        val payload =
+            buildJsonObject {
+                putScopeSets("scopes", scopes)
+                metadata?.let { put("metadata", it) }
+            }
+        val body =
+            transport.post(base, payload, onBehalfOfHeader(onBehalfOf))
+                ?: error("Expected JSON object from session create, got null")
         val info = transport.json.decodeFromJsonElement(SessionResponseJson.serializer(), body)
         return SpectronSession(transport, contextId, info)
     }
 
     /** Delete a session by id. Maps to `DELETE /{ctx}/sessions/{id}`. */
-    public suspend fun delete(sessionId: String, onBehalfOf: String? = null) {
+    public suspend fun delete(
+        sessionId: String,
+        onBehalfOf: String? = null,
+    ) {
         transport.delete("$base/${quotePath(sessionId)}", headers = onBehalfOfHeader(onBehalfOf))
     }
 
@@ -135,11 +144,12 @@ public class SpectronSessions internal constructor(
         offset: Int? = null,
         onBehalfOf: String? = null,
     ): List<TurnResponseJson> {
-        val body = transport.get(
-            "$base/${quotePath(sessionId)}/turns",
-            mapOf("limit" to limit, "offset" to offset),
-            onBehalfOfHeader(onBehalfOf),
-        ) ?: return emptyList()
+        val body =
+            transport.get(
+                "$base/${quotePath(sessionId)}/turns",
+                mapOf("limit" to limit, "offset" to offset),
+                onBehalfOfHeader(onBehalfOf),
+            ) ?: return emptyList()
         return transport.json
             .decodeFromJsonElement(TurnListResponseJson.serializer(), body)
             .turns

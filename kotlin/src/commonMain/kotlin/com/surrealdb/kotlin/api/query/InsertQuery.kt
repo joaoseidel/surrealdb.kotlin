@@ -23,6 +23,7 @@ public class InsertQuery internal constructor(
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 }
 
@@ -44,5 +45,6 @@ public class InsertRelationQuery internal constructor(
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 }

@@ -12,8 +12,7 @@ package com.surrealdb.kotlin.spectron
  */
 public fun scopePaths(paths: List<String>): List<String> = normaliseScopePaths(paths)
 
-public fun scopePaths(scope: Map<String, String>): List<String> =
-    normaliseScopePaths(scope.map { (k, v) -> "$k/$v" })
+public fun scopePaths(scope: Map<String, String>): List<String> = normaliseScopePaths(scope.map { (k, v) -> "$k/$v" })
 
 public fun scopePaths(vararg pairs: Pair<String, String>): List<String> =
     normaliseScopePaths(pairs.map { (k, v) -> "$k/$v" })
@@ -30,11 +29,9 @@ public fun scopePaths(vararg pairs: Pair<String, String>): List<String> =
  */
 public fun scopeSet(paths: List<String>): List<List<String>> = normaliseScopeSets(listOf(paths))
 
-public fun scopeSet(scope: Map<String, String>): List<List<String>> =
-    scopeSet(scope.map { (k, v) -> "$k/$v" })
+public fun scopeSet(scope: Map<String, String>): List<List<String>> = scopeSet(scope.map { (k, v) -> "$k/$v" })
 
-public fun scopeSet(vararg pairs: Pair<String, String>): List<List<String>> =
-    scopeSet(pairs.map { (k, v) -> "$k/$v" })
+public fun scopeSet(vararg pairs: Pair<String, String>): List<List<String>> = scopeSet(pairs.map { (k, v) -> "$k/$v" })
 
 /**
  * Build a scope selector from several AND-clauses joined by OR: a reader
@@ -46,8 +43,7 @@ public fun scopeSet(vararg pairs: Pair<String, String>): List<List<String>> =
  * a clause that normalises to empty is dropped, so no empty clause is ever
  * emitted. An empty result represents the caller's default region.
  */
-public fun scopeSets(vararg clauses: List<String>): List<List<String>> =
-    normaliseScopeSets(clauses.toList())
+public fun scopeSets(vararg clauses: List<String>): List<List<String>> = normaliseScopeSets(clauses.toList())
 
 internal fun normaliseScopePaths(raw: List<String>?): List<String> {
     if (raw.isNullOrEmpty()) return emptyList()

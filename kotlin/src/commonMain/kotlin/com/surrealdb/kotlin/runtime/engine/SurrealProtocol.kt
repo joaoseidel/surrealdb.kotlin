@@ -17,22 +17,58 @@ import kotlinx.serialization.json.JsonObject
 internal interface SurrealProtocol {
     // Connection operations
     suspend fun health(session: SessionSnapshot): JsonElement
+
     suspend fun version(session: SessionSnapshot): JsonElement
 
     // Session operations
-    suspend fun use(namespace: String, database: String, session: SessionSnapshot): JsonElement
-    suspend fun signup(params: JsonObject, session: SessionSnapshot): JsonElement
-    suspend fun signin(params: JsonObject, session: SessionSnapshot): JsonElement
-    suspend fun authenticate(token: String, session: SessionSnapshot): JsonElement
+    suspend fun use(
+        namespace: String,
+        database: String,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun signup(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun signin(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun authenticate(
+        token: String,
+        session: SessionSnapshot,
+    ): JsonElement
+
     suspend fun invalidate(session: SessionSnapshot): JsonElement
+
     suspend fun reset(session: SessionSnapshot): JsonElement
-    suspend fun set(name: String, value: JsonElement, session: SessionSnapshot): JsonElement
-    suspend fun unset(name: String, session: SessionSnapshot): JsonElement
+
+    suspend fun set(
+        name: String,
+        value: JsonElement,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun unset(
+        name: String,
+        session: SessionSnapshot,
+    ): JsonElement
 
     // Transaction operations
     suspend fun begin(session: SessionSnapshot): String
-    suspend fun commit(txnId: String, session: SessionSnapshot)
-    suspend fun cancel(txnId: String, session: SessionSnapshot)
+
+    suspend fun commit(
+        txnId: String,
+        session: SessionSnapshot,
+    )
+
+    suspend fun cancel(
+        txnId: String,
+        session: SessionSnapshot,
+    )
 
     // Query operations
     suspend fun query(
@@ -49,5 +85,8 @@ internal interface SurrealProtocol {
         session: SessionSnapshot,
     ): LiveQuerySubscription
 
-    suspend fun kill(liveQueryId: String, session: SessionSnapshot): JsonElement
+    suspend fun kill(
+        liveQueryId: String,
+        session: SessionSnapshot,
+    ): JsonElement
 }

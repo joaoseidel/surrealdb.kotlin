@@ -1,13 +1,13 @@
 package com.surrealdb.kotlin.api.query
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Snapshot tests for each builder's compiled [BoundQuery]. No server is needed
@@ -18,12 +18,12 @@ import kotlinx.serialization.json.buildJsonObject
  * should be intentional.
  */
 class QueryBuilderTest {
+    private val dispatcher =
+        object : QueryDispatcher {
+            override val json: Json = Json
 
-    private val dispatcher = object : QueryDispatcher {
-        override val json: Json = Json
-        override suspend fun dispatch(query: BoundQuery): JsonElement =
-            error("not used in compile-only tests")
-    }
+            override suspend fun dispatch(query: BoundQuery): JsonElement = error("not used in compile-only tests")
+        }
 
     private fun bindings(q: BoundQuery): Map<String, JsonElement> = q.bindings
 
@@ -34,7 +34,13 @@ class QueryBuilderTest {
         val q = SelectQuery(dispatcher, Table("person")).compile()
         assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::table("))
         assertEquals(1, q.bindings.size)
-        assertEquals("person", q.bindings.values.first().toString().trim('"'))
+        assertEquals(
+            "person",
+            q.bindings.values
+                .first()
+                .toString()
+                .trim('"'),
+        )
     }
 
     @Test
@@ -58,27 +64,30 @@ class QueryBuilderTest {
 
     @Test
     fun `select where compiles expression with bound value`() {
-        val q = SelectQuery(dispatcher, Table("person"))
-            .where(field("age") gt 18)
-            .compile()
+        val q =
+            SelectQuery(dispatcher, Table("person"))
+                .where(field("age") gt 18)
+                .compile()
         assertTrue(q.surql.contains(" WHERE (age > "))
     }
 
     @Test
     fun `select limit and start bind values`() {
-        val q = SelectQuery(dispatcher, Table("person"))
-            .start(10)
-            .limit(5)
-            .compile()
+        val q =
+            SelectQuery(dispatcher, Table("person"))
+                .start(10)
+                .limit(5)
+                .compile()
         assertTrue(q.surql.contains(" START "))
         assertTrue(q.surql.contains(" LIMIT "))
     }
 
     @Test
     fun `select fetch emits comma-separated field list`() {
-        val q = SelectQuery(dispatcher, Table("post"))
-            .fetch("author", "comments")
-            .compile()
+        val q =
+            SelectQuery(dispatcher, Table("post"))
+                .fetch("author", "comments")
+                .compile()
         assertTrue(q.surql.endsWith(" FETCH author, comments"))
     }
 
@@ -96,28 +105,31 @@ class QueryBuilderTest {
 
     @Test
     fun `create content binds the data object`() {
-        val q = CreateQuery(dispatcher, RecordId("person", "1"))
-            .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
-            .compile()
+        val q =
+            CreateQuery(dispatcher, RecordId("person", "1"))
+                .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
+                .compile()
         assertTrue(q.surql.startsWith("CREATE ONLY type::record("))
         assertTrue(q.surql.contains(" CONTENT "))
     }
 
     @Test
     fun `update content compiles to UPDATE ONLY CONTENT`() {
-        val q = UpdateQuery(dispatcher, RecordId("person", "1"))
-            .content(buildJsonObject { put("name", JsonPrimitive("X")) })
-            .compile()
+        val q =
+            UpdateQuery(dispatcher, RecordId("person", "1"))
+                .content(buildJsonObject { put("name", JsonPrimitive("X")) })
+                .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
         assertTrue(q.surql.contains(" CONTENT "))
     }
 
     @Test
     fun `upsert with where compiles to UPSERT ONLY then WHERE`() {
-        val q = UpsertQuery(dispatcher, Table("person"))
-            .content(buildJsonObject { put("name", JsonPrimitive("X")) })
-            .where(field("email") eq "x@y.z")
-            .compile()
+        val q =
+            UpsertQuery(dispatcher, Table("person"))
+                .content(buildJsonObject { put("name", JsonPrimitive("X")) })
+                .where(field("email") eq "x@y.z")
+                .compile()
         assertTrue(q.surql.startsWith("UPSERT ONLY type::table("))
         assertTrue(q.surql.contains(" CONTENT "))
         assertTrue(q.surql.contains(" WHERE (email = "))
@@ -125,8 +137,9 @@ class QueryBuilderTest {
 
     @Test
     fun `merge compiles to UPDATE ONLY MERGE`() {
-        val q = MergeQuery(dispatcher, RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
-            .compile()
+        val q =
+            MergeQuery(dispatcher, RecordId("person", "1"), buildJsonObject { put("active", JsonPrimitive(true)) })
+                .compile()
         assertTrue(q.surql.startsWith("UPDATE ONLY type::record("))
         assertTrue(q.surql.contains(" MERGE "))
     }
@@ -139,9 +152,10 @@ class QueryBuilderTest {
 
     @Test
     fun `delete with where compiles to DELETE ONLY then WHERE`() {
-        val q = DeleteQuery(dispatcher, Table("person"))
-            .where(field("active") eq false)
-            .compile()
+        val q =
+            DeleteQuery(dispatcher, Table("person"))
+                .where(field("active") eq false)
+                .compile()
         assertTrue(q.surql.startsWith("DELETE ONLY type::table("))
         assertTrue(q.surql.contains(" WHERE (active = "))
     }
@@ -150,33 +164,36 @@ class QueryBuilderTest {
 
     @Test
     fun `relate compiles to arrow chain`() {
-        val q = RelateQuery(
-            dispatcher,
-            RecordId("person", "a"),
-            Table("likes"),
-            RecordId("person", "b"),
-        ).compile()
+        val q =
+            RelateQuery(
+                dispatcher,
+                RecordId("person", "a"),
+                Table("likes"),
+                RecordId("person", "b"),
+            ).compile()
         assertTrue(q.surql.contains("->"))
         assertTrue(q.surql.startsWith("RELATE "))
     }
 
     @Test
     fun `insert compiles to INSERT INTO with bound table and data`() {
-        val q = InsertQuery(
-            dispatcher,
-            Table("person"),
-            buildJsonObject { put("name", JsonPrimitive("A")) },
-        ).compile()
+        val q =
+            InsertQuery(
+                dispatcher,
+                Table("person"),
+                buildJsonObject { put("name", JsonPrimitive("A")) },
+            ).compile()
         assertTrue(q.surql.startsWith("INSERT INTO $"))
     }
 
     @Test
     fun `insertRelation compiles to INSERT RELATION INTO`() {
-        val q = InsertRelationQuery(
-            dispatcher,
-            Table("likes"),
-            buildJsonObject { put("in", JsonPrimitive("p:a")) },
-        ).compile()
+        val q =
+            InsertRelationQuery(
+                dispatcher,
+                Table("likes"),
+                buildJsonObject { put("in", JsonPrimitive("p:a")) },
+            ).compile()
         assertTrue(q.surql.startsWith("INSERT RELATION INTO $"))
     }
 

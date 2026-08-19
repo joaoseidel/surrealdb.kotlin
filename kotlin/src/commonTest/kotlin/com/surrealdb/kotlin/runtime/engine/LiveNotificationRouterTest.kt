@@ -54,7 +54,9 @@ class LiveNotificationRouterTest :
                     }
                 }
 
-                should("carry a notification that also reached a subscription, so neither consumer takes it from the other") {
+                should(
+                    "carry a notification that also reached a subscription, so neither consumer takes it from the other",
+                ) {
                     runTest {
                         val router = LiveNotificationRouter()
                         val seen = collectInto(router.notifications)
@@ -156,7 +158,9 @@ class LiveNotificationRouterTest :
                     }
                 }
 
-                should("list a query as soon as it is registered, so a caller can wait for the subscription to exist rather than sleep") {
+                should(
+                    "list a query as soon as it is registered, so a caller can wait for the subscription to exist rather than sleep",
+                ) {
                     runTest {
                         val router = LiveNotificationRouter()
 
@@ -226,7 +230,9 @@ class LiveNotificationRouterTest :
             }
 
             context("closeAll") {
-                should("fail every subscription with the cause, so a collector learns the connection died instead of going quiet") {
+                should(
+                    "fail every subscription with the cause, so a collector learns the connection died instead of going quiet",
+                ) {
                     runTest {
                         val router = LiveNotificationRouter()
                         val events = router.register("lq-1")

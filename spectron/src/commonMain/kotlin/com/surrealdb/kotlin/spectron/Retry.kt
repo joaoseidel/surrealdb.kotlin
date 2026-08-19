@@ -10,7 +10,12 @@ internal fun backoffSchedule(maxRetries: Int): List<Duration> {
     return backoffSteps.take(capped)
 }
 
-internal fun shouldRetry(method: String, status: Int?, attempt: Int, maxRetries: Int): Boolean {
+internal fun shouldRetry(
+    method: String,
+    status: Int?,
+    attempt: Int,
+    maxRetries: Int,
+): Boolean {
     if (attempt >= maxRetries) return false
     if (method.uppercase() != "GET") return false
     if (status == null) return true

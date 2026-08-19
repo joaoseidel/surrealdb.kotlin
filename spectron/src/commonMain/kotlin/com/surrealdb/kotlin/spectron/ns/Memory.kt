@@ -28,7 +28,10 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-internal fun JsonObjectBuilder.putStringList(key: String, values: List<String>?) {
+internal fun JsonObjectBuilder.putStringList(
+    key: String,
+    values: List<String>?,
+) {
     values?.let { list -> put(key, buildJsonArray { list.forEach { add(it) } }) }
 }
 
@@ -39,7 +42,10 @@ internal fun JsonObjectBuilder.putStringList(key: String, values: List<String>?)
  * Used for the `scopes` write field and the `lens` read field, which share
  * this shape.
  */
-internal fun JsonObjectBuilder.putScopeSets(key: String, sets: List<List<String>>?) {
+internal fun JsonObjectBuilder.putScopeSets(
+    key: String,
+    sets: List<List<String>>?,
+) {
     val clauses = normaliseScopeSets(sets)
     if (clauses.isNotEmpty()) {
         put(key, buildJsonArray { clauses.forEach { clause -> add(buildJsonArray { clause.forEach { add(it) } }) } })
@@ -69,22 +75,23 @@ public class SpectronMemory internal constructor(
         location: GeoFilterJson? = null,
         onBehalfOf: String? = null,
     ): QueryMemoryResponseJson {
-        val payload = buildJsonObject {
-            put("query", query)
-            k?.let { put("k", it) }
-            mode?.let { put("mode", it) }
-            sessionId?.let { put("sessionId", it) }
-            putStringList("include", include)
-            putStringList("labels", labels)
-            putScopeSets("lens", lens)
-            scopeView?.let { put("scopeView", it) }
-            source?.let { put("source", it) }
-            asOf?.let { put("asOf", it) }
-            atInstant?.let { put("atInstant", it) }
-            validFrom?.let { put("validFrom", it) }
-            validUntil?.let { put("validUntil", it) }
-            location?.let { put("location", transport.json.encodeToJsonElement(GeoFilterJson.serializer(), it)) }
-        }
+        val payload =
+            buildJsonObject {
+                put("query", query)
+                k?.let { put("k", it) }
+                mode?.let { put("mode", it) }
+                sessionId?.let { put("sessionId", it) }
+                putStringList("include", include)
+                putStringList("labels", labels)
+                putScopeSets("lens", lens)
+                scopeView?.let { put("scopeView", it) }
+                source?.let { put("source", it) }
+                asOf?.let { put("asOf", it) }
+                atInstant?.let { put("atInstant", it) }
+                validFrom?.let { put("validFrom", it) }
+                validUntil?.let { put("validUntil", it) }
+                location?.let { put("location", transport.json.encodeToJsonElement(GeoFilterJson.serializer(), it)) }
+            }
         val body = transport.post("$base/query", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(QueryMemoryResponseJson.serializer(), body!!)
     }
@@ -97,13 +104,14 @@ public class SpectronMemory internal constructor(
         scopeView: String? = null,
         onBehalfOf: String? = null,
     ): ContextQueryResponseJson {
-        val payload = buildJsonObject {
-            put("query", query)
-            k?.let { put("k", it) }
-            putStringList("labels", labels)
-            putScopeSets("lens", lens)
-            scopeView?.let { put("scopeView", it) }
-        }
+        val payload =
+            buildJsonObject {
+                put("query", query)
+                k?.let { put("k", it) }
+                putStringList("labels", labels)
+                putScopeSets("lens", lens)
+                scopeView?.let { put("scopeView", it) }
+            }
         val body = transport.post("$base/context", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ContextQueryResponseJson.serializer(), body!!)
     }
@@ -123,10 +131,11 @@ public class SpectronMemory internal constructor(
         persist: Boolean = false,
         onBehalfOf: String? = null,
     ): ReflectResponseJson {
-        val payload = buildJsonObject {
-            put("query", query)
-            if (persist) put("persist", true)
-        }
+        val payload =
+            buildJsonObject {
+                put("query", query)
+                if (persist) put("persist", true)
+            }
         val body = transport.post("$base/reflect", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ReflectResponseJson.serializer(), body!!)
     }
@@ -136,10 +145,11 @@ public class SpectronMemory internal constructor(
         purge: Boolean = false,
         onBehalfOf: String? = null,
     ): ForgetResponseJson {
-        val payload = buildJsonObject {
-            put("query", query)
-            if (purge) put("purge", true)
-        }
+        val payload =
+            buildJsonObject {
+                put("query", query)
+                if (purge) put("purge", true)
+            }
         val body = transport.post("$base/forget", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ForgetResponseJson.serializer(), body!!)
     }
@@ -153,14 +163,15 @@ public class SpectronMemory internal constructor(
         bypassCache: Boolean = false,
         onBehalfOf: String? = null,
     ): ChatResponseJson {
-        val payload = buildJsonObject {
-            put("message", message)
-            sessionId?.let { put("sessionId", it) }
-            putScopeSets("scopes", scopes)
-            putStringList("labels", labels)
-            model?.let { put("model", it) }
-            if (bypassCache) put("bypassCache", true)
-        }
+        val payload =
+            buildJsonObject {
+                put("message", message)
+                sessionId?.let { put("sessionId", it) }
+                putScopeSets("scopes", scopes)
+                putStringList("labels", labels)
+                model?.let { put("model", it) }
+                if (bypassCache) put("bypassCache", true)
+            }
         val body = transport.post("$base/chat", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ChatResponseJson.serializer(), body!!)
     }
@@ -176,18 +187,28 @@ public class SpectronMemory internal constructor(
         sessionId: String? = null,
         onBehalfOf: String? = null,
     ): FactsResponseJson {
-        val payload = buildJsonObject {
-            text?.let { put("text", it) }
-            infer?.let { put("infer", it.wire) }
-            role?.let { put("role", it.wire) }
-            memoryCategory?.let { put("memory_category", it.wire) }
-            triples?.let { list ->
-                put("triples", buildJsonArray { list.forEach { add(transport.json.encodeToJsonElement(Triple.serializer(), it)) } })
+        val payload =
+            buildJsonObject {
+                text?.let { put("text", it) }
+                infer?.let { put("infer", it.wire) }
+                role?.let { put("role", it.wire) }
+                memoryCategory?.let { put("memory_category", it.wire) }
+                triples?.let { list ->
+                    put(
+                        "triples",
+                        buildJsonArray {
+                            list.forEach {
+                                add(
+                                    transport.json.encodeToJsonElement(Triple.serializer(), it),
+                                )
+                            }
+                        },
+                    )
+                }
+                putStringList("labels", labels)
+                putScopeSets("scopes", scopes)
+                sessionId?.let { put("session_id", it) }
             }
-            putStringList("labels", labels)
-            putScopeSets("scopes", scopes)
-            sessionId?.let { put("session_id", it) }
-        }
         val body = transport.post("$base/facts", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(FactsResponseJson.serializer(), body!!)
     }
@@ -201,14 +222,20 @@ public class SpectronMemory internal constructor(
         sessionId: String? = null,
         onBehalfOf: String? = null,
     ): FactsBatchResponseJson {
-        val payload = buildJsonObject {
-            put("messages", buildJsonArray { messages.forEach { add(transport.json.encodeToJsonElement(BatchMessage.serializer(), it)) } })
-            extract?.let { put("extract", it.wire) }
-            infer?.let { put("infer", it.wire) }
-            putStringList("labels", labels)
-            putScopeSets("scopes", scopes)
-            sessionId?.let { put("session_id", it) }
-        }
+        val payload =
+            buildJsonObject {
+                put(
+                    "messages",
+                    buildJsonArray {
+                        messages.forEach { add(transport.json.encodeToJsonElement(BatchMessage.serializer(), it)) }
+                    },
+                )
+                extract?.let { put("extract", it.wire) }
+                infer?.let { put("infer", it.wire) }
+                putStringList("labels", labels)
+                putScopeSets("scopes", scopes)
+                sessionId?.let { put("session_id", it) }
+            }
         val body = transport.post("$base/facts/batch", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(FactsBatchResponseJson.serializer(), body!!)
     }
@@ -219,11 +246,12 @@ public class SpectronMemory internal constructor(
         observationLimit: Int? = null,
         onBehalfOf: String? = null,
     ): ConsolidateResponseJson {
-        val payload = buildJsonObject {
-            if (dryRun) put("dryRun", true)
-            factLimit?.let { put("factLimit", it) }
-            observationLimit?.let { put("observationLimit", it) }
-        }
+        val payload =
+            buildJsonObject {
+                if (dryRun) put("dryRun", true)
+                factLimit?.let { put("factLimit", it) }
+                observationLimit?.let { put("observationLimit", it) }
+            }
         val body = transport.post("$base/consolidate", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ConsolidateResponseJson.serializer(), body!!)
     }
@@ -235,12 +263,13 @@ public class SpectronMemory internal constructor(
         sweep: Boolean = false,
         onBehalfOf: String? = null,
     ): ElaborateResponseJson {
-        val payload = buildJsonObject {
-            entityRef?.let { put("entityRef", it) }
-            budget?.let { put("budget", it) }
-            if (dryRun) put("dryRun", true)
-            if (sweep) put("sweep", true)
-        }
+        val payload =
+            buildJsonObject {
+                entityRef?.let { put("entityRef", it) }
+                budget?.let { put("budget", it) }
+                if (dryRun) put("dryRun", true)
+                if (sweep) put("sweep", true)
+            }
         val body = transport.post("$base/elaborate", payload, onBehalfOfHeader(onBehalfOf))
         return transport.json.decodeFromJsonElement(ElaborateResponseJson.serializer(), body!!)
     }
@@ -253,17 +282,18 @@ public class SpectronMemory internal constructor(
         validUntil: String? = null,
         onBehalfOf: String? = null,
     ): InspectResponseJson {
-        val body = transport.get(
-            "$base/inspect",
-            mapOf(
-                "ref" to ref,
-                "asOf" to asOf,
-                "atInstant" to atInstant,
-                "validFrom" to validFrom,
-                "validUntil" to validUntil,
-            ),
-            onBehalfOfHeader(onBehalfOf),
-        )
+        val body =
+            transport.get(
+                "$base/inspect",
+                mapOf(
+                    "ref" to ref,
+                    "asOf" to asOf,
+                    "atInstant" to atInstant,
+                    "validFrom" to validFrom,
+                    "validUntil" to validUntil,
+                ),
+                onBehalfOfHeader(onBehalfOf),
+            )
         return transport.json.decodeFromJsonElement(InspectResponseJson.serializer(), body!!)
     }
 }

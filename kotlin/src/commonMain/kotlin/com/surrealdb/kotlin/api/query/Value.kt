@@ -7,7 +7,9 @@ package com.surrealdb.kotlin.api.query
  * the name bound as a parameter, never inlined into the SurrealQL string, so
  * user-supplied table names cannot be used for injection.
  */
-public data class Table(public val name: String) {
+public data class Table(
+    public val name: String,
+) {
     override fun toString(): String = name
 }
 
@@ -17,7 +19,10 @@ public data class Table(public val name: String) {
  * Both `table` and `id` are surfaced verbatim; the builder emits the pair via
  * `type::record($_tb, $_id)` (SurrealDB v3) with both halves bound.
  */
-public data class RecordId(public val table: String, public val id: String) {
+public data class RecordId(
+    public val table: String,
+    public val id: String,
+) {
     override fun toString(): String = "$table:$id"
 }
 

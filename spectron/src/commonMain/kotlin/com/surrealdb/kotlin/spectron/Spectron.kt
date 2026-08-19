@@ -33,8 +33,8 @@ import com.surrealdb.kotlin.spectron.ns.SpectronTraces
 import com.surrealdb.kotlin.spectron.ns.enduserBase
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlin.time.Duration
 
 public class Spectron(
@@ -63,19 +63,21 @@ public class Spectron(
     init {
         require(apiKey.isNotEmpty()) { "Spectron API key is required" }
         require(endpoint.isNotEmpty()) { "Spectron endpoint is required" }
-        val client = httpClient ?: HttpClient {
-            install(HttpTimeout) {
-                requestTimeoutMillis = timeout.inWholeMilliseconds
+        val client =
+            httpClient ?: HttpClient {
+                install(HttpTimeout) {
+                    requestTimeoutMillis = timeout.inWholeMilliseconds
+                }
             }
-        }
-        transport = SpectronTransport(
-            endpoint = endpoint.trimEnd('/'),
-            apiKey = apiKey,
-            httpClient = client,
-            json = json,
-            maxRetries = maxRetries,
-            ownsClient = httpClient == null,
-        )
+        transport =
+            SpectronTransport(
+                endpoint = endpoint.trimEnd('/'),
+                apiKey = apiKey,
+                httpClient = client,
+                json = json,
+                maxRetries = maxRetries,
+                ownsClient = httpClient == null,
+            )
         mem = SpectronMemory(transport, contextId)
         auditApi = SpectronAudit(transport, contextId)
         documents = SpectronDocuments(transport, contextId)
@@ -114,9 +116,18 @@ public class Spectron(
         scopes: List<List<String>>? = null,
         sessionId: String? = null,
         onBehalfOf: String? = null,
-    ): FactsResponseJson = mem.createFact(
-        text, infer, role, memoryCategory, triples, labels, scopes, sessionId, onBehalfOf,
-    )
+    ): FactsResponseJson =
+        mem.createFact(
+            text,
+            infer,
+            role,
+            memoryCategory,
+            triples,
+            labels,
+            scopes,
+            sessionId,
+            onBehalfOf,
+        )
 
     /** Batch-write facts. Maps to `POST /{ctx}/facts/batch`. */
     public suspend fun rememberMany(
@@ -146,10 +157,24 @@ public class Spectron(
         validUntil: String? = null,
         location: GeoFilterJson? = null,
         onBehalfOf: String? = null,
-    ): QueryMemoryResponseJson = mem.query(
-        query, k, mode, sessionId, include, labels, lens, scopeView, source,
-        asOf, atInstant, validFrom, validUntil, location, onBehalfOf,
-    )
+    ): QueryMemoryResponseJson =
+        mem.query(
+            query,
+            k,
+            mode,
+            sessionId,
+            include,
+            labels,
+            lens,
+            scopeView,
+            source,
+            asOf,
+            atInstant,
+            validFrom,
+            validUntil,
+            location,
+            onBehalfOf,
+        )
 
     /** Assemble a context window for an agent prompt. Maps to `POST /{ctx}/context`. */
     public suspend fun queryContext(
@@ -244,7 +269,8 @@ public class Spectron(
     }
 }
 
-internal val defaultSpectronJson: Json = Json {
-    ignoreUnknownKeys = true
-    explicitNulls = false
-}
+internal val defaultSpectronJson: Json =
+    Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }

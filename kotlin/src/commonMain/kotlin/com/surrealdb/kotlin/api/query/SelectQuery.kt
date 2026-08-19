@@ -37,13 +37,18 @@ public class SelectQuery internal constructor(
     }
 
     public fun start(start: Int): SelectQuery = copy(start = start)
+
     public fun limit(limit: Int): SelectQuery = copy(limit = limit)
+
     public fun where(expr: Expr): SelectQuery = copy(cond = expr)
+
     public fun fetch(vararg fields: String): SelectQuery {
         fields.forEach { Expr.Field(it) }
         return copy(fetchFields = fields.toList())
     }
+
     public fun timeout(seconds: Double): SelectQuery = copy(timeoutSeconds = seconds)
+
     /** Version cutoff as a SurrealQL datetime literal (e.g. `d'2024-01-01T00:00:00Z'`). */
     public fun version(literal: String): SelectQuery = copy(versionAt = literal)
 
@@ -58,9 +63,18 @@ public class SelectQuery internal constructor(
         }
         q.appendLiteral(" FROM ONLY ")
         q.appendValue(what)
-        cond?.let { q.appendLiteral(" WHERE "); it.compile(q) }
-        start?.let { q.appendLiteral(" START "); q.bind(JsonPrimitive(it)) }
-        limit?.let { q.appendLiteral(" LIMIT "); q.bind(JsonPrimitive(it)) }
+        cond?.let {
+            q.appendLiteral(" WHERE ")
+            it.compile(q)
+        }
+        start?.let {
+            q.appendLiteral(" START ")
+            q.bind(JsonPrimitive(it))
+        }
+        limit?.let {
+            q.appendLiteral(" LIMIT ")
+            q.bind(JsonPrimitive(it))
+        }
         if (fetchFields.isNotEmpty()) q.appendLiteral(" FETCH " + fetchFields.joinToString(", "))
         timeoutSeconds?.let { q.appendLiteral(" TIMEOUT ${it}s") }
         versionAt?.let { q.appendLiteral(" VERSION $it") }
@@ -82,7 +96,17 @@ public class SelectQuery internal constructor(
         fetchFields: List<String> = this.fetchFields,
         timeoutSeconds: Double? = this.timeoutSeconds,
         versionAt: String? = this.versionAt,
-    ): SelectQuery = SelectQuery(
-        dispatcher, what, selection, fields, start, limit, cond, fetchFields, timeoutSeconds, versionAt,
-    )
+    ): SelectQuery =
+        SelectQuery(
+            dispatcher,
+            what,
+            selection,
+            fields,
+            start,
+            limit,
+            cond,
+            fetchFields,
+            timeoutSeconds,
+            versionAt,
+        )
 }

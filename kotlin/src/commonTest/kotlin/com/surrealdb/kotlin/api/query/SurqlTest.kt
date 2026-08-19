@@ -1,20 +1,20 @@
 package com.surrealdb.kotlin.api.query
 
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlinx.serialization.json.JsonPrimitive
 
 class SurqlTest {
-
     @Test
     fun `surql DSL produces matching string and bindings`() {
-        val q = surql {
-            +"SELECT * FROM "
-            value(Table("person"))
-            +" WHERE age > "
-            value(18)
-        }
+        val q =
+            surql {
+                +"SELECT * FROM "
+                value(Table("person"))
+                +" WHERE age > "
+                value(18)
+            }
         assertTrue(q.surql.startsWith("SELECT * FROM type::table("))
         assertTrue(q.surql.contains(" WHERE age > "))
         // Table name + literal 18 = 2 bindings

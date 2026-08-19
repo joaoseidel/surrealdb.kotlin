@@ -23,16 +23,18 @@ public class SpectronKeys internal constructor(
         ttlSeconds: Int? = null,
         onBehalfOf: String? = null,
     ): MintedKey {
-        val payload = buildJsonObject {
-            name?.let { put("name", it) }
-            grants?.let { put("grants", it) }
-        }
-        val body = transport.post(
-            base,
-            body = payload.takeIf { it.isNotEmpty() },
-            params = mapOf("ttlSeconds" to ttlSeconds),
-            headers = onBehalfOfHeader(onBehalfOf),
-        )
+        val payload =
+            buildJsonObject {
+                name?.let { put("name", it) }
+                grants?.let { put("grants", it) }
+            }
+        val body =
+            transport.post(
+                base,
+                body = payload.takeIf { it.isNotEmpty() },
+                params = mapOf("ttlSeconds" to ttlSeconds),
+                headers = onBehalfOfHeader(onBehalfOf),
+            )
         return transport.json.decodeFromJsonElement(MintedKey.serializer(), body!!)
     }
 
@@ -41,7 +43,10 @@ public class SpectronKeys internal constructor(
         return transport.json.decodeFromJsonElement(ListSerializer(KeyDetail.serializer()), body)
     }
 
-    public suspend fun delete(keyName: String, onBehalfOf: String? = null) {
+    public suspend fun delete(
+        keyName: String,
+        onBehalfOf: String? = null,
+    ) {
         transport.delete("$base/${quotePath(keyName)}", headers = onBehalfOfHeader(onBehalfOf))
     }
 
@@ -50,11 +55,12 @@ public class SpectronKeys internal constructor(
         ttlSeconds: Int? = null,
         onBehalfOf: String? = null,
     ): MintedKey {
-        val body = transport.post(
-            "$base/${quotePath(keyName)}/rotate",
-            params = mapOf("ttlSeconds" to ttlSeconds),
-            headers = onBehalfOfHeader(onBehalfOf),
-        )
+        val body =
+            transport.post(
+                "$base/${quotePath(keyName)}/rotate",
+                params = mapOf("ttlSeconds" to ttlSeconds),
+                headers = onBehalfOfHeader(onBehalfOf),
+            )
         return transport.json.decodeFromJsonElement(MintedKey.serializer(), body!!)
     }
 }

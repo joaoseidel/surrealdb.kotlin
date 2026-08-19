@@ -8,10 +8,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 /**
  * Common-tier tests for client-side transactions: verify the HTTP engine
@@ -21,15 +21,15 @@ import kotlinx.serialization.json.buildJsonObject
  * SurrealDB WebSocket.
  */
 class TransactionTest {
-
     private fun httpClient(): SurrealClient {
-        val engine = MockEngine { _ ->
-            respond(
-                content = """{"id":"1","result":null}""",
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
-            )
-        }
+        val engine =
+            MockEngine { _ ->
+                respond(
+                    content = """{"id":"1","result":null}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            }
         return SurrealClient(
             SurrealClientConfig(
                 url = "http://localhost:8000",
@@ -40,19 +40,21 @@ class TransactionTest {
     }
 
     @Test
-    fun `beginTransaction on http engine reports feature not supported`() = runTest {
-        assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
-            httpClient().beginTransaction()
-        }
-    }
-
-    @Test
-    fun `transaction block on http engine surfaces the feature error`() = runTest {
-        val client = httpClient()
-        assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
-            client.transaction {
-                create(Table("person")).content(buildJsonObject {}).await()
+    fun `beginTransaction on http engine reports feature not supported`() =
+        runTest {
+            assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
+                httpClient().beginTransaction()
             }
         }
-    }
+
+    @Test
+    fun `transaction block on http engine surfaces the feature error`() =
+        runTest {
+            val client = httpClient()
+            assertFailsWith<com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException> {
+                client.transaction {
+                    create(Table("person")).content(buildJsonObject {}).await()
+                }
+            }
+        }
 }

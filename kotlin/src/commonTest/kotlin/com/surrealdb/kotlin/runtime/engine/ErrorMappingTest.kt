@@ -7,13 +7,13 @@ import com.surrealdb.kotlin.api.error.SurrealNotFoundException
 import com.surrealdb.kotlin.api.error.SurrealQueryException
 import com.surrealdb.kotlin.api.error.SurrealRpcException
 import com.surrealdb.kotlin.runtime.SurrealRpcError
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Verifies [mapRpcError] classifies errors from the server's structured
@@ -22,7 +22,6 @@ import kotlinx.serialization.json.JsonPrimitive
  * JSON shape the server sends for that error family.
  */
 class ErrorMappingTest {
-
     private val wireJson = Json { ignoreUnknownKeys = true }
 
     /** Decodes a raw wire error payload — exactly as it would arrive over HTTP/WS — and maps it. */
@@ -33,10 +32,11 @@ class ErrorMappingTest {
 
     @Test
     fun `NotAllowed Auth TokenExpired maps to authentication exception with isTokenExpired`() {
-        val ex = mapWire(
-            """{"code":-32002,"message":"The token has expired","kind":"NotAllowed",""" +
-                """"details":{"kind":"Auth","details":{"kind":"TokenExpired"}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32002,"message":"The token has expired","kind":"NotAllowed",""" +
+                    """"details":{"kind":"Auth","details":{"kind":"TokenExpired"}}}""",
+            )
         assertIs<SurrealAuthenticationException>(ex)
         assertTrue(ex.isTokenExpired)
         assertFalse(ex.isInvalidAuth)
@@ -44,10 +44,11 @@ class ErrorMappingTest {
 
     @Test
     fun `NotAllowed Auth InvalidAuth maps to authentication exception with isInvalidAuth`() {
-        val ex = mapWire(
-            """{"code":-32002,"message":"Invalid credentials","kind":"NotAllowed",""" +
-                """"details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32002,"message":"Invalid credentials","kind":"NotAllowed",""" +
+                    """"details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}""",
+            )
         assertIs<SurrealAuthenticationException>(ex)
         assertTrue(ex.isInvalidAuth)
         assertFalse(ex.isTokenExpired)
@@ -55,12 +56,14 @@ class ErrorMappingTest {
 
     @Test
     fun `token-expired and invalid-auth are distinguishable on the same exception type`() {
-        val expired = mapWire(
-            """{"message":"expired","kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"TokenExpired"}}}""",
-        )
-        val invalid = mapWire(
-            """{"message":"invalid","kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}""",
-        )
+        val expired =
+            mapWire(
+                """{"message":"expired","kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"TokenExpired"}}}""",
+            )
+        val invalid =
+            mapWire(
+                """{"message":"invalid","kind":"NotAllowed","details":{"kind":"Auth","details":{"kind":"InvalidAuth"}}}""",
+            )
         assertIs<SurrealAuthenticationException>(expired)
         assertIs<SurrealAuthenticationException>(invalid)
         assertTrue(expired.isTokenExpired && !expired.isInvalidAuth)
@@ -69,11 +72,12 @@ class ErrorMappingTest {
 
     @Test
     fun `NotAllowed Auth NotAllowed reason carries actor action and resource`() {
-        val ex = mapWire(
-            """{"code":-32002,"message":"Not enough permissions","kind":"NotAllowed","details":""" +
-                """{"kind":"Auth","details":{"kind":"NotAllowed",""" +
-                """"details":{"actor":"user:tobie","action":"select","resource":"table:secret"}}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32002,"message":"Not enough permissions","kind":"NotAllowed","details":""" +
+                    """{"kind":"Auth","details":{"kind":"NotAllowed",""" +
+                    """"details":{"actor":"user:tobie","action":"select","resource":"table:secret"}}}}""",
+            )
         assertIs<SurrealAuthenticationException>(ex)
         assertFalse(ex.isTokenExpired)
         assertFalse(ex.isInvalidAuth)
@@ -91,10 +95,11 @@ class ErrorMappingTest {
 
     @Test
     fun `NotAllowed Scripting is NOT an authentication exception`() {
-        val ex = mapWire(
-            """{"code":-32602,"message":"Scripting functions are not allowed","kind":"NotAllowed",""" +
-                """"details":{"kind":"Scripting"}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32602,"message":"Scripting functions are not allowed","kind":"NotAllowed",""" +
+                    """"details":{"kind":"Scripting"}}""",
+            )
         assertFalse(ex is SurrealAuthenticationException)
 
         val kind = ex.kind
@@ -116,10 +121,11 @@ class ErrorMappingTest {
 
     @Test
     fun `NotFound Record maps to not-found exception`() {
-        val ex = mapWire(
-            """{"message":"The record does not exist","kind":"NotFound",""" +
-                """"details":{"kind":"Record","details":{"id":"person:chiru"}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"message":"The record does not exist","kind":"NotFound",""" +
+                    """"details":{"kind":"Record","details":{"id":"person:chiru"}}}""",
+            )
         assertIs<SurrealNotFoundException>(ex)
 
         val detail = ex.detail
@@ -129,10 +135,11 @@ class ErrorMappingTest {
 
     @Test
     fun `AlreadyExists Record maps to already-exists exception`() {
-        val ex = mapWire(
-            """{"message":"Database record `person:chiru` already exists","kind":"AlreadyExists",""" +
-                """"details":{"kind":"Record","details":{"id":"person:chiru"}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"message":"Database record `person:chiru` already exists","kind":"AlreadyExists",""" +
+                    """"details":{"kind":"Record","details":{"id":"person:chiru"}}}""",
+            )
         assertIs<SurrealAlreadyExistsException>(ex)
 
         val detail = ex.detail
@@ -142,12 +149,14 @@ class ErrorMappingTest {
 
     @Test
     fun `NotFound and AlreadyExists for the same table are distinguishable by exception type`() {
-        val notFound = mapWire(
-            """{"message":"missing","kind":"NotFound","details":{"kind":"Table","details":{"name":"person"}}}""",
-        )
-        val alreadyExists = mapWire(
-            """{"message":"dup","kind":"AlreadyExists","details":{"kind":"Table","details":{"name":"person"}}}""",
-        )
+        val notFound =
+            mapWire(
+                """{"message":"missing","kind":"NotFound","details":{"kind":"Table","details":{"name":"person"}}}""",
+            )
+        val alreadyExists =
+            mapWire(
+                """{"message":"dup","kind":"AlreadyExists","details":{"kind":"Table","details":{"name":"person"}}}""",
+            )
         assertIs<SurrealNotFoundException>(notFound)
         assertIs<SurrealAlreadyExistsException>(alreadyExists)
     }
@@ -156,9 +165,10 @@ class ErrorMappingTest {
 
     @Test
     fun `Query TransactionConflict is flagged retryable`() {
-        val ex = mapWire(
-            """{"code":-32009,"message":"Resource busy","kind":"Query","details":{"kind":"TransactionConflict"}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32009,"message":"Resource busy","kind":"Query","details":{"kind":"TransactionConflict"}}""",
+            )
         assertIs<SurrealQueryException>(ex)
         assertTrue(ex.isTransactionConflict)
         assertFalse(ex.isTimedOut)
@@ -168,10 +178,11 @@ class ErrorMappingTest {
 
     @Test
     fun `Query TimedOut is NOT a transaction conflict`() {
-        val ex = mapWire(
-            """{"code":-32004,"message":"Query timed out","kind":"Query",""" +
-                """"details":{"kind":"TimedOut","details":{"duration":{"secs":5,"nanos":0}}}}""",
-        )
+        val ex =
+            mapWire(
+                """{"code":-32004,"message":"Query timed out","kind":"Query",""" +
+                    """"details":{"kind":"TimedOut","details":{"duration":{"secs":5,"nanos":0}}}}""",
+            )
         assertIs<SurrealQueryException>(ex)
         assertFalse(ex.isTransactionConflict)
         assertTrue(ex.isTimedOut)
@@ -230,11 +241,12 @@ class ErrorMappingTest {
 
     @Test
     fun `code message and data are forwarded to the exception`() {
-        val error = SurrealRpcError(
-            code = -32603,
-            message = "Invalid params",
-            data = JsonPrimitive("details"),
-        )
+        val error =
+            SurrealRpcError(
+                code = -32603,
+                message = "Invalid params",
+                data = JsonPrimitive("details"),
+            )
         val ex = mapRpcError(error)
         assertEquals(-32603, ex.code)
         assertEquals("Invalid params", ex.message)

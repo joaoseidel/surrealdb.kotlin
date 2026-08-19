@@ -13,6 +13,7 @@ public class CreateQuery internal constructor(
     private val returnMode: ReturnMode? = null,
 ) {
     public fun content(data: JsonElement): CreateQuery = copy(data = data)
+
     public fun returnMode(mode: ReturnMode): CreateQuery = copy(returnMode = mode)
 
     public fun compile(): BoundQuery {
@@ -28,6 +29,7 @@ public class CreateQuery internal constructor(
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 
     private fun copy(

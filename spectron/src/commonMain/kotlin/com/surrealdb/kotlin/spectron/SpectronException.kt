@@ -17,8 +17,11 @@ public sealed class SpectronException(
     cause: Throwable? = null,
 ) : RuntimeException(buildMessage(status, title, detail), cause)
 
-private fun buildMessage(status: Int, title: String, detail: String?): String =
-    if (detail.isNullOrEmpty()) "[$status] $title" else "[$status] $title: $detail"
+private fun buildMessage(
+    status: Int,
+    title: String,
+    detail: String?,
+): String = if (detail.isNullOrEmpty()) "[$status] $title" else "[$status] $title: $detail"
 
 public class SpectronAuthException(
     status: Int,
@@ -108,17 +111,41 @@ internal fun errorFromResponse(
     }
 
     return when {
-        status == 401 -> SpectronAuthException(status, title, detail, typeUri, instance, extensions)
-        status == 403 -> SpectronScopeException(status, title, detail, typeUri, instance, extensions)
-        status == 404 -> SpectronNotFoundException(status, title, detail, typeUri, instance, extensions)
-        status == 400 || status == 422 ->
+        status == 401 -> {
+            SpectronAuthException(status, title, detail, typeUri, instance, extensions)
+        }
+
+        status == 403 -> {
+            SpectronScopeException(status, title, detail, typeUri, instance, extensions)
+        }
+
+        status == 404 -> {
+            SpectronNotFoundException(status, title, detail, typeUri, instance, extensions)
+        }
+
+        status == 400 || status == 422 -> {
             SpectronValidationException(status, title, detail, typeUri, instance, extensions)
-        status == 429 -> SpectronRateLimitException(
-            status, title, detail, typeUri, instance, extensions,
-            retryAfter = parseRetryAfter(headers),
-        )
-        status >= 500 -> SpectronServerException(status, title, detail, typeUri, instance, extensions)
-        else -> SpectronServerException(status, title, detail, typeUri, instance, extensions)
+        }
+
+        status == 429 -> {
+            SpectronRateLimitException(
+                status,
+                title,
+                detail,
+                typeUri,
+                instance,
+                extensions,
+                retryAfter = parseRetryAfter(headers),
+            )
+        }
+
+        status >= 500 -> {
+            SpectronServerException(status, title, detail, typeUri, instance, extensions)
+        }
+
+        else -> {
+            SpectronServerException(status, title, detail, typeUri, instance, extensions)
+        }
     }
 }
 

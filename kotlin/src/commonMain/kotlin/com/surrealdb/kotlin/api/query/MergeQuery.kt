@@ -13,6 +13,7 @@ public class MergeQuery internal constructor(
     private val returnMode: ReturnMode? = null,
 ) {
     public fun where(expr: Expr): MergeQuery = copy(cond = expr)
+
     public fun returnMode(mode: ReturnMode): MergeQuery = copy(returnMode = mode)
 
     public fun compile(): BoundQuery {
@@ -21,12 +22,16 @@ public class MergeQuery internal constructor(
         q.appendValue(what)
         q.appendLiteral(" MERGE ")
         if (data is JsonElement) q.bind(data) else q.appendValue(data)
-        cond?.let { q.appendLiteral(" WHERE "); it.compile(q) }
+        cond?.let {
+            q.appendLiteral(" WHERE ")
+            it.compile(q)
+        }
         returnMode?.render(q)
         return q
     }
 
     public suspend fun await(): JsonElement = firstQueryResult(dispatcher.dispatch(compile()))
+
     public suspend fun awaitRaw(): JsonElement = dispatcher.dispatch(compile())
 
     private fun copy(

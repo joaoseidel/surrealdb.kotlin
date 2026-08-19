@@ -16,18 +16,48 @@ public interface SurrealQueryable {
     public suspend fun query(bound: BoundQuery): JsonElement
 
     /** Dispatch a raw SurrealQL string with optional name-keyed bindings. */
-    public suspend fun query(sql: String, vars: JsonObject? = null): JsonElement
+    public suspend fun query(
+        sql: String,
+        vars: JsonObject? = null,
+    ): JsonElement
 
     public fun select(what: Any): SelectQuery
+
     public fun create(what: Any): CreateQuery
+
     public fun upsert(what: Any): UpsertQuery
+
     public fun update(what: Any): UpdateQuery
-    public fun merge(what: Any, data: Any): MergeQuery
-    public fun patch(what: Any, patches: JsonElement, diff: Boolean = false): PatchQuery
+
+    public fun merge(
+        what: Any,
+        data: Any,
+    ): MergeQuery
+
+    public fun patch(
+        what: Any,
+        patches: JsonElement,
+        diff: Boolean = false,
+    ): PatchQuery
+
     public fun delete(what: Any): DeleteQuery
-    public fun relate(`in`: Any, relation: Any, out: Any): RelateQuery
-    public fun insert(into: Table, data: JsonElement): InsertQuery
-    public fun insertRelation(into: Table, data: JsonElement): InsertRelationQuery
+
+    public fun relate(
+        `in`: Any,
+        relation: Any,
+        out: Any,
+    ): RelateQuery
+
+    public fun insert(
+        into: Table,
+        data: JsonElement,
+    ): InsertQuery
+
+    public fun insertRelation(
+        into: Table,
+        data: JsonElement,
+    ): InsertRelationQuery
+
     public fun run(function: String): RunQuery
 }
 
@@ -44,25 +74,52 @@ internal class QueryableImpl(
 ) : SurrealQueryable {
     override suspend fun query(bound: BoundQuery): JsonElement = dispatcher.dispatch(bound)
 
-    override suspend fun query(sql: String, vars: JsonObject?): JsonElement {
+    override suspend fun query(
+        sql: String,
+        vars: JsonObject?,
+    ): JsonElement {
         val bq = BoundQuery().appendLiteral(sql)
         if (vars != null) for ((k, v) in vars) bq.attachBinding(k, v)
         return dispatcher.dispatch(bq)
     }
 
     override fun select(what: Any): SelectQuery = SelectQuery(dispatcher, what)
+
     override fun create(what: Any): CreateQuery = CreateQuery(dispatcher, what)
+
     override fun upsert(what: Any): UpsertQuery = UpsertQuery(dispatcher, what)
+
     override fun update(what: Any): UpdateQuery = UpdateQuery(dispatcher, what)
-    override fun merge(what: Any, data: Any): MergeQuery = MergeQuery(dispatcher, what, data)
-    override fun patch(what: Any, patches: JsonElement, diff: Boolean): PatchQuery =
-        PatchQuery(dispatcher, what, patches, diff)
+
+    override fun merge(
+        what: Any,
+        data: Any,
+    ): MergeQuery = MergeQuery(dispatcher, what, data)
+
+    override fun patch(
+        what: Any,
+        patches: JsonElement,
+        diff: Boolean,
+    ): PatchQuery = PatchQuery(dispatcher, what, patches, diff)
+
     override fun delete(what: Any): DeleteQuery = DeleteQuery(dispatcher, what)
-    override fun relate(`in`: Any, relation: Any, out: Any): RelateQuery =
-        RelateQuery(dispatcher, `in`, relation, out)
-    override fun insert(into: Table, data: JsonElement): InsertQuery = InsertQuery(dispatcher, into, data)
-    override fun insertRelation(into: Table, data: JsonElement): InsertRelationQuery =
-        InsertRelationQuery(dispatcher, into, data)
+
+    override fun relate(
+        `in`: Any,
+        relation: Any,
+        out: Any,
+    ): RelateQuery = RelateQuery(dispatcher, `in`, relation, out)
+
+    override fun insert(
+        into: Table,
+        data: JsonElement,
+    ): InsertQuery = InsertQuery(dispatcher, into, data)
+
+    override fun insertRelation(
+        into: Table,
+        data: JsonElement,
+    ): InsertRelationQuery = InsertRelationQuery(dispatcher, into, data)
+
     override fun run(function: String): RunQuery = RunQuery(dispatcher, function)
 }
 
@@ -77,5 +134,6 @@ internal class QueryableImpl(
 @PublishedApi
 internal interface QueryDispatcher {
     public val json: Json
+
     public suspend fun dispatch(query: BoundQuery): JsonElement
 }
