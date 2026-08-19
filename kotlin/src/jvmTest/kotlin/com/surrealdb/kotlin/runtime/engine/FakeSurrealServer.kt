@@ -1,5 +1,8 @@
 package com.surrealdb.kotlin.runtime.engine
 
+import com.surrealdb.kotlin.api.ReconnectConfig
+import com.surrealdb.kotlin.api.Session
+import com.surrealdb.kotlin.api.Surreal
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -12,8 +15,11 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -222,5 +228,41 @@ internal class FakeSurrealServer(
                 )
             },
         )
+    }
+}
+
+internal const val PATIENCE_MILLIS = 10_000L
+
+internal suspend fun awaiting(condition: () -> Boolean) {
+    withTimeout(PATIENCE_MILLIS) {
+        while (!condition()) delay(5)
+    }
+}
+
+internal fun clientFor(server: FakeSurrealServer) =
+    Surreal(
+        Surreal.Config(
+            url = "ws://127.0.0.1:${server.port}",
+            reconnect = ReconnectConfig(initialDelayMillis = 10, maxDelayMillis = 50),
+            requestTimeoutMillis = PATIENCE_MILLIS,
+        ),
+    )
+
+internal fun withServer(
+    liveQueriesBeforeRejecting: Int = Int.MAX_VALUE,
+    notifyOnStart: String? = null,
+    block: suspend CoroutineScope.(FakeSurrealServer, Surreal, Session) -> Unit,
+) {
+    val server = FakeSurrealServer(liveQueriesBeforeRejecting, notifyOnStart)
+    server.start()
+    try {
+        val client = clientFor(server)
+        try {
+            runBlocking { block(server, client, client.session()) }
+        } finally {
+            client.close()
+        }
+    } finally {
+        server.stop()
     }
 }

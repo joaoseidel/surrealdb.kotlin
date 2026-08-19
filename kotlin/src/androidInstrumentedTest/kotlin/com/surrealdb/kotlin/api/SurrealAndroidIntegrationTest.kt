@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.api
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.create
 import com.surrealdb.kotlin.api.query.delete
 import kotlinx.coroutines.flow.first
@@ -92,7 +93,7 @@ class SurrealAndroidIntegrationTest {
                 db.query("DEFINE TABLE android_live SCHEMALESS")
                 db.query("DELETE android_live")
 
-                val subscription = db.live("android_live")
+                val subscription = db.live(Table("android_live"))
                 withTimeout(10_000) { client.activeLiveQueries.first { subscription.id in it } }
 
                 db

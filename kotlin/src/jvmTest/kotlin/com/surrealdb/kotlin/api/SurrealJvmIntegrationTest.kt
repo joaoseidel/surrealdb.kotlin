@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.api.ConnectionEvent
 import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.live.LiveMode
 import com.surrealdb.kotlin.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.api.query.ReturnMode
 import com.surrealdb.kotlin.api.query.create
@@ -289,11 +290,13 @@ class SurrealJvmIntegrationTest {
                 db.query("DEFINE TABLE live_person SCHEMALESS")
                 db.query("DELETE live_person")
 
-                val subscription = db.live("live_person")
+                val subscription = db.live(Table("live_person"))
+                val diffs = db.live(Table("live_person"), LiveMode.Diffs)
 
                 // Wait on the engine's own record of the subscription rather than sleeping
                 // and hoping — this is what activeLiveQueries is for.
                 withTimeout(5_000) { client.activeLiveQueries.first { subscription.id in it } }
+                withTimeout(5_000) { client.activeLiveQueries.first { diffs.id in it } }
 
                 db
                     .create(RecordId("live_person", "one"))
@@ -302,6 +305,18 @@ class SurrealJvmIntegrationTest {
 
                 val event = withTimeout(10_000) { subscription.events.first() }
                 assertEquals("CREATE", event.action)
+                assertNotNull(event.result.jsonObject["name"])
+
+                val diffEvent = withTimeout(10_000) { diffs.events.first() }
+                assertEquals("CREATE", diffEvent.action)
+                val firstOp =
+                    diffEvent.result.jsonArray
+                        .first()
+                        .jsonObject["op"]
+                assertEquals("replace", firstOp?.jsonPrimitive?.content)
+
+                db.kill(diffs.id)
+                diffs.cancel()
 
                 db.kill(subscription.id)
                 assertTrue(
