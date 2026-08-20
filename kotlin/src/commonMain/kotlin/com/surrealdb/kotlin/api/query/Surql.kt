@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
-import com.surrealdb.kotlin.api.data.Field
+import com.surrealdb.kotlin.api.data.Projection
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.SurqlDsl
@@ -138,15 +138,15 @@ internal fun BoundQuery.appendStatementTarget(
     }
 
 /**
- * Append [fields] as a projection list, aliasing any path that holds an index
+ * Append [projections] as a projection list, aliasing any path that holds an index
  * to itself. SurrealDB answers `SELECT tags[0]` with `{"tags": "cs"}`: it drops
  * the index and puts the value on the parent key, where the declaration does
  * not name it and a second index into the same array overwrites the first.
  */
-internal fun BoundQuery.appendProjections(fields: List<Field<*>>): BoundQuery =
-    apply { appendLiteral(fields.joinToString(", ") { it.asProjection() }) }
+internal fun BoundQuery.appendProjections(projections: List<Projection>): BoundQuery =
+    apply { appendLiteral(projections.joinToString(", ") { it.render() }) }
 
-private fun Field<*>.asProjection(): String = if ('[' in path) "$path AS `$path`" else path
+private fun Projection.render(): String = if ('[' in path) "$path AS `$path`" else path
 
 /**
  * Append [value] to the query, choosing the right SurrealQL expression based

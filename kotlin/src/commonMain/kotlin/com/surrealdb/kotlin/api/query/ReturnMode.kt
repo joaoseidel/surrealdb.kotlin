@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
-import com.surrealdb.kotlin.api.data.Field
+import com.surrealdb.kotlin.api.data.Projection
 
 /**
  * How a write statement's `RETURN` clause should behave.
@@ -17,7 +17,7 @@ public sealed class ReturnMode {
     public data object Diff : ReturnMode()
 
     public data class Fields(
-        val fields: List<Field<*>>,
+        val fields: List<Projection>,
     ) : ReturnMode() {
         init {
             require(fields.isNotEmpty()) { "ReturnMode.Fields requires at least one field" }

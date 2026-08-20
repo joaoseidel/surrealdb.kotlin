@@ -12,8 +12,8 @@ package com.surrealdb.kotlin.api.data
  * [com.surrealdb.kotlin.api.query.checkSchema] is what asks it.
  */
 public open class Field<V> internal constructor(
-    public val path: String,
-) {
+    override val path: String,
+) : Projection {
     init {
         require(FIELD_PATH.matches(path)) {
             "Field path must match $FIELD_PATH (got '$path')"
