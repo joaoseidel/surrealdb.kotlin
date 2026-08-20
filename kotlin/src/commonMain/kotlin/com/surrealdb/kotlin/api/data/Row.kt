@@ -26,9 +26,8 @@ import kotlinx.serialization.serializer
  * the `city` of the `address` object: SurrealDB rebuilds the nesting in what it
  * answers with rather than flattening it. A record holding the whole path as
  * one key is read from that key instead, which is how a projected `tags[0]`
- * arrives. `[*]` reads every element of an
- * array, so `field<List<String>>("authors[*].name")` is a list of names and an
- * element that has none holds a null in it, which is the shape
+ * arrives. `[*]` reads every element, so `field<List<String?>>("authors[*].name")`
+ * is the list of names with a null wherever an element has none, the shape
  * `SELECT authors[*].name` answers with.
  *
  * [content] is the record as it arrived, for anything this does not cover.
@@ -46,27 +45,27 @@ public class Row internal constructor(
     public inline operator fun <reified V> get(field: Field<V>): V = decode(field, serializer())
 
     /**
-     * As [get], for a field whose type is not known at the call site: `reified`
-     * refuses a `Field<*>`, and the builders hold their projections as
-     * `List<Field<*>>`.
+     * As [get], for something whose type is not known at the call site:
+     * `reified` refuses a `Field<*>`, the builders hold their projections as
+     * `List<Projection>`, and a [Nested] group has no value type of its own.
      */
     public fun <V> decode(
-        field: Field<*>,
+        projection: Projection,
         serializer: KSerializer<V>,
     ): V {
-        val value = resolve(field.path)
+        val value = resolve(projection.path)
         if (value == null || value is JsonNull) {
             if (serializer.descriptor.isNullable) return json.decodeFromJsonElement(serializer, JsonNull)
             throw NoSuchElementException(
-                "No value for '${field.path}' in this row, which holds ${content.keys.sorted()}. " +
+                "No value for '${projection.path}' in this row, which holds ${content.keys.sorted()}. " +
                     "Declare the field as nullable to read a missing one as null.",
             )
         }
         return json.decodeFromJsonElement(serializer, value)
     }
 
-    /** True if the record carries [field] at all, NULL included. */
-    public operator fun contains(field: Field<*>): Boolean = resolve(field.path) != null
+    /** True if the record carries [projection] at all, NULL included. */
+    public operator fun contains(projection: Projection): Boolean = resolve(projection.path) != null
 
     override fun toString(): String = content.toString()
 

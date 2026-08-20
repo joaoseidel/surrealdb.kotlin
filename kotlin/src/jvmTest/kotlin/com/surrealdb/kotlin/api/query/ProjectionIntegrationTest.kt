@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
+import com.surrealdb.kotlin.api.data.Nested
 import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
@@ -22,7 +23,13 @@ private object Talks : Table("pj_talk") {
     val firstTag = field<String>("tags[0]")
     val secondTag = field<String>("tags[1]")
     val everyTag = field<List<String>>("tags[*]")
-    val city = field<String>("venue.city")
+
+    object Venue : Nested("venue") {
+        val city by field<String>()
+        val country by field<String>()
+    }
+
+    val venue = nested(Venue)
 }
 
 private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
@@ -52,7 +59,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
                 .set {
                     it[title] = "Ada"
                     it[tags] = listOf("cs", "lisp")
-                    it[city] = "Boston"
+                    it[venue.city] = "Boston"
+                    it[venue.country] = "US"
                 }.await()
             db.create(Talks["grace"]).set { it[title] = "Grace" }.await()
 
@@ -72,10 +80,10 @@ class ProjectionIntegrationTest :
         context("a projection over a nested field") {
             should("read back through the field that named it, since the server rebuilds the object") {
                 onServer { db ->
-                    val talk = db.select(Talks["ada"]).fields(Talks.title, Talks.city).theRecord()
+                    val talk = db.select(Talks["ada"]).fields(Talks.title, Talks.venue.city).theRecord()
 
                     talk[Talks.title] shouldBe "Ada"
-                    talk[Talks.city] shouldBe "Boston"
+                    talk[Talks.venue.city] shouldBe "Boston"
                 }
             }
         }
@@ -117,13 +125,24 @@ class ProjectionIntegrationTest :
             }
         }
 
+        context("a projection over a nested group") {
+            should("answer with the whole object, read leaf by leaf") {
+                onServer { db ->
+                    val talk = db.select(Talks["ada"]).fields(Talks.venue).theRecord()
+
+                    talk[Talks.venue.city] shouldBe "Boston"
+                    talk[Talks.venue.country] shouldBe "US"
+                }
+            }
+        }
+
         context("a VALUE projection") {
             should("read as the values themselves, in the order the statement answered") {
                 onServer { db ->
                     val cities =
                         db
                             .select(Talks)
-                            .value(Talks.city)
+                            .value(Talks.venue.city)
                             .decodeAs<String?>()
                             .await()
 
@@ -135,7 +154,7 @@ class ProjectionIntegrationTest :
                 onServer { db ->
                     val failure =
                         shouldThrow<SurrealProtocolException> {
-                            db.select(Talks["ada"]).value(Talks.city).await()
+                            db.select(Talks["ada"]).value(Talks.venue.city).await()
                         }
 
                     failure.message shouldContain "decodeAs()"

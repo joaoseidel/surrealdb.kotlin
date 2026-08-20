@@ -215,6 +215,7 @@ object People : Table("person") {
 }
 
 db.select(People).where { address.city eq "Cambridge" }
+db.select(People).fields(People.address)
 db.update(People).set { it[address.geo.lat] = 52.2 }
 row[People.address.city]   // "Cambridge", because SurrealDB rebuilds the nesting rather than flattening it
 ```
@@ -225,9 +226,10 @@ checks the path against where the group is declared, so a missing parent fails a
 than becoming a `WHERE` on a field that does not exist, which SurrealDB answers with an empty result
 set rather than an error.
 
-A group is not a field, so it has no value to assign or read whole. Assign the leaves, and a dotted
-`SET` builds the objects above them. A caller who wants the whole object at once declares it beside
-the group, and either form works on its own:
+A group is not a field, so it has no value to assign. Assign the leaves, and a dotted `SET` builds
+the objects above them. It can be projected whole, `fields(People.address)`, and every leaf under it
+still reads through its own declaration. A caller who wants the object as one value declares it
+beside the group, and either form works on its own:
 
 ```kotlin
 object People : Table("person") {

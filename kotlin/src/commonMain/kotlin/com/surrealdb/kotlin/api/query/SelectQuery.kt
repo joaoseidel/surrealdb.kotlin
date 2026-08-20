@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.Condition
 import com.surrealdb.kotlin.api.data.Field
+import com.surrealdb.kotlin.api.data.Projection
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
@@ -19,7 +20,7 @@ public class SelectQuery<S : Table> internal constructor(
     private val schema: S,
     private val what: Target,
     private val selection: Selection = Selection.All,
-    private val fields: List<Field<*>> = emptyList(),
+    private val fields: List<Projection> = emptyList(),
     private val start: Int? = null,
     private val limit: Int? = null,
     private val cond: Condition? = null,
@@ -30,9 +31,13 @@ public class SelectQuery<S : Table> internal constructor(
 ) : Query(context) {
     internal enum class Selection { All, Fields, Value }
 
-    /** Select only the named fields. */
-    public fun fields(vararg fields: Field<*>): SelectQuery<S> =
-        copy(selection = Selection.Fields, fields = fields.toList())
+    /**
+     * Select only what is named here. A [com.surrealdb.kotlin.api.data.Nested]
+     * group stands for the whole object it describes, and every leaf under it
+     * still reads through its own declaration.
+     */
+    public fun fields(vararg projections: Projection): SelectQuery<S> =
+        copy(selection = Selection.Fields, fields = projections.toList())
 
     /**
      * Project a single field as `SELECT VALUE`, so the statement answers with
@@ -40,7 +45,8 @@ public class SelectQuery<S : Table> internal constructor(
      * records and rejects those, so read them with
      * `decodeAs<V>().await()`.
      */
-    public fun value(field: Field<*>): SelectQuery<S> = copy(selection = Selection.Value, fields = listOf(field))
+    public fun value(projection: Projection): SelectQuery<S> =
+        copy(selection = Selection.Value, fields = listOf(projection))
 
     public fun start(start: Int): SelectQuery<S> = copy(start = start)
 
@@ -103,7 +109,7 @@ public class SelectQuery<S : Table> internal constructor(
 
     private fun copy(
         selection: Selection = this.selection,
-        fields: List<Field<*>> = this.fields,
+        fields: List<Projection> = this.fields,
         start: Int? = this.start,
         limit: Int? = this.limit,
         cond: Condition? = this.cond,

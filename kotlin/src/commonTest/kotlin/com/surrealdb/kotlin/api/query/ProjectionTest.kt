@@ -66,6 +66,21 @@ class ProjectionTest :
             }
         }
 
+        context("a projection over a nested group") {
+            should("name the object, which the server answers with whole") {
+                val compiled = RecordingContext().select(Contacts).fields(Contacts.name, Contacts.address).compile()
+
+                compiled.surql shouldContain "SELECT name, address FROM"
+            }
+
+            should("read every leaf under it through the declaration that named the leaf") {
+                val contact = row("""{"address":{"city":"Boston","geo":{"lat":42.36}}}""")
+
+                contact[Contacts.address.city] shouldBe "Boston"
+                contact[Contacts.address.geo.lat] shouldBe 42.36
+            }
+        }
+
         context("a VALUE projection over an indexed path") {
             should("take no alias, because the answer is the value and has no key to carry one") {
                 val compiled = RecordingContext().select(Agenda).value(Agenda.firstTag).compile()
