@@ -177,7 +177,7 @@ jobs:
           # not exist — the gate and the endpoint have to arrive as instrumentation
           # arguments. 10.0.2.2 is the host loopback as seen from the emulator.
           script: >
-            ./gradlew --no-daemon :kotlin:connectedDebugAndroidTest
+            ./gradlew --no-daemon :kotlin:connectedAndroidDeviceTest
             -Pandroid.testInstrumentationRunnerArguments.SURREAL_RUN_INTEGRATION=true
             -Pandroid.testInstrumentationRunnerArguments.SURREAL_ANDROID_ENDPOINT=http://10.0.2.2:8000
 
@@ -186,9 +186,9 @@ jobs:
         # count is checked too: the gate above is an assumption, and an assumption
         # that fails reports as a pass while testing nothing at all.
         run: |
-          results="kotlin/build/outputs/androidTest-results/connected/debug"
-          shopt -s nullglob
-          files=("$results"/TEST-*.xml)
+          results="kotlin/build/outputs/androidTest-results/connected"
+          shopt -s nullglob globstar
+          files=("$results"/**/TEST-*.xml)
           if [ ${#files[@]} -eq 0 ]; then
             echo "no instrumented test results under $results"
             exit 1
@@ -201,7 +201,7 @@ jobs:
 
       - name: Android test report
         if: failure()
-        run: cat kotlin/build/outputs/androidTest-results/connected/debug/TEST-*.xml || true
+        run: find kotlin/build/outputs/androidTest-results/connected -name 'TEST-*.xml' -exec cat {} + || true
 
       - name: SurrealDB logs
         if: always()

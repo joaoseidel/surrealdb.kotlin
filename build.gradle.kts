@@ -1,4 +1,4 @@
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -7,14 +7,14 @@ import org.jetbrains.kotlin.konan.target.HostManager
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.ksp) apply false
     alias(libs.plugins.kotest) apply false
 }
 
 val jdkToolchainVersion = 21
-val javaVersion = JavaVersion.VERSION_11
 val androidCompileSdk = 35
 val androidMinSdk = 26
 val ktlintVersion =
@@ -52,8 +52,17 @@ allprojects {
 
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
+    val generatedRoot =
+        layout.buildDirectory
+            .get()
+            .asFile.path
+
     configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
         version.set(ktlintVersion)
+
+        filter {
+            exclude { it.file.path.startsWith(generatedRoot) }
+        }
     }
 }
 
@@ -61,7 +70,6 @@ subprojects {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
         apply(plugin = "org.jetbrains.dokka")
-        apply(plugin = "io.kotest.multiplatform")
         apply(plugin = "maven-publish")
 
         configure<KotlinMultiplatformExtension> {
@@ -69,8 +77,10 @@ subprojects {
 
             jvmToolchain(jdkToolchainVersion)
 
-            androidTarget {
-                publishLibraryVariants("release")
+            targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach {
+                compileSdk = androidCompileSdk
+                minSdk = androidMinSdk
+
                 compilerOptions {
                     jvmTarget.set(JvmTarget.JVM_11)
                 }
@@ -94,19 +104,6 @@ subprojects {
             sourceSets.getByName("jvmTest").dependencies {
                 implementation(libs.junit.jupiter)
                 implementation(libs.kotest.runner.junit5)
-            }
-        }
-
-        configure<LibraryExtension> {
-            compileSdk = androidCompileSdk
-
-            defaultConfig {
-                minSdk = androidMinSdk
-            }
-
-            compileOptions {
-                sourceCompatibility = javaVersion
-                targetCompatibility = javaVersion
             }
         }
 
@@ -159,7 +156,6 @@ fun Project.configurePublishing() {
                 artifactId =
                     when (name) {
                         "kotlinMultiplatform" -> artifactBase
-                        "androidRelease" -> "$artifactBase-android"
                         else -> "$artifactBase-$name"
                     }
 

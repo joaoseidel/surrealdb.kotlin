@@ -1,13 +1,15 @@
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.multiplatform)
-}
-
-android {
-    namespace = "com.surrealdb.kotlin.spectron"
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
+    android {
+        namespace = "com.surrealdb.kotlin.spectron"
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
