@@ -79,8 +79,6 @@ public fun toJson(value: Any?): JsonElement =
         }
     }
 
-private val IDENT = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
-
 /**
  * Append [target] as the SurrealQL expression naming it. Every statement that
  * takes a target renders it here, so what `select` and `delete` point at is
@@ -111,17 +109,13 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
             }
 
             is RecordIdRange -> {
-                // Range literals in v3 are `tb:start..end` — there's no
-                // type::range constructor that accepts table+start+end. Inline
-                // the table after validating it as an identifier.
-                require(IDENT.matches(target.table)) {
-                    "RecordIdRange.table must be a plain identifier (got '${target.table}')"
-                }
-                appendLiteral(target.table)
-                appendLiteral(":")
+                appendLiteral("type::record(")
+                bind(JsonPrimitive(target.table))
+                appendLiteral(", ")
                 target.start?.let { bind(JsonPrimitive(it)) }
                 appendLiteral(if (target.includeEnd) "..=" else "..")
                 target.end?.let { bind(JsonPrimitive(it)) }
+                appendLiteral(")")
             }
         }
     }

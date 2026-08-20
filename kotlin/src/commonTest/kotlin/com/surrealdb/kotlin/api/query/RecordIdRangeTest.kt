@@ -1,27 +1,28 @@
 package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.RecordIdRange
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * A record range is the one target the builder inlines part of — SurrealQL has
- * no `type::range` constructor, so the table name reaches the query string
- * directly and the bounds are the only halves that can be bound.
+ * A record range is a record id whose key is a range, so it is built the same
+ * way a single record id is: `type::record($tb, $start..$end)`, every half
+ * bound. The bare literal form `tb:$start..$end` does not parse, because v3
+ * refuses a parameter where it expects a record-id key.
  */
 class RecordIdRangeTest :
     ShouldSpec({
         context("a RecordIdRange rendered into a query") {
-            should("bind both bounds, so neither can carry SurrealQL into the string") {
+            should("bind the table and both bounds, so none of them can carry SurrealQL into the string") {
                 val q = BoundQuery()
 
                 q.appendValue(RecordIdRange("person", start = "alice", end = "zara"))
 
-                q.surql shouldBe "person:\$_0..\$_1"
-                q.bindings["_0"] shouldBe JsonPrimitive("alice")
-                q.bindings["_1"] shouldBe JsonPrimitive("zara")
+                q.surql shouldBe "type::record(\$_0, \$_1..\$_2)"
+                q.bindings["_0"] shouldBe JsonPrimitive("person")
+                q.bindings["_1"] shouldBe JsonPrimitive("alice")
+                q.bindings["_2"] shouldBe JsonPrimitive("zara")
             }
 
             should("close the range inclusively when includeEnd is set") {
@@ -29,7 +30,7 @@ class RecordIdRangeTest :
 
                 q.appendValue(RecordIdRange("person", start = "alice", end = "zara", includeEnd = true))
 
-                q.surql shouldBe "person:\$_0..=\$_1"
+                q.surql shouldBe "type::record(\$_0, \$_1..=\$_2)"
             }
 
             should("close inclusively with no start too, because the two bounds are independent") {
@@ -37,7 +38,7 @@ class RecordIdRangeTest :
 
                 q.appendValue(RecordIdRange("person", end = "zara", includeEnd = true))
 
-                q.surql shouldBe "person:..=\$_0"
+                q.surql shouldBe "type::record(\$_0, ..=\$_1)"
             }
 
             should("leave the open side empty when only one bound is given") {
@@ -47,16 +48,26 @@ class RecordIdRangeTest :
                 fromAlice.appendValue(RecordIdRange("person", start = "alice"))
                 untilZara.appendValue(RecordIdRange("person", end = "zara"))
 
-                fromAlice.surql shouldBe "person:\$_0.."
-                untilZara.surql shouldBe "person:..\$_0"
+                fromAlice.surql shouldBe "type::record(\$_0, \$_1..)"
+                untilZara.surql shouldBe "type::record(\$_0, ..\$_1)"
             }
 
-            should("reject a table name that is not a plain identifier, because it is inlined") {
+            should("render an unbounded range, which names every key the table has") {
                 val q = BoundQuery()
 
-                shouldThrow<IllegalArgumentException> {
-                    q.appendValue(RecordIdRange("person; DROP TABLE x", start = "a"))
-                }
+                q.appendValue(RecordIdRange("person"))
+
+                q.surql shouldBe "type::record(\$_0, ..)"
+                q.bindings["_0"] shouldBe JsonPrimitive("person")
+            }
+
+            should("take a table name that is not an identifier, because it is bound rather than inlined") {
+                val q = BoundQuery()
+
+                q.appendValue(RecordIdRange("person; DROP TABLE x", start = "a"))
+
+                q.surql shouldBe "type::record(\$_0, \$_1..)"
+                q.bindings["_0"] shouldBe JsonPrimitive("person; DROP TABLE x")
             }
         }
     })
