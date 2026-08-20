@@ -15,15 +15,23 @@ public class PatchQuery<T, S : Table<T>> internal constructor(
     private val patches: JsonElement,
     private val cond: Condition<T>? = null,
     private val returnMode: ReturnMode? = null,
+    private val only: Boolean? = null,
 ) : Query(context) {
     public fun where(build: S.() -> Condition<T>): PatchQuery<T, S> = copy(cond = schema.build())
 
     public fun returnMode(mode: ReturnMode): PatchQuery<T, S> = copy(returnMode = mode)
 
+    /**
+     * Emit `ONLY`, so the statement answers with the record itself instead of a
+     * list of one. A record-id target already does. On a table or range target
+     * the server rejects the statement the moment a second record matches.
+     */
+    public fun only(): PatchQuery<T, S> = copy(only = true)
+
     override fun compile(): BoundQuery {
         val q = BoundQuery()
-        q.appendLiteral("UPDATE ONLY ")
-        q.appendTarget(what)
+        q.appendLiteral("UPDATE ")
+        q.appendStatementTarget(what, only)
         q.appendLiteral(" PATCH ")
         q.bind(patches)
         cond?.let {
@@ -37,5 +45,6 @@ public class PatchQuery<T, S : Table<T>> internal constructor(
     private fun copy(
         cond: Condition<T>? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-    ): PatchQuery<T, S> = PatchQuery(context, schema, what, patches, cond, returnMode)
+        only: Boolean? = this.only,
+    ): PatchQuery<T, S> = PatchQuery(context, schema, what, patches, cond, returnMode, only)
 }

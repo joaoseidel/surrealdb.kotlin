@@ -32,9 +32,9 @@ class QueryBuilderTest {
     // ── select ──
 
     @Test
-    fun `select from table emits SELECT FROM ONLY with bound table name`() {
+    fun `select from table emits SELECT FROM with bound table name`() {
         val q = context.select(People).compile()
-        assertTrue(q.surql.startsWith("SELECT * FROM ONLY type::table("))
+        assertTrue(q.surql.startsWith("SELECT * FROM type::table("))
         assertEquals(1, q.bindings.size)
         assertEquals(
             "person",
@@ -55,13 +55,13 @@ class QueryBuilderTest {
     @Test
     fun `select fields emits comma-separated field list`() {
         val q = context.select(People).fields(People.id, People.name, People.age).compile()
-        assertTrue(q.surql.startsWith("SELECT id, name, age FROM ONLY"))
+        assertTrue(q.surql.startsWith("SELECT id, name, age FROM type::table("))
     }
 
     @Test
     fun `select value emits VALUE clause`() {
         val q = context.select(People).value(People.name).compile()
-        assertTrue(q.surql.startsWith("SELECT VALUE name FROM ONLY"))
+        assertTrue(q.surql.startsWith("SELECT VALUE name FROM type::table("))
     }
 
     @Test
@@ -121,14 +121,14 @@ class QueryBuilderTest {
     }
 
     @Test
-    fun `upsert with where compiles to UPSERT ONLY then WHERE`() {
+    fun `upsert with where compiles to UPSERT then WHERE`() {
         val q =
             context
                 .upsert(People)
                 .content(buildJsonObject { put("name", JsonPrimitive("X")) })
                 .where { email eq "x@y.z" }
                 .compile()
-        assertTrue(q.surql.startsWith("UPSERT ONLY type::table("))
+        assertTrue(q.surql.startsWith("UPSERT type::table("))
         assertTrue(q.surql.contains(" CONTENT "))
         assertTrue(q.surql.contains(" WHERE (email = "))
     }
@@ -150,13 +150,13 @@ class QueryBuilderTest {
     }
 
     @Test
-    fun `delete with where compiles to DELETE ONLY then WHERE`() {
+    fun `delete with where compiles to DELETE then WHERE`() {
         val q =
             context
                 .delete(People)
                 .where { active eq false }
                 .compile()
-        assertTrue(q.surql.startsWith("DELETE ONLY type::table("))
+        assertTrue(q.surql.startsWith("DELETE type::table("))
         assertTrue(q.surql.contains(" WHERE (active = "))
     }
 

@@ -127,6 +127,35 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
     }
 
 /**
+ * Whether a statement pointed at [target] can match at most one record.
+ *
+ * `ONLY` makes the server answer with the record itself instead of a list, and
+ * reject the statement the moment a second record matches. That is right for a
+ * target naming one record and wrong for one naming a set, so the verbs read
+ * the answer from the target rather than hardcoding the keyword. The `when` is
+ * exhaustive over [Target], so a new kind of target has to answer this too.
+ */
+internal fun Target.matchesAtMostOneRecord(): Boolean =
+    when (this) {
+        is RecordId, is TableRecord<*, *> -> true
+        is Table<*>, is RecordIdRange -> false
+    }
+
+/**
+ * Append the target of a statement, prefixed with `ONLY` when the statement
+ * answers with a single record. [only] overrides [matchesAtMostOneRecord]: the
+ * builders pass what `only()` recorded, and `null` means the target decides.
+ */
+internal fun BoundQuery.appendStatementTarget(
+    target: Target,
+    only: Boolean?,
+): BoundQuery =
+    apply {
+        if (only ?: target.matchesAtMostOneRecord()) appendLiteral("ONLY ")
+        appendTarget(target)
+    }
+
+/**
  * Append [value] to the query, choosing the right SurrealQL expression based
  * on the value's type. Strings/numbers/booleans become bound parameters; a
  * [Target] expands into the SurrealQL expression naming it.

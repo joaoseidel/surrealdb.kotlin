@@ -33,7 +33,7 @@ class AssignmentTest :
                             it[age] = 30
                         }.compile()
 
-                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET name = \$_1, age = \$_2"
+                compiled.surql shouldBe "UPDATE type::table(\$_0) SET name = \$_1, age = \$_2"
             }
 
             should("bind every value, so nothing a caller supplied reaches the SurrealQL") {
@@ -69,7 +69,7 @@ class AssignmentTest :
             should("emit no clause at all when the block assigned nothing, because empty SET is a parse error") {
                 val compiled = compileOnly.update(People).set { }.compile()
 
-                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0)"
+                compiled.surql shouldBe "UPDATE type::table(\$_0)"
                 compiled.bindings shouldHaveSize 1
             }
 
@@ -86,7 +86,7 @@ class AssignmentTest :
                     .upsert(People)
                     .set { it[age] = 30 }
                     .compile()
-                    .surql shouldBe "UPSERT ONLY type::table(\$_0) SET age = \$_1"
+                    .surql shouldBe "UPSERT type::table(\$_0) SET age = \$_1"
             }
 
             should("sit before WHERE and RETURN, because SurrealQL takes the clauses in that order") {
@@ -100,7 +100,7 @@ class AssignmentTest :
                         .surql
 
                 surql shouldBe
-                    "UPDATE ONLY type::table(\$_0) SET age = \$_1 WHERE (age > \$_2) RETURN AFTER"
+                    "UPDATE type::table(\$_0) SET age = \$_1 WHERE (age > \$_2) RETURN AFTER"
             }
 
             should("apply to one record when the target carries the schema") {
@@ -143,7 +143,7 @@ class AssignmentTest :
                     .content(buildJsonObject { put("name", "Alice") })
                     .set { }
                     .compile()
-                    .surql shouldBe "UPDATE ONLY type::table(\$_0)"
+                    .surql shouldBe "UPDATE type::table(\$_0)"
             }
         }
 
@@ -156,7 +156,7 @@ class AssignmentTest :
                         .compile()
 
                 compiled.surql shouldBe
-                    "UPDATE ONLY type::table(\$_0) SET author = type::record(\$_1, \$_2)"
+                    "UPDATE type::table(\$_0) SET author = type::record(\$_1, \$_2)"
             }
 
             should("take a schema-carrying record through its RecordId, which reads the same") {
@@ -165,7 +165,7 @@ class AssignmentTest :
                     .set { it[author] = People["alice"].record }
                     .compile()
                     .surql shouldBe
-                    "UPDATE ONLY type::table(\$_0) SET author = type::record(\$_1, \$_2)"
+                    "UPDATE type::table(\$_0) SET author = type::record(\$_1, \$_2)"
             }
         }
 
@@ -177,7 +177,7 @@ class AssignmentTest :
                         .set { it[address] = Postal("Boston", "02110") }
                         .compile()
 
-                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET address = \$_1"
+                compiled.surql shouldBe "UPDATE type::table(\$_0) SET address = \$_1"
                 compiled.bindings["_1"].toString() shouldBe "{\"city\":\"Boston\",\"postal_code\":\"02110\"}"
             }
 
@@ -198,7 +198,7 @@ class AssignmentTest :
                         .set { it[tags] += "cs" }
                         .compile()
 
-                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET tags += \$_1"
+                compiled.surql shouldBe "UPDATE type::table(\$_0) SET tags += \$_1"
                 compiled.bindings shouldContainValue JsonPrimitive("cs")
             }
 
@@ -207,7 +207,7 @@ class AssignmentTest :
                     .update(People)
                     .set { it[tags] -= "cs" }
                     .compile()
-                    .surql shouldBe "UPDATE ONLY type::table(\$_0) SET tags -= \$_1"
+                    .surql shouldBe "UPDATE type::table(\$_0) SET tags -= \$_1"
             }
 
             should("mix with plain assignments in one statement, in the order written") {
@@ -219,7 +219,7 @@ class AssignmentTest :
                         it[tags] -= "lisp"
                     }.compile()
                     .surql shouldBe
-                    "UPDATE ONLY type::table(\$_0) SET age = \$_1, tags += \$_2, tags -= \$_3"
+                    "UPDATE type::table(\$_0) SET age = \$_1, tags += \$_2, tags -= \$_3"
             }
         }
 
@@ -231,7 +231,7 @@ class AssignmentTest :
                         .set { it[tags] = listOf("cs", "lisp") }
                         .compile()
 
-                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET tags = \$_1"
+                compiled.surql shouldBe "UPDATE type::table(\$_0) SET tags = \$_1"
                 compiled.bindings["_1"].toString() shouldBe "[\"cs\",\"lisp\"]"
             }
         }

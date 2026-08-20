@@ -287,7 +287,7 @@ class RpcMethodsTest :
                     h.db.select(Table("person")).await()
 
                     h.lastMethod shouldBe "query"
-                    h.lastSurql() shouldStartWith "SELECT * FROM ONLY type::table("
+                    h.lastSurql() shouldStartWith "SELECT * FROM type::table("
                     h
                         .param(1)
                         ?.jsonObject
