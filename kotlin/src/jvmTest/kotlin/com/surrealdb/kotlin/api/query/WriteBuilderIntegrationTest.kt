@@ -23,19 +23,12 @@ private data class Shelf(
     @SerialName("postal_code") val zip: String,
 )
 
-@Serializable
-private data class Book(
-    val title: String,
-    val pages: Int,
-    val tags: List<String>,
-    val shelf: Shelf,
-)
-
-private object Books : Table<Book>("wb_book", Book.serializer()) {
+private object Books : Table("wb_book") {
     val title by field<String>()
     val pages by field<Int>()
     val tags by field<List<String>>()
-    val shelf by nested<Shelf>()
+    val shelf = field<Shelf>("shelf")
+    val shelfCity = field<String>("shelf.city")
     val shelfZip = field<String>("shelf.postal_code")
 }
 
@@ -103,7 +96,7 @@ class WriteBuilderIntegrationTest :
                         db
                             .update(Books["htdp"])
                             .set {
-                                it[shelf[Shelf::city]] = "Boston"
+                                it[shelfCity] = "Boston"
                                 it[shelfZip] = "02110"
                             }.await()
 

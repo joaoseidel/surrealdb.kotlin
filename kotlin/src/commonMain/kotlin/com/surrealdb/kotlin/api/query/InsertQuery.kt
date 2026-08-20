@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
  */
 public class InsertQuery internal constructor(
     context: QueryContext,
-    private val into: Table<*>,
+    private val into: Table,
     private val data: JsonElement,
 ) : Query(context) {
     override fun compile(): BoundQuery {
@@ -29,7 +29,7 @@ public class InsertQuery internal constructor(
  */
 public class InsertRelationQuery internal constructor(
     context: QueryContext,
-    private val into: Table<*>,
+    private val into: Table,
     private val data: JsonElement,
 ) : Query(context) {
     override fun compile(): BoundQuery {

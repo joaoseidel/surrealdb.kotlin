@@ -18,13 +18,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-@Serializable
-private data class Line(
-    val title: String,
-    val n: Int,
-)
-
-private object Lines : Table<Line>("om_line", Line.serializer()) {
+private object Lines : Table("om_line") {
     val title by field<String>()
     val n by field<Int>()
 }

@@ -4,7 +4,6 @@ import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
 @Serializable
 internal data class Postal(
@@ -12,26 +11,7 @@ internal data class Postal(
     @SerialName("postal_code") val zip: String,
 )
 
-@Serializable
-internal data class Human(
-    val name: String,
-    val age: Int,
-    val email: String,
-    val active: Boolean,
-    val tags: List<String>,
-    val address: Postal,
-    val meta: JsonElement,
-    @SerialName("first_name") val firstName: String,
-)
-
-@Serializable
-internal data class Article(
-    val title: String,
-    val author: String,
-    val comments: List<String>,
-)
-
-internal object People : Table<Human>("person", Human.serializer()) {
+internal object People : Table("person") {
     val id = recordId()
     val name by field<String>()
     val age by field<Int>()
@@ -39,26 +19,20 @@ internal object People : Table<Human>("person", Human.serializer()) {
     val active by field<Boolean>()
     val tags by field<List<String>>()
     val firstName = field<String>("first_name")
-    val address by nested<Postal>()
+    val address = field<Postal>("address")
+    val city = field<String>("address.city")
 }
 
-internal object Posts : Table<Article>("post", Article.serializer()) {
+internal object Posts : Table("post") {
     val author by field<String>()
     val comments by field<List<String>>()
 }
 
-@Serializable
-internal data class Note(
-    val body: String,
-    val author: String,
-)
-
 /**
- * `author` holds a link. The DTO types it `String` because that is what a link
- * decodes to over JSON, while the field handle types it [RecordId] because that
- * is what a statement may assign to it.
+ * `author` holds a link, so its handle is typed [RecordId]: that is what a
+ * statement may assign to it, whatever a caller decodes the result into.
  */
-internal object Notes : Table<Note>("note", Note.serializer()) {
+internal object Notes : Table("note") {
     val body by field<String>()
     val author = field<RecordId>("author")
 }

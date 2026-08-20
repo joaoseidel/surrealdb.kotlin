@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * Each chain method returns a fresh instance so builders are safe to share or
  * pin to a variable.
  */
-public class SelectQuery<T, S : Table<T>> internal constructor(
+public class SelectQuery<S : Table> internal constructor(
     context: QueryContext,
     private val schema: S,
     private val what: Target,
@@ -22,7 +22,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
     private val fields: List<Field<*>> = emptyList(),
     private val start: Int? = null,
     private val limit: Int? = null,
-    private val cond: Condition<T>? = null,
+    private val cond: Condition? = null,
     private val fetchFields: List<Field<*>> = emptyList(),
     private val timeoutSeconds: Double? = null,
     private val versionAt: String? = null,
@@ -31,24 +31,24 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
     internal enum class Selection { All, Fields, Value }
 
     /** Select only the named fields. */
-    public fun fields(vararg fields: Field<*>): SelectQuery<T, S> =
+    public fun fields(vararg fields: Field<*>): SelectQuery<S> =
         copy(selection = Selection.Fields, fields = fields.toList())
 
     /** Project a single field as VALUE. */
-    public fun value(field: Field<*>): SelectQuery<T, S> = copy(selection = Selection.Value, fields = listOf(field))
+    public fun value(field: Field<*>): SelectQuery<S> = copy(selection = Selection.Value, fields = listOf(field))
 
-    public fun start(start: Int): SelectQuery<T, S> = copy(start = start)
+    public fun start(start: Int): SelectQuery<S> = copy(start = start)
 
-    public fun limit(limit: Int): SelectQuery<T, S> = copy(limit = limit)
+    public fun limit(limit: Int): SelectQuery<S> = copy(limit = limit)
 
-    public fun where(build: S.() -> Condition<T>): SelectQuery<T, S> = copy(cond = schema.build())
+    public fun where(build: S.() -> Condition): SelectQuery<S> = copy(cond = schema.build())
 
-    public fun fetch(vararg fields: Field<*>): SelectQuery<T, S> = copy(fetchFields = fields.toList())
+    public fun fetch(vararg fields: Field<*>): SelectQuery<S> = copy(fetchFields = fields.toList())
 
-    public fun timeout(seconds: Double): SelectQuery<T, S> = copy(timeoutSeconds = seconds)
+    public fun timeout(seconds: Double): SelectQuery<S> = copy(timeoutSeconds = seconds)
 
     /** Version cutoff as a SurrealQL datetime literal (e.g. `d'2024-01-01T00:00:00Z'`). */
-    public fun version(literal: String): SelectQuery<T, S> = copy(versionAt = literal)
+    public fun version(literal: String): SelectQuery<S> = copy(versionAt = literal)
 
     /**
      * Emit `ONLY`, so the statement answers with the record itself instead of a
@@ -56,7 +56,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
      * with [limit] (1), because the server rejects the statement the moment a
      * second row matches; `only()` adds no limit of its own.
      */
-    public fun only(): SelectQuery<T, S> = copy(forceOnly = true)
+    public fun only(): SelectQuery<S> = copy(forceOnly = true)
 
     /** Compile this query without dispatching it. */
     override fun compile(): BoundQuery {
@@ -92,12 +92,12 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
         fields: List<Field<*>> = this.fields,
         start: Int? = this.start,
         limit: Int? = this.limit,
-        cond: Condition<T>? = this.cond,
+        cond: Condition? = this.cond,
         fetchFields: List<Field<*>> = this.fetchFields,
         timeoutSeconds: Double? = this.timeoutSeconds,
         versionAt: String? = this.versionAt,
         forceOnly: Boolean = this.forceOnly,
-    ): SelectQuery<T, S> =
+    ): SelectQuery<S> =
         SelectQuery(
             context,
             schema,

@@ -17,12 +17,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-@Serializable
-private data class Slot(
-    val n: Int,
-)
-
-private object Slots : Table<Slot>("rt_slot", Slot.serializer()) {
+private object Slots : Table("rt_slot") {
     val n by field<Int>()
 }
 

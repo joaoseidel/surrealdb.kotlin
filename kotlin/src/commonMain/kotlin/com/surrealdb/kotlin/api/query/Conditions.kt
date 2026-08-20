@@ -15,14 +15,13 @@ import com.surrealdb.kotlin.api.data.Table
 
 /**
  * Field paths are the one thing written into the SurrealQL rather than bound:
- * SurrealQL has no parameter form for an identifier. They are validated against
- * the record type's descriptor at declaration and against an identifier pattern
- * at construction. Every operand is bound.
+ * SurrealQL has no parameter form for an identifier. They are checked against an
+ * identifier pattern when the field is constructed. Every operand is bound.
  */
-internal fun BoundQuery.appendCondition(condition: Condition<*>): BoundQuery =
+internal fun BoundQuery.appendCondition(condition: Condition): BoundQuery =
     apply {
         when (condition) {
-            is Comparison<*> -> {
+            is Comparison -> {
                 appendLiteral("(")
                 appendLiteral(condition.field.path)
                 appendLiteral(" ${condition.op} ")
@@ -30,13 +29,13 @@ internal fun BoundQuery.appendCondition(condition: Condition<*>): BoundQuery =
                 appendLiteral(")")
             }
 
-            is FieldTest<*> -> {
+            is FieldTest -> {
                 appendLiteral("(")
                 appendLiteral(condition.field.path)
                 appendLiteral(" ${condition.op})")
             }
 
-            is FunctionCall<*> -> {
+            is FunctionCall -> {
                 appendLiteral("${condition.function}(")
                 appendLiteral(condition.field.path)
                 appendLiteral(", ")
@@ -44,25 +43,25 @@ internal fun BoundQuery.appendCondition(condition: Condition<*>): BoundQuery =
                 appendLiteral(")")
             }
 
-            is RawCondition<*> -> {
+            is RawCondition -> {
                 appendLiteral("(")
                 appendFragment(condition.sql, condition.bindings)
                 appendLiteral(")")
             }
 
-            is Grouped<*> -> {
+            is Grouped -> {
                 appendCondition(condition.inner)
             }
 
-            is Conjunction<*> -> {
+            is Conjunction -> {
                 appendJoined(condition.parts, " AND ")
             }
 
-            is Disjunction<*> -> {
+            is Disjunction -> {
                 appendJoined(condition.parts, " OR ")
             }
 
-            is Negation<*> -> {
+            is Negation -> {
                 appendLiteral("!")
                 appendCondition(condition.inner)
             }
@@ -70,7 +69,7 @@ internal fun BoundQuery.appendCondition(condition: Condition<*>): BoundQuery =
     }
 
 private fun BoundQuery.appendJoined(
-    parts: List<Condition<*>>,
+    parts: List<Condition>,
     joiner: String,
 ) {
     appendLiteral("(")
@@ -89,7 +88,7 @@ private fun BoundQuery.appendOperand(operand: Any?) {
 }
 
 /** The SurrealQL this condition renders to, with its bindings. */
-public fun Condition<*>.toSurql(): BoundQuery = BoundQuery().appendCondition(this)
+public fun Condition.toSurql(): BoundQuery = BoundQuery().appendCondition(this)
 
 /**
  * The escape hatch, for what has no Kotlin-side name: a server-side computed
@@ -100,7 +99,7 @@ public fun Condition<*>.toSurql(): BoundQuery = BoundQuery().appendCondition(thi
  * where { raw { +"geo::distance(location, "; value(here); +") < "; value(radius) } }
  * ```
  */
-public fun <T> Table<T>.raw(block: SurqlBuilder.() -> Unit): Atom<T> {
+public fun Table.raw(block: SurqlBuilder.() -> Unit): Atom {
     val fragment = surql(block)
     return RawCondition(fragment.surql, fragment.bindings)
 }

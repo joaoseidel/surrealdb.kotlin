@@ -2,7 +2,7 @@ package com.surrealdb.kotlin.api.data
 
 /**
  * What a statement operates on: a whole table, one record, a range of records
- * on one table, or one record of a table that declared its record type.
+ * on one table, or one record of a declared table.
  *
  * Every CRUD verb takes a `Target` rather than an `Any`, so `select(42)` and
  * `select("user")`, the latter selecting the *string* `"user"` rather than the
@@ -39,11 +39,12 @@ public data class RecordIdRange(
 ) : Target
 
 /**
- * One record of a declared table, carrying the schema that names its fields.
+ * One record of a declared table, carrying the declaration that names its
+ * fields.
  *
  * `update(RecordId("book", "sicp"))` resolves to the untyped overload and loses
  * every field with it, so a `where { }` beside it has nothing to name. With the
- * schema attached the typed overloads apply to a single record too:
+ * declaration attached the typed overloads apply to a single record too:
  *
  * ```
  * db.select(Books["sicp"]).await()
@@ -54,16 +55,16 @@ public data class RecordIdRange(
  * Handed to an expression it writes the link, the same as the [RecordId] it
  * names.
  */
-public class TableRecord<T, S : Table<T>> internal constructor(
+public class TableRecord<S : Table> internal constructor(
     internal val schema: S,
     public val record: RecordId,
 ) : Target {
     override fun toString(): String = record.toString()
 
-    override fun equals(other: Any?): Boolean = other is TableRecord<*, *> && other.record == record
+    override fun equals(other: Any?): Boolean = other is TableRecord<*> && other.record == record
 
     override fun hashCode(): Int = record.hashCode()
 }
 
 /** Name one record of this table, keeping the schema: `Books["sicp"]`. */
-public operator fun <T, S : Table<T>> S.get(id: String): TableRecord<T, S> = TableRecord(this, RecordId(tableName, id))
+public operator fun <S : Table> S.get(id: String): TableRecord<S> = TableRecord(this, RecordId(tableName, id))

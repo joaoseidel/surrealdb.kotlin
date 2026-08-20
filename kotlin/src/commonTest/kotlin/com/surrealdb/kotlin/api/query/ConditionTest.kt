@@ -180,7 +180,7 @@ class ConditionTest :
 
         context("a nested field") {
             should("render as the dotted path it resolved to") {
-                with(People) { address[Postal::city] eq "Cambridge" }
+                with(People) { city eq "Cambridge" }
                     .toSurql()
                     .surql shouldBe "(address.city = \$_0)"
             }
