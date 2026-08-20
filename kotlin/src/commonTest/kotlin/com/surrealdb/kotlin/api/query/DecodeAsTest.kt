@@ -22,15 +22,6 @@ private data class Person(
 
 private fun answering(body: String): RecordingContext = RecordingContext(result = Json.parseToJsonElement(body))
 
-/**
- * `decodeAs<T>()` and its two terminals.
- *
- * [T] is the type of one record, and SurrealDB decides on its own whether it
- * answers with a list, with the record itself, or with null: a table target
- * gives an array, `ONLY` and a record-id target give the record, and a
- * statement that matched nothing gives null. The terminals are what makes
- * those three shapes one contract.
- */
 class DecodeAsTest :
     ShouldSpec({
         context("await") {

@@ -67,34 +67,33 @@ internal object RecordIdSerializer : KSerializer<RecordId> {
 }
 
 internal fun parseRecordId(text: String): RecordId {
-    val (table, afterTable) = readQuotable(text, 0, stopAtColon = true)
-    if (text.getOrNull(afterTable) != ':') {
+    val table = readQuotable(text, 0, stopAtColon = true)
+    if (text.getOrNull(table.endsAt) != ':') {
         throw SerializationException("Expected a record id of the form 'table:key', got '$text'")
     }
 
-    val (key, afterKey) = readQuotable(text, afterTable + 1, stopAtColon = false)
-    if (afterKey != text.length) {
+    val key = readQuotable(text, table.endsAt + 1, stopAtColon = false)
+    if (key.endsAt != text.length) {
         throw SerializationException("Trailing text after the key of record id '$text'")
     }
 
-    return RecordId(table, UUID_KEY.matchEntire(key)?.groupValues?.get(1) ?: key)
+    return RecordId(table.text, UUID_KEY.matchEntire(key.text)?.groupValues?.get(1) ?: key.text)
 }
 
-/**
- * Read one half of a record id, starting at [from], and say where it ended.
- * Backticks quote a half that is not a bare identifier, and a backslash escapes
- * the character after it. The table half of an unquoted id ends at the
- * separating colon, the key half at the end of the text.
- */
+private class RecordIdHalf(
+    val text: String,
+    val endsAt: Int,
+)
+
 private fun readQuotable(
     text: String,
     from: Int,
     stopAtColon: Boolean,
-): Pair<String, Int> {
+): RecordIdHalf {
     if (text.getOrNull(from) != '`') {
         val colon = text.indexOf(':', from)
         val end = if (stopAtColon && colon >= 0) colon else text.length
-        return text.substring(from, end) to end
+        return RecordIdHalf(text.substring(from, end), end)
     }
 
     val read = StringBuilder()
@@ -108,7 +107,7 @@ private fun readQuotable(
             }
 
             char == '`' -> {
-                return read.toString() to at + 1
+                return RecordIdHalf(read.toString(), at + 1)
             }
 
             else -> {

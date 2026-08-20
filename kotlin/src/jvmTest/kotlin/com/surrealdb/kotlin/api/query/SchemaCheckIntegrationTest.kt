@@ -12,15 +12,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-/** Everything here is defined on the server, except `id`, which never is. */
-private object Readers : Table("sc_reader") {
+private object InSync : Table("sc_reader") {
     val id by field<String>()
     val name by field<String>()
     val age by field<Int>()
     val firstTag = field<String>("tags[0]")
 }
 
-/** The declaration the server has never heard of, which is the case that matters. */
 private object Stale : Table("sc_reader") {
     val name by field<String>()
     val pagse by field<Int>()
@@ -55,13 +53,13 @@ private fun onServer(block: suspend (Session) -> Unit) {
             statementResults(
                 db.query(
                     """
-                    REMOVE TABLE IF EXISTS ${Readers.tableName};
+                    REMOVE TABLE IF EXISTS ${InSync.tableName};
                     REMOVE TABLE IF EXISTS ${Loose.tableName};
                     REMOVE TABLE IF EXISTS ${Absent.tableName};
-                    DEFINE TABLE ${Readers.tableName} SCHEMAFULL;
-                    DEFINE FIELD name ON ${Readers.tableName} TYPE string;
-                    DEFINE FIELD age ON ${Readers.tableName} TYPE int;
-                    DEFINE FIELD tags ON ${Readers.tableName} TYPE array<string>;
+                    DEFINE TABLE ${InSync.tableName} SCHEMAFULL;
+                    DEFINE FIELD name ON ${InSync.tableName} TYPE string;
+                    DEFINE FIELD age ON ${InSync.tableName} TYPE int;
+                    DEFINE FIELD tags ON ${InSync.tableName} TYPE array<string>;
                     DEFINE TABLE ${Loose.tableName} SCHEMALESS;
                     """.trimIndent(),
                 ),
@@ -79,7 +77,7 @@ class SchemaCheckIntegrationTest :
         context("checkSchema on a SCHEMAFULL table") {
             should("report nothing when the server defines every declared field") {
                 onServer { db ->
-                    db.checkSchema(Readers) shouldBe emptyList()
+                    db.checkSchema(InSync) shouldBe emptyList()
                 }
             }
 
@@ -114,7 +112,7 @@ class SchemaCheckIntegrationTest :
         context("checkSchema over several tables") {
             should("answer for each of them in one round trip") {
                 onServer { db ->
-                    db.checkSchema(Readers, Stale, Loose) shouldHaveSize 2
+                    db.checkSchema(InSync, Stale, Loose) shouldHaveSize 2
                 }
             }
         }

@@ -28,10 +28,6 @@ internal object Posts : Table("post") {
     val comments by field<List<String>>()
 }
 
-/**
- * `author` holds a link, so its handle is typed [RecordId]: that is what a
- * statement may assign to it, whatever a caller decodes the result into.
- */
 internal object Notes : Table("note") {
     val body by field<String>()
     val author = field<RecordId>("author")
