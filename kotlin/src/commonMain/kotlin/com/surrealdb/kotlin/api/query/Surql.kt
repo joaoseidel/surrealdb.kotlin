@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.api.query
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.data.TableRecord
 import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -12,7 +13,8 @@ import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Convert an arbitrary value into a [JsonElement] for binding. Accepts the
- * SDK's typed value wrappers ([Table], [RecordId], [RecordIdRange]) plus the
+ * SDK's typed value wrappers ([Table], [RecordId], [TableRecord],
+ * [RecordIdRange]) plus the
  * normal Kotlin types. Throws for anything we can't represent on the wire.
  */
 public fun toJson(value: Any?): JsonElement =
@@ -50,6 +52,10 @@ public fun toJson(value: Any?): JsonElement =
                 put("tb", JsonPrimitive(value.table))
                 put("id", JsonPrimitive(value.id))
             }
+        }
+
+        is TableRecord<*, *> -> {
+            toJson(value.record)
         }
 
         is RecordIdRange -> {
@@ -98,6 +104,10 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
                 appendLiteral(", ")
                 bind(JsonPrimitive(target.id))
                 appendLiteral(")")
+            }
+
+            is TableRecord<*, *> -> {
+                appendTarget(target.record)
             }
 
             is RecordIdRange -> {

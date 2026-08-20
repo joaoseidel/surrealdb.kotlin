@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.api.query
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.data.TableRecord
 import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
@@ -54,6 +55,10 @@ public class RelateQuery internal constructor(
                 q.appendLiteral(")")
             }
 
+            is TableRecord<*, *> -> {
+                renderRelateOperand(q, operand.record)
+            }
+
             is Table<*> -> {
                 q.appendTarget(operand)
             }
@@ -78,6 +83,10 @@ public class RelateQuery internal constructor(
 
             is RecordId -> {
                 renderRelateOperand(q, slot)
+            }
+
+            is TableRecord<*, *> -> {
+                renderRelateOperand(q, slot.record)
             }
 
             is RecordIdRange -> {
