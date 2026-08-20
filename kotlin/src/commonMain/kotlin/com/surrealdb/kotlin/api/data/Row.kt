@@ -24,7 +24,9 @@ import kotlinx.serialization.serializer
  *
  * A field is looked up by its path, so `field<String>("address.city")` reads
  * the `city` of the `address` object: SurrealDB rebuilds the nesting in what it
- * answers with rather than flattening it. `[*]` reads every element of an
+ * answers with rather than flattening it. A record holding the whole path as
+ * one key is read from that key instead, which is how a projected `tags[0]`
+ * arrives. `[*]` reads every element of an
  * array, so `field<List<String>>("authors[*].name")` is a list of names and an
  * element that has none holds a null in it, which is the shape
  * `SELECT authors[*].name` answers with.
@@ -72,7 +74,8 @@ public class Row internal constructor(
 
     override fun hashCode(): Int = content.hashCode()
 
-    private fun resolve(path: String): JsonElement? = walk(content, path.replace("[", ".").replace("]", "").split("."))
+    private fun resolve(path: String): JsonElement? =
+        content[path] ?: walk(content, path.replace("[", ".").replace("]", "").split("."))
 
     private fun walk(
         value: JsonElement,
