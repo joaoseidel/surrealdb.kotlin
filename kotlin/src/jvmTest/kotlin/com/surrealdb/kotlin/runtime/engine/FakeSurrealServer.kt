@@ -103,7 +103,13 @@ internal class FakeSurrealServer(
 
     fun start() {
         server.start(wait = false)
-        port = runBlocking { server.resolvedConnectors().first().port }
+        port =
+            runBlocking {
+                server.engine
+                    .resolvedConnectors()
+                    .first()
+                    .port
+            }
     }
 
     fun stop() {
