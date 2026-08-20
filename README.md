@@ -31,7 +31,8 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
   type beside it. Inside `where { }` they come from that declaration and each operator is typed, so
   `age greater "18"` does not compile. The same declaration reads the result back: `row[People.name]`
   is a `String`, and `db.checkSchema(People)` asks a SCHEMAFULL database whether it agrees, naming
-  every field it does not have.
+  every field it does not have. The fields of an object field are a nested group of the same
+  declaration, and reach any depth: `row[People.address.geo.lat]`.
 - [Spectron](#spectron) client for memory and knowledge management, shipped as a separate opt-in artifact (`com.surrealdb:kotlin-spectron`).
 
 ## Supported RPC methods
@@ -156,18 +157,46 @@ answered with two records, because that is a query that asked the wrong question
 `create` is the exception: it writes exactly one record, so it always carries `ONLY`.
 
 The table declaration is the only one the driver needs. `Person` above is the caller's own type, and
-nothing makes the two agree. A field of a nested object is declared by its path, and so is the object
-itself when you want to assign or read the whole of it:
+nothing makes the two agree. The fields of an object field are declared as a group:
 
 ```kotlin
 object People : Table("person") {
-    val address = field<Address>("address")
-    val city = field<String>("address.city")
+    val name by field<String>()
+
+    object Address : Nested("address") {
+        val city by field<String>()
+        val zip = field<String>("postal_code")
+
+        object Geo : Nested("address.geo") {
+            val lat by field<Double>()
+        }
+
+        val geo = nested(Geo)
+    }
+
+    val address = nested(Address)
 }
 
-db.select(People).where { city eq "Cambridge" }
-db.update(People).set { it[city] = "Cambridge" }
-row[People.city]      // "Cambridge", because SurrealDB rebuilds the nesting rather than flattening it
+db.select(People).where { address.city eq "Cambridge" }
+db.update(People).set { it[address.geo.lat] = 52.2 }
+row[People.address.city]   // "Cambridge", because SurrealDB rebuilds the nesting rather than flattening it
+```
+
+A group names its whole path, `"address.geo"` and not `"geo"`, because a nested `object` in Kotlin
+has no reference to the one it is written in and so cannot work its own prefix out. `nested(...)`
+checks the path against where the group is declared, so a missing parent fails at declaration rather
+than becoming a `WHERE` on a field that does not exist, which SurrealDB answers with an empty result
+set rather than an error.
+
+A group is not a field, so it has no value to assign or read whole. Assign the leaves, and a dotted
+`SET` builds the objects above them. A caller who wants the whole object at once declares it beside
+the group, and either form works on its own:
+
+```kotlin
+object People : Table("person") {
+    val address = field<Postal>("address")
+    val city = field<String>("address.city")
+}
 ```
 
 Whether the database has those fields is a separate question, and `checkSchema` is what asks it. A
