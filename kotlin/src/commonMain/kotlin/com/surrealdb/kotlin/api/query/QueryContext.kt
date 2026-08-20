@@ -51,28 +51,28 @@ public fun <S : Table> QueryContext.select(table: S): SelectQuery<S> = SelectQue
 public fun <S : Table> QueryContext.select(record: TableRecord<S>): SelectQuery<S> =
     SelectQuery(this, record.schema, record)
 
-public fun QueryContext.select(what: Target): SelectQuery<Table> = SelectQuery(this, untypedSchema(what), what)
+public fun QueryContext.select(what: Target): SelectQuery<Table> = SelectQuery(this, schemaOf(what), what)
 
 public fun <S : Table> QueryContext.create(table: S): CreateQuery<S> = CreateQuery(this, table, table)
 
 public fun <S : Table> QueryContext.create(record: TableRecord<S>): CreateQuery<S> =
     CreateQuery(this, record.schema, record)
 
-public fun QueryContext.create(what: Target): CreateQuery<Table> = CreateQuery(this, untypedSchema(what), what)
+public fun QueryContext.create(what: Target): CreateQuery<Table> = CreateQuery(this, schemaOf(what), what)
 
 public fun <S : Table> QueryContext.upsert(table: S): UpsertQuery<S> = UpsertQuery(this, table, table)
 
 public fun <S : Table> QueryContext.upsert(record: TableRecord<S>): UpsertQuery<S> =
     UpsertQuery(this, record.schema, record)
 
-public fun QueryContext.upsert(what: Target): UpsertQuery<Table> = UpsertQuery(this, untypedSchema(what), what)
+public fun QueryContext.upsert(what: Target): UpsertQuery<Table> = UpsertQuery(this, schemaOf(what), what)
 
 public fun <S : Table> QueryContext.update(table: S): UpdateQuery<S> = UpdateQuery(this, table, table)
 
 public fun <S : Table> QueryContext.update(record: TableRecord<S>): UpdateQuery<S> =
     UpdateQuery(this, record.schema, record)
 
-public fun QueryContext.update(what: Target): UpdateQuery<Table> = UpdateQuery(this, untypedSchema(what), what)
+public fun QueryContext.update(what: Target): UpdateQuery<Table> = UpdateQuery(this, schemaOf(what), what)
 
 public fun <S : Table> QueryContext.merge(
     table: S,
@@ -87,7 +87,7 @@ public fun <S : Table> QueryContext.merge(
 public fun QueryContext.merge(
     what: Target,
     data: JsonElement,
-): MergeQuery<Table> = MergeQuery(this, untypedSchema(what), what, data)
+): MergeQuery<Table> = MergeQuery(this, schemaOf(what), what, data)
 
 public fun <S : Table> QueryContext.patch(
     table: S,
@@ -102,14 +102,14 @@ public fun <S : Table> QueryContext.patch(
 public fun QueryContext.patch(
     what: Target,
     patches: JsonElement,
-): PatchQuery<Table> = PatchQuery(this, untypedSchema(what), what, patches)
+): PatchQuery<Table> = PatchQuery(this, schemaOf(what), what, patches)
 
 public fun <S : Table> QueryContext.delete(table: S): DeleteQuery<S> = DeleteQuery(this, table, table)
 
 public fun <S : Table> QueryContext.delete(record: TableRecord<S>): DeleteQuery<S> =
     DeleteQuery(this, record.schema, record)
 
-public fun QueryContext.delete(what: Target): DeleteQuery<Table> = DeleteQuery(this, untypedSchema(what), what)
+public fun QueryContext.delete(what: Target): DeleteQuery<Table> = DeleteQuery(this, schemaOf(what), what)
 
 public fun QueryContext.relate(
     `in`: Target,
@@ -129,12 +129,7 @@ public fun QueryContext.insertRelation(
 
 public fun QueryContext.run(function: String): RunQuery = RunQuery(this, function)
 
-/**
- * A table with no declaration behind it, so a `where { }` over a bare
- * [RecordId] or [RecordIdRange] still has the operators and `raw { }`, and no
- * field names.
- */
-internal fun untypedSchema(what: Target): Table =
+internal fun schemaOf(what: Target): Table =
     when (what) {
         is Table -> what
         is RecordId -> Table(what.table)

@@ -6,12 +6,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 
-/**
- * A field path is written into the SurrealQL rather than bound, because
- * SurrealQL has no parameter form for an identifier. The shape is all this
- * layer can check; whether the database has the field is
- * [com.surrealdb.kotlin.api.query.checkSchema]'s question.
- */
 class TableFieldTest :
     ShouldSpec({
         context("Table.field") {

@@ -13,11 +13,6 @@ import com.surrealdb.kotlin.api.data.Negation
 import com.surrealdb.kotlin.api.data.RawCondition
 import com.surrealdb.kotlin.api.data.Table
 
-/**
- * Field paths are the one thing written into the SurrealQL rather than bound:
- * SurrealQL has no parameter form for an identifier. They are checked against an
- * identifier pattern when the field is constructed. Every operand is bound.
- */
 internal fun BoundQuery.appendCondition(condition: Condition): BoundQuery =
     apply {
         when (condition) {

@@ -28,10 +28,6 @@ import kotlin.properties.ReadOnlyProperty
 public open class Table(
     public val tableName: String,
 ) : Target {
-    /**
-     * Every name this table declared, which is the list
-     * [com.surrealdb.kotlin.api.query.checkSchema] puts to the database.
-     */
     internal val declaredFields: MutableList<Field<*>> = mutableListOf()
 
     /** Declare a field, optionally as a dotted path into a nested object. */
