@@ -18,6 +18,7 @@ private object Sightings : Table("sighting") {
     val tags by field<List<String>>()
     val firstTag = field<String>("tags[0]")
     val everyTag = field<List<String>>("tags[*]")
+    val authorNames = field<List<String?>>("authors[*].name")
     val address = field<Postal>("address")
     val city = field<String>("address.city")
     val zip = field<String>("address.postal_code")
@@ -61,6 +62,16 @@ class RowTest :
             should("index into an array") {
                 row("""{"tags":["cs","lisp"]}""")[Sightings.firstTag] shouldBe "cs"
             }
+
+            should("read every element of an array through [*]") {
+                row("""{"tags":["cs","lisp"]}""")[Sightings.everyTag] shouldBe listOf("cs", "lisp")
+            }
+
+            should("read a field of every element, holding a null where an element has none") {
+                val sighting = row("""{"authors":[{"name":"Ada"},{"nick":"x"}]}""")
+
+                sighting[Sightings.authorNames] shouldBe listOf("Ada", null)
+            }
         }
 
         context("a field the record does not carry") {
@@ -79,8 +90,8 @@ class RowTest :
                 row("""{"nickname":null}""")[Sightings.nickname] shouldBe null
             }
 
-            should("read a path that names no single value as absent") {
-                shouldThrow<NoSuchElementException> { row("""{"tags":["cs"]}""")[Sightings.everyTag] }
+            should("read [*] as absent when the record has no array to walk") {
+                shouldThrow<NoSuchElementException> { row("""{"name":"Ada"}""")[Sightings.everyTag] }
             }
         }
 

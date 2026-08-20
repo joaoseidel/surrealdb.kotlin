@@ -24,8 +24,10 @@ import kotlinx.serialization.serializer
  *
  * A field is looked up by its path, so `field<String>("address.city")` reads
  * the `city` of the `address` object: SurrealDB rebuilds the nesting in what it
- * answers with rather than flattening it. A path ending in `[*]` names no
- * single value and reads as absent.
+ * answers with rather than flattening it. `[*]` reads every element of an
+ * array, so `field<List<String>>("authors[*].name")` is a list of names and an
+ * element that has none holds a null in it, which is the shape
+ * `SELECT authors[*].name` answers with.
  *
  * [content] is the record as it arrived, for anything this does not cover.
  */
@@ -70,16 +72,19 @@ public class Row internal constructor(
 
     override fun hashCode(): Int = content.hashCode()
 
-    private fun resolve(path: String): JsonElement? {
-        var value: JsonElement = content
-        for (step in path.replace("[", ".").replace("]", "").split(".")) {
-            value =
-                when (value) {
-                    is JsonObject -> value[step]
-                    is JsonArray -> step.toIntOrNull()?.let(value::getOrNull)
-                    else -> null
-                } ?: return null
+    private fun resolve(path: String): JsonElement? = walk(content, path.replace("[", ".").replace("]", "").split("."))
+
+    private fun walk(
+        value: JsonElement,
+        steps: List<String>,
+    ): JsonElement? {
+        val step = steps.firstOrNull() ?: return value
+        val rest = steps.drop(1)
+        return when {
+            value is JsonArray && step == "*" -> JsonArray(value.map { walk(it, rest) ?: JsonNull })
+            value is JsonArray -> step.toIntOrNull()?.let(value::getOrNull)?.let { walk(it, rest) }
+            value is JsonObject -> value[step]?.let { walk(it, rest) }
+            else -> null
         }
-        return value
     }
 }
