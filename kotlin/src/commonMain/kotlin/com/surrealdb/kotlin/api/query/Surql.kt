@@ -138,15 +138,16 @@ internal fun BoundQuery.appendStatementTarget(
     }
 
 /**
- * Append [projections] as a projection list, aliasing any path that holds an index
- * to itself. SurrealDB answers `SELECT tags[0]` with `{"tags": "cs"}`: it drops
- * the index and puts the value on the parent key, where the declaration does
- * not name it and a second index into the same array overwrites the first.
+ * SurrealDB answers `SELECT tags[0]` with `{"tags": "cs"}`: it drops the index
+ * and puts the value on the parent key, where the declaration does not name it
+ * and a second index into the same array overwrites the first.
  */
 internal fun BoundQuery.appendProjections(projections: List<Projection>): BoundQuery =
-    apply { appendLiteral(projections.joinToString(", ") { it.render() }) }
+    apply { appendLiteral(projections.joinToString(", ") { it.keptAtItsOwnPath() }) }
 
-private fun Projection.render(): String = if ('[' in path) "$path AS `$path`" else path
+private fun Projection.keptAtItsOwnPath(): String = if (holdsAnIndex) "$path AS `$path`" else path
+
+private val Projection.holdsAnIndex: Boolean get() = '[' in path
 
 /**
  * Append [value] to the query, choosing the right SurrealQL expression based

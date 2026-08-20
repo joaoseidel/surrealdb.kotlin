@@ -7,11 +7,11 @@ package com.surrealdb.kotlin.api.data
  * ```
  * db.select(Users).fields(Users.name, Users.address)
  * ```
- *
- * [path] is the SurrealQL naming it, and it is also where the value arrives, so
- * a row reads back through the same declaration that asked for it.
  */
 public sealed interface Projection {
-    /** The SurrealQL that names it. */
+    /**
+     * The SurrealQL that names it, and where its value arrives, so a row reads
+     * back through the same declaration that asked for it.
+     */
     public val path: String
 }
