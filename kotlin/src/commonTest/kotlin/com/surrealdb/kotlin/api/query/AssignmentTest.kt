@@ -61,7 +61,7 @@ class AssignmentTest :
             should("emit a dotted path for a nested field, because SET builds the missing parent") {
                 compileOnly
                     .update(People)
-                    .set { it[address[Postal::city]] = "Boston" }
+                    .set { it[city] = "Boston" }
                     .compile()
                     .surql shouldContain " SET address.city = \$"
             }

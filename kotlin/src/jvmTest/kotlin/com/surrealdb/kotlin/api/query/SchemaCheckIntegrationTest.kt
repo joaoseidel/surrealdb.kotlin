@@ -12,39 +12,25 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-@Serializable
-private data class Reader(
-    val id: String,
-    val name: String,
-    val age: Int,
-    val tags: List<String>,
-)
-
 /** Everything here is defined on the server, except `id`, which never is. */
-private object Readers : Table<Reader>("sc_reader", Reader.serializer()) {
+private object Readers : Table("sc_reader") {
     val id by field<String>()
     val name by field<String>()
     val age by field<Int>()
     val firstTag = field<String>("tags[0]")
 }
 
-@Serializable
-private data class StaleReader(
-    val name: String,
-    val pagse: Int,
-)
-
 /** The declaration the server has never heard of, which is the case that matters. */
-private object Stale : Table<StaleReader>("sc_reader", StaleReader.serializer()) {
+private object Stale : Table("sc_reader") {
     val name by field<String>()
     val pagse by field<Int>()
 }
 
-private object Loose : Table<Reader>("sc_loose", Reader.serializer()) {
+private object Loose : Table("sc_loose") {
     val name by field<String>()
 }
 
-private object Absent : Table<Reader>("sc_absent", Reader.serializer()) {
+private object Absent : Table("sc_absent") {
     val name by field<String>()
 }
 

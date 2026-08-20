@@ -3,13 +3,12 @@ package com.surrealdb.kotlin.api.data
 import kotlinx.serialization.json.JsonElement
 
 /**
- * A `WHERE` clause bound to the record type it was written against, so a
- * condition over `Author` cannot be handed to a query over `Book`.
+ * A `WHERE` clause.
  *
- * Build them with the operators on [Table]; the variants are not constructible
+ * Build one with the operators on [Table]; the variants are not constructible
  * from outside.
  */
-public sealed interface Condition<T>
+public sealed interface Condition
 
 /**
  * A condition that may appear on either side of `and`.
@@ -21,54 +20,54 @@ public sealed interface Condition<T>
  *
  * Nest with [Table.all] / [Table.any] / [Table.none].
  */
-public sealed interface Conjunctible<T> : Condition<T>
+public sealed interface Conjunctible : Condition
 
 /** A condition that may appear on either side of `or`. See [Conjunctible]. */
-public sealed interface Disjunctible<T> : Condition<T>
+public sealed interface Disjunctible : Condition
 
 /**
  * A condition with no top-level `and` or `or` of its own — a comparison, a
  * presence test, a raw fragment, a negation, or a group built by `all` / `any` /
  * `none`.
  */
-public sealed interface Atom<T> :
-    Conjunctible<T>,
-    Disjunctible<T>
+public sealed interface Atom :
+    Conjunctible,
+    Disjunctible
 
-internal class Comparison<T>(
+internal class Comparison(
     val field: Field<*>,
     val op: String,
     val operand: Any?,
-) : Atom<T>
+) : Atom
 
-internal class FieldTest<T>(
+internal class FieldTest(
     val field: Field<*>,
     val op: String,
-) : Atom<T>
+) : Atom
 
-internal class FunctionCall<T>(
+internal class FunctionCall(
     val function: String,
     val field: Field<*>,
     val operand: Any?,
-) : Atom<T>
+) : Atom
 
-internal class RawCondition<T>(
+internal class RawCondition(
     val sql: String,
     val bindings: Map<String, JsonElement>,
-) : Atom<T>
+) : Atom
 
-internal class Negation<T>(
-    val inner: Condition<T>,
-) : Atom<T>
+internal class Negation(
+    val inner: Condition,
+) : Atom
 
-internal class Grouped<T>(
-    val inner: Condition<T>,
-) : Atom<T>
+internal class Grouped(
+    val inner: Condition,
+) : Atom
 
-internal class Conjunction<T>(
-    val parts: List<Condition<T>>,
-) : Conjunctible<T>
+internal class Conjunction(
+    val parts: List<Condition>,
+) : Conjunctible
 
-internal class Disjunction<T>(
-    val parts: List<Condition<T>>,
-) : Disjunctible<T>
+internal class Disjunction(
+    val parts: List<Condition>,
+) : Disjunctible

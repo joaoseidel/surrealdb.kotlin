@@ -7,20 +7,20 @@ import kotlinx.serialization.json.JsonElement
 /**
  * Builder for `CREATE` queries.
  */
-public class CreateQuery<T, S : Table<T>> internal constructor(
+public class CreateQuery<S : Table> internal constructor(
     context: QueryContext,
     private val schema: S,
     private val what: Target,
     private val data: WriteData? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
-    public fun content(data: JsonElement): CreateQuery<T, S> = copy(data = ContentData(data))
+    public fun content(data: JsonElement): CreateQuery<S> = copy(data = ContentData(data))
 
     /** Assign fields by name: `set { it[title] = "SICP" }`. Replaces any [content]. */
-    public fun set(block: S.(Assignments) -> Unit): CreateQuery<T, S> =
+    public fun set(block: S.(Assignments) -> Unit): CreateQuery<S> =
         copy(data = buildAssignments(context.json, schema, block))
 
-    public fun returnMode(mode: ReturnMode): CreateQuery<T, S> = copy(returnMode = mode)
+    public fun returnMode(mode: ReturnMode): CreateQuery<S> = copy(returnMode = mode)
 
     override fun compile(): BoundQuery {
         val q = BoundQuery()
@@ -34,5 +34,5 @@ public class CreateQuery<T, S : Table<T>> internal constructor(
     private fun copy(
         data: WriteData? = this.data,
         returnMode: ReturnMode? = this.returnMode,
-    ): CreateQuery<T, S> = CreateQuery(context, schema, what, data, returnMode)
+    ): CreateQuery<S> = CreateQuery(context, schema, what, data, returnMode)
 }

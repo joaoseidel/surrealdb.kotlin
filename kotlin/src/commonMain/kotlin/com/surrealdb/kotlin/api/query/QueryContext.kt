@@ -42,79 +42,74 @@ public interface QueryContext {
 
 /**
  * Every verb comes in three overloads: a declared table, one record of a
- * declared table, and a bare [Target]. The first two keep the schema, so
- * `where { }` still names fields. The third is the escape hatch for a table
- * nobody declared a record type for.
+ * declared table, and a bare [Target]. The first two carry the declaration
+ * through, so `where { }` and `set { }` still name fields. The third is what a
+ * [RecordId] or a [RecordIdRange] lands on, and it has no fields to name.
  */
-public fun <T, S : Table<T>> QueryContext.select(table: S): SelectQuery<T, S> = SelectQuery(this, table, table)
+public fun <S : Table> QueryContext.select(table: S): SelectQuery<S> = SelectQuery(this, table, table)
 
-public fun <T, S : Table<T>> QueryContext.select(record: TableRecord<T, S>): SelectQuery<T, S> =
+public fun <S : Table> QueryContext.select(record: TableRecord<S>): SelectQuery<S> =
     SelectQuery(this, record.schema, record)
 
-public fun QueryContext.select(what: Target): SelectQuery<Nothing, Table<Nothing>> =
-    SelectQuery(this, untypedSchema(what), what)
+public fun QueryContext.select(what: Target): SelectQuery<Table> = SelectQuery(this, untypedSchema(what), what)
 
-public fun <T, S : Table<T>> QueryContext.create(table: S): CreateQuery<T, S> = CreateQuery(this, table, table)
+public fun <S : Table> QueryContext.create(table: S): CreateQuery<S> = CreateQuery(this, table, table)
 
-public fun <T, S : Table<T>> QueryContext.create(record: TableRecord<T, S>): CreateQuery<T, S> =
+public fun <S : Table> QueryContext.create(record: TableRecord<S>): CreateQuery<S> =
     CreateQuery(this, record.schema, record)
 
-public fun QueryContext.create(what: Target): CreateQuery<Nothing, Table<Nothing>> =
-    CreateQuery(this, untypedSchema(what), what)
+public fun QueryContext.create(what: Target): CreateQuery<Table> = CreateQuery(this, untypedSchema(what), what)
 
-public fun <T, S : Table<T>> QueryContext.upsert(table: S): UpsertQuery<T, S> = UpsertQuery(this, table, table)
+public fun <S : Table> QueryContext.upsert(table: S): UpsertQuery<S> = UpsertQuery(this, table, table)
 
-public fun <T, S : Table<T>> QueryContext.upsert(record: TableRecord<T, S>): UpsertQuery<T, S> =
+public fun <S : Table> QueryContext.upsert(record: TableRecord<S>): UpsertQuery<S> =
     UpsertQuery(this, record.schema, record)
 
-public fun QueryContext.upsert(what: Target): UpsertQuery<Nothing, Table<Nothing>> =
-    UpsertQuery(this, untypedSchema(what), what)
+public fun QueryContext.upsert(what: Target): UpsertQuery<Table> = UpsertQuery(this, untypedSchema(what), what)
 
-public fun <T, S : Table<T>> QueryContext.update(table: S): UpdateQuery<T, S> = UpdateQuery(this, table, table)
+public fun <S : Table> QueryContext.update(table: S): UpdateQuery<S> = UpdateQuery(this, table, table)
 
-public fun <T, S : Table<T>> QueryContext.update(record: TableRecord<T, S>): UpdateQuery<T, S> =
+public fun <S : Table> QueryContext.update(record: TableRecord<S>): UpdateQuery<S> =
     UpdateQuery(this, record.schema, record)
 
-public fun QueryContext.update(what: Target): UpdateQuery<Nothing, Table<Nothing>> =
-    UpdateQuery(this, untypedSchema(what), what)
+public fun QueryContext.update(what: Target): UpdateQuery<Table> = UpdateQuery(this, untypedSchema(what), what)
 
-public fun <T, S : Table<T>> QueryContext.merge(
+public fun <S : Table> QueryContext.merge(
     table: S,
     data: JsonElement,
-): MergeQuery<T, S> = MergeQuery(this, table, table, data)
+): MergeQuery<S> = MergeQuery(this, table, table, data)
 
-public fun <T, S : Table<T>> QueryContext.merge(
-    record: TableRecord<T, S>,
+public fun <S : Table> QueryContext.merge(
+    record: TableRecord<S>,
     data: JsonElement,
-): MergeQuery<T, S> = MergeQuery(this, record.schema, record, data)
+): MergeQuery<S> = MergeQuery(this, record.schema, record, data)
 
 public fun QueryContext.merge(
     what: Target,
     data: JsonElement,
-): MergeQuery<Nothing, Table<Nothing>> = MergeQuery(this, untypedSchema(what), what, data)
+): MergeQuery<Table> = MergeQuery(this, untypedSchema(what), what, data)
 
-public fun <T, S : Table<T>> QueryContext.patch(
+public fun <S : Table> QueryContext.patch(
     table: S,
     patches: JsonElement,
-): PatchQuery<T, S> = PatchQuery(this, table, table, patches)
+): PatchQuery<S> = PatchQuery(this, table, table, patches)
 
-public fun <T, S : Table<T>> QueryContext.patch(
-    record: TableRecord<T, S>,
+public fun <S : Table> QueryContext.patch(
+    record: TableRecord<S>,
     patches: JsonElement,
-): PatchQuery<T, S> = PatchQuery(this, record.schema, record, patches)
+): PatchQuery<S> = PatchQuery(this, record.schema, record, patches)
 
 public fun QueryContext.patch(
     what: Target,
     patches: JsonElement,
-): PatchQuery<Nothing, Table<Nothing>> = PatchQuery(this, untypedSchema(what), what, patches)
+): PatchQuery<Table> = PatchQuery(this, untypedSchema(what), what, patches)
 
-public fun <T, S : Table<T>> QueryContext.delete(table: S): DeleteQuery<T, S> = DeleteQuery(this, table, table)
+public fun <S : Table> QueryContext.delete(table: S): DeleteQuery<S> = DeleteQuery(this, table, table)
 
-public fun <T, S : Table<T>> QueryContext.delete(record: TableRecord<T, S>): DeleteQuery<T, S> =
+public fun <S : Table> QueryContext.delete(record: TableRecord<S>): DeleteQuery<S> =
     DeleteQuery(this, record.schema, record)
 
-public fun QueryContext.delete(what: Target): DeleteQuery<Nothing, Table<Nothing>> =
-    DeleteQuery(this, untypedSchema(what), what)
+public fun QueryContext.delete(what: Target): DeleteQuery<Table> = DeleteQuery(this, untypedSchema(what), what)
 
 public fun QueryContext.relate(
     `in`: Target,
@@ -123,21 +118,26 @@ public fun QueryContext.relate(
 ): RelateQuery = RelateQuery(this, `in`, relation, out)
 
 public fun QueryContext.insert(
-    into: Table<*>,
+    into: Table,
     data: JsonElement,
 ): InsertQuery = InsertQuery(this, into, data)
 
 public fun QueryContext.insertRelation(
-    into: Table<*>,
+    into: Table,
     data: JsonElement,
 ): InsertRelationQuery = InsertRelationQuery(this, into, data)
 
 public fun QueryContext.run(function: String): RunQuery = RunQuery(this, function)
 
-internal fun untypedSchema(what: Target): Table<Nothing> =
+/**
+ * A table with no declaration behind it, so a `where { }` over a bare
+ * [RecordId] or [RecordIdRange] still has the operators and `raw { }`, and no
+ * field names.
+ */
+internal fun untypedSchema(what: Target): Table =
     when (what) {
-        is Table<*> -> Table(what.tableName)
+        is Table -> what
         is RecordId -> Table(what.table)
-        is TableRecord<*, *> -> Table(what.record.table)
+        is TableRecord<*> -> what.schema
         is RecordIdRange -> Table(what.table)
     }

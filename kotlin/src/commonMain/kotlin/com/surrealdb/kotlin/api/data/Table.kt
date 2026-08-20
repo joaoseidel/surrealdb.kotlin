@@ -1,17 +1,13 @@
 package com.surrealdb.kotlin.api.data
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlin.properties.PropertyDelegateProvider
+import kotlin.properties.ReadOnlyProperty
 
 /**
- * A SurrealDB table, and — when declared with its record type — the place that
- * type's fields are named.
+ * A SurrealDB table, and the one place its fields are named.
  *
  * ```
- * @Serializable
- * data class Book(val title: String, val pages: Int)
- *
- * object Books : Table<Book>("book", Book.serializer()) {
+ * object Books : Table("book") {
  *     val id = recordId()
  *     val title by field<String>()
  *     val pages by field<Int>()
@@ -20,87 +16,105 @@ import kotlinx.serialization.descriptors.SerialDescriptor
  * db.select(Books).where { pages greater 100 }
  * ```
  *
- * The serializer is passed rather than resolved from `T`, because Kotlin cannot
- * pass a reified argument to a supertype constructor.
+ * The declaration is the whole description the library needs. There is no wire
+ * type beside it: a caller with a domain class of their own keeps it and
+ * decodes into it, and nothing here has to agree with it. Whether the *database*
+ * agrees is asked by [com.surrealdb.kotlin.api.query.checkSchema].
+ *
+ * `Table("book")` on its own is a target for every verb with no fields to name,
+ * so a `where { }` over one is written with `raw { }`.
  */
-public open class Table<T> internal constructor(
+@SurqlDsl
+public open class Table(
     public val tableName: String,
-    descriptor: SerialDescriptor?,
-) : Fields("", descriptor, descriptor?.let(::labelOf) ?: tableName),
-    Target {
-    public constructor(name: String, serializer: KSerializer<T>) : this(name, serializer.descriptor)
+) : Target {
+    /**
+     * Every name this table declared, which is the list
+     * [com.surrealdb.kotlin.api.query.checkSchema] puts to the database.
+     */
+    internal val declaredFields: MutableList<Field<*>> = mutableListOf()
+
+    /** Declare a field, optionally as a dotted path into a nested object. */
+    protected fun <V> field(name: String): Field<V> = Field<V>(name).also { declaredFields += it }
+
+    /** Declare a field taking its name from the property it initialises. */
+    protected fun <V> field(): PropertyDelegateProvider<Table, ReadOnlyProperty<Table, Field<V>>> =
+        PropertyDelegateProvider { _, property ->
+            val resolved = field<V>(property.name)
+            ReadOnlyProperty { _, _ -> resolved }
+        }
 
     /**
-     * The record id. SurrealDB fixes it at the field `id`, so it takes no name
-     * and is not checked against the descriptor — the id is there whether or
-     * not the Kotlin class models it.
+     * The record id. SurrealDB fixes it at the field `id`, so it takes no name,
+     * and it is not one of the declared fields: the id is there whether or not
+     * any schema mentions it.
      */
-    protected fun recordId(): Field<RecordId> = Field(childPath(groupPath, "id"))
+    protected fun recordId(): Field<RecordId> = Field("id")
 
-    public infix fun <V> Field<V>.eq(value: V): Atom<T> = Comparison(this, "=", value)
+    public infix fun <V> Field<V>.eq(value: V): Atom = Comparison(this, "=", value)
 
-    public infix fun <V> Field<V>.eq(other: Field<V>): Atom<T> = Comparison(this, "=", other)
+    public infix fun <V> Field<V>.eq(other: Field<V>): Atom = Comparison(this, "=", other)
 
-    public infix fun <V> Field<V>.neq(value: V): Atom<T> = Comparison(this, "!=", value)
+    public infix fun <V> Field<V>.neq(value: V): Atom = Comparison(this, "!=", value)
 
-    public infix fun <V> Field<V>.neq(other: Field<V>): Atom<T> = Comparison(this, "!=", other)
+    public infix fun <V> Field<V>.neq(other: Field<V>): Atom = Comparison(this, "!=", other)
 
-    public infix fun <V : Comparable<V>> Field<V>.greater(value: V): Atom<T> = Comparison(this, ">", value)
+    public infix fun <V : Comparable<V>> Field<V>.greater(value: V): Atom = Comparison(this, ">", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.greaterEq(value: V): Atom<T> = Comparison(this, ">=", value)
+    public infix fun <V : Comparable<V>> Field<V>.greaterEq(value: V): Atom = Comparison(this, ">=", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.less(value: V): Atom<T> = Comparison(this, "<", value)
+    public infix fun <V : Comparable<V>> Field<V>.less(value: V): Atom = Comparison(this, "<", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.lessEq(value: V): Atom<T> = Comparison(this, "<=", value)
+    public infix fun <V : Comparable<V>> Field<V>.lessEq(value: V): Atom = Comparison(this, "<=", value)
 
-    public infix fun <V> Field<V>.inside(values: Collection<V>): Atom<T> = Comparison(this, "IN", values)
+    public infix fun <V> Field<V>.inside(values: Collection<V>): Atom = Comparison(this, "IN", values)
 
-    public infix fun <E> Field<List<E>>.contains(value: E): Atom<T> = Comparison(this, "CONTAINS", value)
+    public infix fun <E> Field<List<E>>.contains(value: E): Atom = Comparison(this, "CONTAINS", value)
 
-    public infix fun <E> Field<List<E>>.containsAll(values: Collection<E>): Atom<T> =
+    public infix fun <E> Field<List<E>>.containsAll(values: Collection<E>): Atom =
         Comparison(this, "CONTAINSALL", values)
 
-    public infix fun <E> Field<List<E>>.containsAny(values: Collection<E>): Atom<T> =
+    public infix fun <E> Field<List<E>>.containsAny(values: Collection<E>): Atom =
         Comparison(this, "CONTAINSANY", values)
 
-    public infix fun Field<String>.startsWith(prefix: String): Atom<T> = FunctionCall(STARTS_WITH, this, prefix)
+    public infix fun Field<String>.startsWith(prefix: String): Atom = FunctionCall(STARTS_WITH, this, prefix)
 
-    public infix fun Field<String>.matches(pattern: String): Atom<T> = FunctionCall(MATCHES, this, pattern)
+    public infix fun Field<String>.matches(pattern: String): Atom = FunctionCall(MATCHES, this, pattern)
 
     /** SurrealDB distinguishes NONE, NULL and absent, so the DSL does too. */
-    public fun Field<*>.isNone(): Atom<T> = FieldTest(this, "IS NONE")
+    public fun Field<*>.isNone(): Atom = FieldTest(this, "IS NONE")
 
-    public fun Field<*>.isNull(): Atom<T> = FieldTest(this, "IS NULL")
+    public fun Field<*>.isNull(): Atom = FieldTest(this, "IS NULL")
 
-    public fun Field<*>.exists(): Atom<T> = FieldTest(this, "IS NOT NONE")
+    public fun Field<*>.exists(): Atom = FieldTest(this, "IS NOT NONE")
 
     /** `AND`. Mixing with [or] without an explicit group does not compile; see [Conjunctible]. */
-    public infix fun Conjunctible<T>.and(other: Conjunctible<T>): Conjunctible<T> =
+    public infix fun Conjunctible.and(other: Conjunctible): Conjunctible =
         Conjunction(flattenConjunction(this) + flattenConjunction(other))
 
     /** `OR`. See [and]. */
-    public infix fun Disjunctible<T>.or(other: Disjunctible<T>): Disjunctible<T> =
+    public infix fun Disjunctible.or(other: Disjunctible): Disjunctible =
         Disjunction(flattenDisjunction(this) + flattenDisjunction(other))
 
-    public fun not(inner: Condition<T>): Atom<T> = Negation(inner)
+    public fun not(inner: Condition): Atom = Negation(inner)
 
     /** Every condition must hold. */
-    public fun all(vararg conditions: Condition<T>): Atom<T> = Grouped(Conjunction(conditions.toRequiredList("all")))
+    public fun all(vararg conditions: Condition): Atom = Grouped(Conjunction(conditions.toRequiredList("all")))
 
     /** At least one condition must hold. */
-    public fun any(vararg conditions: Condition<T>): Atom<T> = Grouped(Disjunction(conditions.toRequiredList("any")))
+    public fun any(vararg conditions: Condition): Atom = Grouped(Disjunction(conditions.toRequiredList("any")))
 
     /** No condition may hold. */
-    public fun none(vararg conditions: Condition<T>): Atom<T> = Negation(Disjunction(conditions.toRequiredList("none")))
+    public fun none(vararg conditions: Condition): Atom = Negation(Disjunction(conditions.toRequiredList("none")))
 
-    private fun Array<out Condition<T>>.toRequiredList(caller: String): List<Condition<T>> {
+    private fun Array<out Condition>.toRequiredList(caller: String): List<Condition> {
         require(isNotEmpty()) { "$caller(...) requires at least one condition" }
         return toList()
     }
 
     override fun toString(): String = tableName
 
-    override fun equals(other: Any?): Boolean = other is Table<*> && other.tableName == tableName
+    override fun equals(other: Any?): Boolean = other is Table && other.tableName == tableName
 
     override fun hashCode(): Int = tableName.hashCode()
 
@@ -110,14 +124,8 @@ public open class Table<T> internal constructor(
     }
 }
 
-private fun <T> flattenConjunction(condition: Condition<T>): List<Condition<T>> =
-    if (condition is Conjunction<T>) condition.parts else listOf(condition)
+private fun flattenConjunction(condition: Condition): List<Condition> =
+    if (condition is Conjunction) condition.parts else listOf(condition)
 
-private fun <T> flattenDisjunction(condition: Condition<T>): List<Condition<T>> =
-    if (condition is Disjunction<T>) condition.parts else listOf(condition)
-
-/**
- * A table with no declared record type — a target only. A `where { }` over one
- * can still be written with `raw { }`, but it has no fields to name.
- */
-public fun Table(name: String): Table<Nothing> = Table(name, null as SerialDescriptor?)
+private fun flattenDisjunction(condition: Condition): List<Condition> =
+    if (condition is Disjunction) condition.parts else listOf(condition)

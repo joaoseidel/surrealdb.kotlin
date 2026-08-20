@@ -39,7 +39,7 @@ public fun toJson(value: Any?): JsonElement =
             JsonPrimitive(value)
         }
 
-        is Table<*> -> {
+        is Table -> {
             buildJsonObject {
                 put("\$type", JsonPrimitive("table"))
                 put("name", JsonPrimitive(value.tableName))
@@ -54,7 +54,7 @@ public fun toJson(value: Any?): JsonElement =
             }
         }
 
-        is TableRecord<*, *> -> {
+        is TableRecord<*> -> {
             toJson(value.record)
         }
 
@@ -88,7 +88,7 @@ public fun toJson(value: Any?): JsonElement =
 internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
     apply {
         when (target) {
-            is Table<*> -> {
+            is Table -> {
                 appendLiteral("type::table(")
                 bind(JsonPrimitive(target.tableName))
                 appendLiteral(")")
@@ -104,7 +104,7 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
                 appendLiteral(")")
             }
 
-            is TableRecord<*, *> -> {
+            is TableRecord<*> -> {
                 appendTarget(target.record)
             }
 
@@ -122,8 +122,8 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
 
 internal fun Target.matchesAtMostOneRecord(): Boolean =
     when (this) {
-        is RecordId, is TableRecord<*, *> -> true
-        is Table<*>, is RecordIdRange -> false
+        is RecordId, is TableRecord<*> -> true
+        is Table, is RecordIdRange -> false
     }
 
 internal fun BoundQuery.appendStatementTarget(

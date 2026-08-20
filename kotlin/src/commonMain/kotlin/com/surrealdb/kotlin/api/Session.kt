@@ -146,7 +146,7 @@ public class Session internal constructor(
      * run it via [query], which returns a live query UUID.
      */
     public suspend fun live(
-        table: Table<*>,
+        table: Table,
         mode: LiveMode = LiveMode.Records,
     ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table.tableName, mode.wantsDiff) }
 

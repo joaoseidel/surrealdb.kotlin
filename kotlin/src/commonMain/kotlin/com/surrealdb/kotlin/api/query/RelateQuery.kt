@@ -55,11 +55,11 @@ public class RelateQuery internal constructor(
                 q.appendLiteral(")")
             }
 
-            is TableRecord<*, *> -> {
+            is TableRecord<*> -> {
                 renderRelateOperand(q, operand.record)
             }
 
-            is Table<*> -> {
+            is Table -> {
                 q.appendTarget(operand)
             }
 
@@ -74,7 +74,7 @@ public class RelateQuery internal constructor(
         slot: Target,
     ) {
         when (slot) {
-            is Table<*> -> {
+            is Table -> {
                 require(IDENTIFIER.matches(slot.tableName)) {
                     "Relation table must be an identifier (got '${slot.tableName}')"
                 }
@@ -85,7 +85,7 @@ public class RelateQuery internal constructor(
                 renderRelateOperand(q, slot)
             }
 
-            is TableRecord<*, *> -> {
+            is TableRecord<*> -> {
                 renderRelateOperand(q, slot.record)
             }
 

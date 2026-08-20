@@ -29,7 +29,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * The record id is never compared: SurrealDB fixes it at `id` and leaves it out
  * of the field list whatever the schema says.
  */
-public suspend fun QueryContext.checkSchema(vararg tables: Table<*>): List<String> {
+public suspend fun QueryContext.checkSchema(vararg tables: Table): List<String> {
     if (tables.isEmpty()) return emptyList()
 
     val request = BoundQuery("INFO FOR DB")
@@ -64,7 +64,7 @@ public suspend fun QueryContext.checkSchema(vararg tables: Table<*>): List<Strin
     }
 }
 
-private fun Table<*>.driftAgainst(known: Set<String>): List<String> =
+private fun Table.driftAgainst(known: Set<String>): List<String> =
     declaredFields
         .map { it.path }
         .filter { it != "id" && serverPaths(it).none(known::contains) }
