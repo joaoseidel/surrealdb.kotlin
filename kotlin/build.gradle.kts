@@ -1,22 +1,23 @@
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.multiplatform)
-}
-
-android {
-    namespace = "com.surrealdb.kotlin"
-
-    defaultConfig {
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
+    android {
+        namespace = "com.surrealdb.kotlin"
+
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.datetime)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
         }
@@ -38,7 +39,7 @@ kotlin {
             implementation(libs.ktor.server.websockets)
         }
 
-        androidInstrumentedTest.dependencies {
+        getByName("androidDeviceTest").dependencies {
             implementation(libs.bundles.androidx.test)
         }
     }
