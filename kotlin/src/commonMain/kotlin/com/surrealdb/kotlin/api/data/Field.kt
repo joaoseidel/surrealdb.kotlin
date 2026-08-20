@@ -8,7 +8,7 @@ import kotlin.reflect.KProperty1
  * A typed reference to a field of [Table]'s record type, where [path] is the
  * SurrealQL that names it, already qualified with any enclosing groups.
  */
-public class Field<V> internal constructor(
+public open class Field<V> internal constructor(
     public val path: String,
 ) {
     init {
@@ -40,14 +40,18 @@ public class Field<V> internal constructor(
  * Books.address[Address::city]        // Field<String> at "address.city"
  * ```
  *
+ * It is a [Field] of the object itself as well, so the whole group can be
+ * assigned in one go without a second handle being declared for it:
+ * `set { it[address] = Address("Boston", "02110") }`.
+ *
  * [get] throws when a property is serialised under a different name
  * (`@SerialName`), naming the property.
  */
 public class Nested<V> internal constructor(
-    internal val path: String,
+    path: String,
     internal val descriptor: SerialDescriptor?,
     internal val label: String,
-) {
+) : Field<V>(path) {
     /** The field this property is serialised as, qualified with this group's path. */
     public operator fun <R> get(property: KProperty1<V, R>): Field<R> =
         Field(childPath(path, resolveName(descriptor, property.name, label)))

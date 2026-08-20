@@ -22,7 +22,8 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
     public fun content(data: JsonElement): UpdateQuery<T, S> = copy(data = ContentData(data))
 
     /** Assign fields by name: `set { it[pages] = 0 }`. Replaces any [content]. */
-    public fun set(block: S.(Assignments) -> Unit): UpdateQuery<T, S> = copy(data = buildAssignments(schema, block))
+    public fun set(block: S.(Assignments) -> Unit): UpdateQuery<T, S> =
+        copy(data = buildAssignments(context.json, schema, block))
 
     public fun where(build: S.() -> Condition<T>): UpdateQuery<T, S> = copy(cond = schema.build())
 
