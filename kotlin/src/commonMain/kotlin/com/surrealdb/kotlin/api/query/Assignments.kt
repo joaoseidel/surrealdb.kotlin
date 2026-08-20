@@ -83,9 +83,9 @@ public class Assignments internal constructor(
 public class ArrayField<E>
     @PublishedApi
     internal constructor(
-        @PublishedApi internal val sink: Assignments,
-        @PublishedApi internal val field: Field<List<E>>,
-        @PublishedApi internal val encode: (E) -> Any?,
+        private val sink: Assignments,
+        private val field: Field<List<E>>,
+        private val encode: (E) -> Any?,
     ) {
         /** Append [value] to the array. */
         public operator fun plusAssign(value: E) {
