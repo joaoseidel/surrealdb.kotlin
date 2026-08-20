@@ -19,14 +19,6 @@ private object Agenda : Table("agenda") {
 
 private fun row(body: String): Row = Row(Json, Json.parseToJsonElement(body) as JsonObject)
 
-/**
- * What a projection compiles to, and where the value it asks for arrives.
- *
- * Every alias here is one SurrealDB v3.2.4 was probed with. `SELECT tags[0]`
- * answers `{"tags": "cs"}` and `SELECT tags[0], tags[1]` answers
- * `{"tags": "lisp"}`, so an index that is not aliased is at best in the wrong
- * place and at worst the wrong value.
- */
 class ProjectionTest :
     ShouldSpec({
         context("a projection over a plain path") {

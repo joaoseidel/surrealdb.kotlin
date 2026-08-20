@@ -44,11 +44,7 @@ public class Row internal constructor(
      */
     public inline operator fun <reified V> get(field: Field<V>): V = decode(field, serializer())
 
-    /**
-     * As [get], for something whose type is not known at the call site:
-     * `reified` refuses a `Field<*>`, the builders hold their projections as
-     * `List<Projection>`, and a [Nested] group has no value type of its own.
-     */
+    /** As [get], for something whose type is not known at the call site. */
     public fun <V> decode(
         projection: Projection,
         serializer: KSerializer<V>,

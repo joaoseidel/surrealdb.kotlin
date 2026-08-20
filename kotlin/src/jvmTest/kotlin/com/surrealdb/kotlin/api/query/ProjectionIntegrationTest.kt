@@ -71,10 +71,6 @@ private fun onServer(block: suspend (Session) -> Unit) {
     }
 }
 
-/**
- * Every projection here is sent to a real SurrealDB, because the value's
- * arrival is the server's decision and not this library's.
- */
 class ProjectionIntegrationTest :
     ShouldSpec({
         context("a projection over a nested field") {
