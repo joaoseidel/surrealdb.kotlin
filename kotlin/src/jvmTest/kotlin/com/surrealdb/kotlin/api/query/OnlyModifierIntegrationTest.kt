@@ -33,14 +33,6 @@ private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "
 
 private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
 
-/**
- * `ONLY` is the difference between a statement answering with a record and
- * answering with a list of them, and the server is the only place that
- * difference is real. Every case here writes two records first, because one
- * record hides the bug this phase fixes.
- *
- * Opt-in through `SURREAL_RUN_INTEGRATION=true`.
- */
 private fun onServer(block: suspend (Session) -> Unit) {
     if (!integrationEnabled()) return
 

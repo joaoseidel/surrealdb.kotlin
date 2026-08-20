@@ -37,14 +37,6 @@ private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "
 
 private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
 
-/**
- * A range target had never reached the server: the old rendering put a
- * parameter where a record-id key belongs and v3 answers
- * `Unexpected token $param expected a record-id key`. These cases are what
- * proves the replacement is a range and not merely a string that parses.
- *
- * Opt-in through `SURREAL_RUN_INTEGRATION=true`.
- */
 private fun onServer(block: suspend (Session) -> Unit) {
     if (!integrationEnabled()) return
 

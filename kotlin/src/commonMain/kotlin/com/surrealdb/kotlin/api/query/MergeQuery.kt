@@ -15,7 +15,7 @@ public class MergeQuery<T, S : Table<T>> internal constructor(
     private val data: JsonElement,
     private val cond: Condition<T>? = null,
     private val returnMode: ReturnMode? = null,
-    private val only: Boolean? = null,
+    private val forceOnly: Boolean = false,
 ) : Query(context) {
     public fun where(build: S.() -> Condition<T>): MergeQuery<T, S> = copy(cond = schema.build())
 
@@ -26,12 +26,12 @@ public class MergeQuery<T, S : Table<T>> internal constructor(
      * list of one. A record-id target already does. On a table or range target
      * the server rejects the statement the moment a second record matches.
      */
-    public fun only(): MergeQuery<T, S> = copy(only = true)
+    public fun only(): MergeQuery<T, S> = copy(forceOnly = true)
 
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPDATE ")
-        q.appendStatementTarget(what, only)
+        q.appendStatementTarget(what, forceOnly)
         q.appendLiteral(" MERGE ")
         q.bind(data)
         cond?.let {
@@ -45,6 +45,6 @@ public class MergeQuery<T, S : Table<T>> internal constructor(
     private fun copy(
         cond: Condition<T>? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-        only: Boolean? = this.only,
-    ): MergeQuery<T, S> = MergeQuery(context, schema, what, data, cond, returnMode, only)
+        forceOnly: Boolean = this.forceOnly,
+    ): MergeQuery<T, S> = MergeQuery(context, schema, what, data, cond, returnMode, forceOnly)
 }

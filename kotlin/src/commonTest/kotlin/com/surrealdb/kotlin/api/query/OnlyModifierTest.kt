@@ -23,10 +23,8 @@ private val db =
         override suspend fun query(bound: BoundQuery): JsonElement = error("compile-only")
     }
 
-/** Targets that can name at most one record. */
 private val oneRecord: List<Target> = listOf(RecordId("person", "alice"), People["alice"])
 
-/** Targets that can name any number of records, including none. */
 private val manyRecords: List<Target> =
     listOf(Table("person"), People, RecordIdRange("person", start = "alice", end = "zara"))
 
@@ -50,12 +48,6 @@ private val forced: List<Pair<String, (Target) -> Query>> =
         "patch" to { target -> db.patch(target, JsonArray(emptyList())).only() },
     )
 
-/**
- * `ONLY` asks the server for the record itself rather than a list, and the
- * server rejects the statement the moment a second record matches. Which
- * statements may ask for it is a property of what they point at, so these cases
- * hold every verb to the target's answer.
- */
 class OnlyModifierTest :
     ShouldSpec({
         context("a target that names one record") {

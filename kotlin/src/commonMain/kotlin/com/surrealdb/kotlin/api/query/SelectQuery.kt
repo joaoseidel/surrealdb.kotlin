@@ -26,7 +26,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
     private val fetchFields: List<Field<*>> = emptyList(),
     private val timeoutSeconds: Double? = null,
     private val versionAt: String? = null,
-    private val only: Boolean? = null,
+    private val forceOnly: Boolean = false,
 ) : Query(context) {
     internal enum class Selection { All, Fields, Value }
 
@@ -56,7 +56,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
      * with [limit] (1), because the server rejects the statement the moment a
      * second row matches; `only()` adds no limit of its own.
      */
-    public fun only(): SelectQuery<T, S> = copy(only = true)
+    public fun only(): SelectQuery<T, S> = copy(forceOnly = true)
 
     /** Compile this query without dispatching it. */
     override fun compile(): BoundQuery {
@@ -68,7 +68,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
             Selection.Value -> q.appendLiteral(" VALUE " + fields.first().path)
         }
         q.appendLiteral(" FROM ")
-        q.appendStatementTarget(what, only)
+        q.appendStatementTarget(what, forceOnly)
         cond?.let {
             q.appendLiteral(" WHERE ")
             q.appendCondition(it)
@@ -96,7 +96,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
         fetchFields: List<Field<*>> = this.fetchFields,
         timeoutSeconds: Double? = this.timeoutSeconds,
         versionAt: String? = this.versionAt,
-        only: Boolean? = this.only,
+        forceOnly: Boolean = this.forceOnly,
     ): SelectQuery<T, S> =
         SelectQuery(
             context,
@@ -110,6 +110,6 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
             fetchFields,
             timeoutSeconds,
             versionAt,
-            only,
+            forceOnly,
         )
 }
