@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Nested
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import kotlinx.serialization.SerialName
@@ -31,4 +32,22 @@ internal object Posts : Table("post") {
 internal object Notes : Table("note") {
     val body by field<String>()
     val author = field<RecordId>("author")
+}
+
+internal object Contacts : Table("contact") {
+    val name by field<String>()
+
+    object Address : Nested("address") {
+        val city by field<String>()
+        val zip = field<String>("postal_code")
+
+        object Geo : Nested("address.geo") {
+            val lat by field<Double>()
+            val lon by field<Double>()
+        }
+
+        val geo = nested(Geo)
+    }
+
+    val address = nested(Address)
 }

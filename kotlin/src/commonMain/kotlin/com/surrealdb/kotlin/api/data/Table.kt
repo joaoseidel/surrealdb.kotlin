@@ -1,8 +1,5 @@
 package com.surrealdb.kotlin.api.data
 
-import kotlin.properties.PropertyDelegateProvider
-import kotlin.properties.ReadOnlyProperty
-
 /**
  * A SurrealDB table, and the one place its fields are named.
  *
@@ -23,23 +20,14 @@ import kotlin.properties.ReadOnlyProperty
  *
  * `Table("book")` on its own is a target for every verb with no fields to name,
  * so a `where { }` over one is written with `raw { }`.
+ *
+ * The fields of an object field are declared as a [Nested] group.
  */
 @SurqlDsl
 public open class Table(
     public val tableName: String,
-) : Target {
-    internal val declaredFields: MutableList<Field<*>> = mutableListOf()
-
-    /** Declare a field, optionally as a dotted path into a nested object. */
-    protected fun <V> field(name: String): Field<V> = Field<V>(name).also { declaredFields += it }
-
-    /** Declare a field taking its name from the property it initialises. */
-    protected fun <V> field(): PropertyDelegateProvider<Table, ReadOnlyProperty<Table, Field<V>>> =
-        PropertyDelegateProvider { _, property ->
-            val resolved = field<V>(property.name)
-            ReadOnlyProperty { _, _ -> resolved }
-        }
-
+) : FieldGroup(""),
+    Target {
     /**
      * The record id. SurrealDB fixes it at the field `id`, so it takes no name,
      * and it is not one of the declared fields: the id is there whether or not
