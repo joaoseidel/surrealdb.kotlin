@@ -9,14 +9,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 private object Lines : Table("om_line") {
     val title by field<String>()
@@ -68,9 +67,9 @@ class OnlyModifierIntegrationTest :
         context("a select over a table holding two records") {
             should("return both of them") {
                 onServer { db ->
-                    val rows = db.select(Lines).await().jsonArray
+                    val rows = db.select(Lines).await()
 
-                    rows.map { it.jsonObject["title"]!!.jsonPrimitive.content } shouldBe listOf("One", "Two")
+                    rows.map { it[Lines.title] } shouldBe listOf("One", "Two")
                 }
             }
 
@@ -81,7 +80,6 @@ class OnlyModifierIntegrationTest :
                             .select(Lines)
                             .where { n greaterEq 1 }
                             .await()
-                            .jsonArray
 
                     rows.size shouldBe 2
                 }
@@ -89,32 +87,36 @@ class OnlyModifierIntegrationTest :
         }
 
         context("an update over a table holding two records") {
-            should("write to both and answer with a list, whatever the match count") {
+            should("write to both and answer with every record it touched, whatever the match count") {
                 onServer { db ->
                     val updated =
                         db
                             .update(Lines)
                             .set { it[n] = 9 }
                             .await()
-                            .jsonArray
 
-                    updated.map { it.jsonObject["n"]!!.jsonPrimitive.int } shouldBe listOf(9, 9)
+                    updated.map { it[Lines.n] } shouldBe listOf(9, 9)
                 }
             }
         }
 
         context("a record target") {
-            should("answer with the record itself rather than a list of one") {
+            should("answer with the record itself rather than a list of one, which is what ONLY buys") {
                 onServer { db ->
-                    val record = db.select(Lines["a"]).await()
+                    val statement = db.select(Lines["a"])
 
-                    record.jsonObject["title"]!!.jsonPrimitive.content shouldBe "One"
+                    firstQueryResult(db.query(statement.compile())).shouldBeInstanceOf<JsonObject>()
+                    statement.awaitSingleOrNull()?.get(Lines.title) shouldBe "One"
                 }
             }
 
             should("answer with null for a record that does not exist, rather than failing") {
                 onServer { db ->
-                    db.select(Lines["nobody"]).await().toString() shouldBe "null"
+                    val statement = db.select(Lines["nobody"])
+
+                    firstQueryResult(db.query(statement.compile())) shouldBe JsonNull
+                    statement.awaitSingleOrNull() shouldBe null
+                    statement.await() shouldBe emptyList()
                 }
             }
         }
@@ -130,14 +132,22 @@ class OnlyModifierIntegrationTest :
 
             should("answer with the record itself once a limit narrows it to one") {
                 onServer { db ->
-                    val record =
+                    val statement =
                         db
                             .select(Lines)
                             .limit(1)
                             .only()
-                            .await()
 
-                    record.jsonObject["title"]!!.jsonPrimitive.content shouldBe "One"
+                    firstQueryResult(db.query(statement.compile())).shouldBeInstanceOf<JsonObject>()
+                    statement.awaitSingleOrNull()?.get(Lines.title) shouldBe "One"
+                }
+            }
+        }
+
+        context("a table target without only()") {
+            should("answer with a list, which is the shape the terminals read every result through") {
+                onServer { db ->
+                    firstQueryResult(db.query(db.select(Lines).compile())).shouldBeInstanceOf<JsonArray>()
                 }
             }
         }
@@ -145,9 +155,9 @@ class OnlyModifierIntegrationTest :
         context("a create over a table") {
             should("answer with the record it wrote rather than a list of one") {
                 onServer { db ->
-                    val created = db.create(Lines).set { it[title] = "Three" }.await()
+                    val created = db.create(Lines).set { it[title] = "Three" }.awaitSingleOrNull()
 
-                    created.jsonObject["title"]!!.jsonPrimitive.content shouldBe "Three"
+                    created?.get(Lines.title) shouldBe "Three"
                 }
             }
         }

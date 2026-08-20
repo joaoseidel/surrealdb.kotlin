@@ -2,20 +2,17 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
+import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 private data class Shelf(
@@ -31,6 +28,8 @@ private object Books : Table("wb_book") {
     val shelfCity = field<String>("shelf.city")
     val shelfZip = field<String>("shelf.postal_code")
 }
+
+private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
 
 private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
 
@@ -79,10 +78,10 @@ class WriteBuilderIntegrationTest :
                             .set {
                                 it[title] = "SICP"
                                 it[pages] = 657
-                            }.await()
+                            }.theRecord()
 
-                    created.jsonObject["title"]!!.jsonPrimitive.content shouldBe "SICP"
-                    created.jsonObject["pages"]!!.jsonPrimitive.int shouldBe 657
+                    created[Books.title] shouldBe "SICP"
+                    created[Books.pages] shouldBe 657
                 }
             }
         }
@@ -98,11 +97,10 @@ class WriteBuilderIntegrationTest :
                             .set {
                                 it[shelfCity] = "Boston"
                                 it[shelfZip] = "02110"
-                            }.await()
+                            }.theRecord()
 
-                    val shelf = updated.jsonObject["shelf"]!!.jsonObject
-                    shelf["city"]!!.jsonPrimitive.content shouldBe "Boston"
-                    shelf["postal_code"]!!.jsonPrimitive.content shouldBe "02110"
+                    updated[Books.shelfCity] shouldBe "Boston"
+                    updated[Books.shelfZip] shouldBe "02110"
                 }
             }
         }
@@ -112,15 +110,12 @@ class WriteBuilderIntegrationTest :
                 onServer { db ->
                     db.create(Books["array"]).set { it[title] = "Arrays" }.await()
 
-                    val appended = db.update(Books["array"]).set { it[tags] += "cs" }.await()
-                    appended.jsonObject["tags"]!!.jsonArray.map { it.jsonPrimitive.content } shouldBe listOf("cs")
+                    db.update(Books["array"]).set { it[tags] += "cs" }.theRecord()[Books.tags] shouldBe listOf("cs")
 
-                    val more = db.update(Books["array"]).set { it[tags] += "lisp" }.await()
-                    more.jsonObject["tags"]!!.jsonArray.map { it.jsonPrimitive.content } shouldBe
+                    db.update(Books["array"]).set { it[tags] += "lisp" }.theRecord()[Books.tags] shouldBe
                         listOf("cs", "lisp")
 
-                    val removed = db.update(Books["array"]).set { it[tags] -= "cs" }.await()
-                    removed.jsonObject["tags"]!!.jsonArray.map { it.jsonPrimitive.content } shouldBe listOf("lisp")
+                    db.update(Books["array"]).set { it[tags] -= "cs" }.theRecord()[Books.tags] shouldBe listOf("lisp")
                 }
             }
         }
@@ -139,13 +134,9 @@ class WriteBuilderIntegrationTest :
                         db
                             .update(Books["composite"])
                             .set { it[shelf] = Shelf("Cambridge", "02139") }
-                            .await()
+                            .theRecord()
 
-                    replaced.jsonObject["shelf"]!!.jsonObject shouldBe
-                        buildJsonObject {
-                            put("city", JsonPrimitive("Cambridge"))
-                            put("postal_code", JsonPrimitive("02139"))
-                        }
+                    replaced[Books.shelf] shouldBe Shelf("Cambridge", "02139")
                 }
             }
         }
@@ -160,18 +151,22 @@ class WriteBuilderIntegrationTest :
                             it[pages] = 100
                         }.await()
 
-                    val unchanged = db.update(Books["empty"]).set { }.await()
+                    val unchanged = db.update(Books["empty"]).set { }.theRecord()
 
-                    unchanged.jsonObject["title"]!!.jsonPrimitive.content shouldBe "Untouched"
-                    unchanged.jsonObject["pages"]!!.jsonPrimitive.int shouldBe 100
+                    unchanged[Books.title] shouldBe "Untouched"
+                    unchanged[Books.pages] shouldBe 100
                 }
             }
 
             should("create nothing when the record does not exist") {
                 onServer { db ->
-                    db.update(Books["absent"]).set { }.await() shouldBe JsonNull
+                    db
+                        .update(Books["absent"])
+                        .set { }
+                        .await()
+                        .shouldBeEmpty()
 
-                    db.select(Books["absent"]).await() shouldBe JsonNull
+                    db.select(Books["absent"]).awaitSingleOrNull() shouldBe null
                 }
             }
         }

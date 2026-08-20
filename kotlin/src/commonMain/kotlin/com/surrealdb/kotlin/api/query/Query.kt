@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Row
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
 
@@ -18,8 +19,21 @@ public abstract class Query internal constructor(
     /** Compile to SurrealQL and its bindings, without sending anything. */
     public abstract fun compile(): BoundQuery
 
-    /** Send the statement and return the unwrapped first-statement result. */
-    public suspend fun await(): JsonElement = result()
+    /**
+     * Send the statement and read back every record it answered with, in the
+     * order the server gave them. A statement that matched nothing answers with
+     * an empty list.
+     */
+    public suspend fun await(): List<Row> = resultRows(context.json, result())
+
+    /**
+     * Send the statement and read back the one record it answered with, or null
+     * if it matched nothing.
+     *
+     * Two records is a query that asked the wrong question, so this throws
+     * rather than picking one. Pair it with `only()` or `limit(1)`.
+     */
+    public suspend fun awaitSingleOrNull(): Row? = atMostOneRecord(await())
 
     /**
      * Decode what this statement answers with as [T], where [T] is the type of
