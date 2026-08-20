@@ -14,7 +14,7 @@ plugins {
     alias(libs.plugins.kotest) apply false
 }
 
-val jdkToolchainVersion = 21
+val jdkToolchainVersion = 25
 val androidCompileSdk = 35
 val androidMinSdk = 26
 val ktlintVersion =
