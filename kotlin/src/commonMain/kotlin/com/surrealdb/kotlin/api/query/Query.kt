@@ -1,12 +1,12 @@
 package com.surrealdb.kotlin.api.query
 
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.serializer
 
 /**
  * A statement under construction. Each builder is an immutable value that
  * describes one statement and costs nothing until a terminal operation sends
- * it — [await], [awaitRaw] or [awaitAs].
+ * it.
  *
  * Chain methods return a fresh instance, so a builder is safe to share or pin
  * to a variable. It dispatches on the [QueryContext] it was built from, which
@@ -19,11 +19,22 @@ public abstract class Query internal constructor(
     public abstract fun compile(): BoundQuery
 
     /** Send the statement and return the unwrapped first-statement result. */
-    public suspend fun await(): JsonElement = firstQueryResult(context.query(compile()))
+    public suspend fun await(): JsonElement = result()
 
-    /** Send the statement and return the raw `[{ status, result, time, type }]` envelope. */
-    public suspend fun awaitRaw(): JsonElement = context.query(compile())
+    /**
+     * Decode what this statement answers with as [T], where [T] is the type of
+     * one record: a statement answering with three records decodes as three
+     * [T]s, not as one `List<T>`.
+     *
+     * It holds the decoding rather than performing it, so the terminals stay in
+     * one place and the type is named where a reader expects it, last:
+     *
+     * ```
+     * db.select(Users).decodeAs<User>().await()                 // List<User>
+     * db.select(Users["alice"]).decodeAs<User>().awaitSingleOrNull()   // User?
+     * ```
+     */
+    public inline fun <reified T> decodeAs(): TypedResult<T> = TypedResult(this, serializer())
+
+    internal suspend fun result(): JsonElement = firstQueryResult(context.query(compile()))
 }
-
-/** As [Query.await], decoding the result with the context's serializer. */
-public suspend inline fun <reified T> Query.awaitAs(): T = context.json.decodeFromJsonElement(await())

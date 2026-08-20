@@ -185,13 +185,6 @@ public class Session internal constructor(
 
     public inline fun <reified T> decode(element: JsonElement): T = json.decodeFromJsonElement(element)
 
-    public suspend inline fun <reified T> queryAs(
-        sql: String,
-        vars: JsonObject? = null,
-    ): T = decode(query(sql, vars))
-
-    public suspend inline fun <reified T> queryAs(bound: BoundQuery): T = decode(query(bound))
-
     private suspend fun applyTokenResult(result: JsonElement) {
         val tokens = extractTokens(result) ?: return
         controller.update(sessionId) {

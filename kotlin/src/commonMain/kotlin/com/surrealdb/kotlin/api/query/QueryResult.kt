@@ -35,6 +35,38 @@ internal fun statementResults(response: JsonElement): List<JsonElement> =
         )
     }
 
+/**
+ * The records of one statement's result, which SurrealDB shapes differently
+ * depending on what the statement pointed at: an array for a table target, the
+ * record itself under `ONLY` or a record-id target, and null for a statement
+ * that matched nothing.
+ *
+ * A value that is neither, which is what `RETURN` and a `VALUE` projection
+ * answer with, is one record too, so a scalar reads back as a scalar.
+ */
+internal fun resultRecords(result: JsonElement): List<JsonElement> =
+    when (result) {
+        is JsonArray -> result
+        JsonNull -> emptyList()
+        else -> listOf(result)
+    }
+
+/**
+ * The one record a caller asked for, or null.
+ *
+ * More than one is a statement that asked the wrong question, and answering
+ * with the first would hide it.
+ */
+internal fun <T> atMostOneRecord(records: List<T>): T? {
+    if (records.size > 1) {
+        throw SurrealProtocolException(
+            "Expected at most one record, got ${records.size}. " +
+                "Pair awaitSingleOrNull() with only() or limit(1).",
+        )
+    }
+    return records.firstOrNull()
+}
+
 private fun statementArray(response: JsonElement): JsonArray =
     response as? JsonArray
         ?: throw SurrealProtocolException("Expected array response from query, got: $response")

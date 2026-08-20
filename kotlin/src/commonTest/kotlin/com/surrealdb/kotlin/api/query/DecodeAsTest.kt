@@ -1,0 +1,145 @@
+package com.surrealdb.kotlin.api.query
+
+import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.api.data.get
+import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+private data class Person(
+    val id: RecordId,
+    val name: String,
+)
+
+private fun answering(body: String): RecordingContext = RecordingContext(result = Json.parseToJsonElement(body))
+
+/**
+ * `decodeAs<T>()` and its two terminals.
+ *
+ * [T] is the type of one record, and SurrealDB decides on its own whether it
+ * answers with a list, with the record itself, or with null: a table target
+ * gives an array, `ONLY` and a record-id target give the record, and a
+ * statement that matched nothing gives null. The terminals are what makes
+ * those three shapes one contract.
+ */
+class DecodeAsTest :
+    ShouldSpec({
+        context("await") {
+            should("decode every record of an array result") {
+                runTest {
+                    val context =
+                        answering(
+                            """[{"id":"person:alice","name":"Ada"},{"id":"person:bob","name":"Bob"}]""",
+                        )
+
+                    val people = context.select(People).decodeAs<Person>().await()
+
+                    people shouldBe
+                        listOf(
+                            Person(RecordId("person", "alice"), "Ada"),
+                            Person(RecordId("person", "bob"), "Bob"),
+                        )
+                }
+            }
+
+            should("decode a single-record result as a list of one, because ONLY changes the shape not the meaning") {
+                runTest {
+                    val context = answering("""{"id":"person:alice","name":"Ada"}""")
+
+                    context
+                        .select(People)
+                        .only()
+                        .decodeAs<Person>()
+                        .await() shouldBe
+                        listOf(Person(RecordId("person", "alice"), "Ada"))
+                }
+            }
+
+            should("answer with an empty list when the statement matched nothing") {
+                runTest {
+                    answering("null")
+                        .select(People)
+                        .decodeAs<Person>()
+                        .await()
+                        .shouldBeEmpty()
+                }
+            }
+        }
+
+        context("awaitSingleOrNull") {
+            should("decode the one record a record-id target answers with") {
+                runTest {
+                    val context = answering("""{"id":"person:alice","name":"Ada"}""")
+
+                    context.select(People["alice"]).decodeAs<Person>().awaitSingleOrNull() shouldBe
+                        Person(RecordId("person", "alice"), "Ada")
+                }
+            }
+
+            should("answer null for a statement that matched nothing, which is what a missing record looks like") {
+                runTest {
+                    answering("null").select(People["nobody"]).decodeAs<Person>().awaitSingleOrNull() shouldBe null
+                }
+            }
+
+            should("refuse a second record rather than picking one, because the caller asked the wrong question") {
+                runTest {
+                    val context =
+                        answering(
+                            """[{"id":"person:alice","name":"Ada"},{"id":"person:bob","name":"Bob"}]""",
+                        )
+
+                    val failure =
+                        shouldThrow<SurrealProtocolException> {
+                            context.select(People).decodeAs<Person>().awaitSingleOrNull()
+                        }
+
+                    failure.message shouldContain "got 2"
+                }
+            }
+
+            should("decode a scalar, so a function call reads back as the value it returned") {
+                runTest {
+                    answering(""""2026-08-20T00:00:00Z"""")
+                        .run("time::now")
+                        .decodeAs<String>()
+                        .awaitSingleOrNull() shouldBe "2026-08-20T00:00:00Z"
+                }
+            }
+        }
+
+        context("the serializer") {
+            should("come from the context, so a session's configuration reaches every builder") {
+                runTest {
+                    val context =
+                        RecordingContext(
+                            json = Json { ignoreUnknownKeys = true },
+                            result = Json.parseToJsonElement("""{"id":"person:alice","name":"Ada","unmodelled":1}"""),
+                        )
+
+                    context.select(People).decodeAs<Person>().awaitSingleOrNull() shouldBe
+                        Person(RecordId("person", "alice"), "Ada")
+                }
+            }
+
+            should("decode a record id without a contextual serializer being registered") {
+                runTest {
+                    val context = answering("""{"id":"person:`with-dash`","name":"Ada"}""")
+
+                    context
+                        .select(People)
+                        .decodeAs<Person>()
+                        .awaitSingleOrNull()
+                        ?.id shouldBe
+                        RecordId("person", "with-dash")
+                }
+            }
+        }
+    })
