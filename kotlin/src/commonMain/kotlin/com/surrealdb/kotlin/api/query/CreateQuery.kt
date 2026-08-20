@@ -25,7 +25,7 @@ public class CreateQuery<T, S : Table<T>> internal constructor(
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("CREATE ")
-        q.appendStatementTarget(what, only = true)
+        q.appendStatementTarget(what, forceOnly = true)
         data?.render(q)
         returnMode?.render(q)
         return q

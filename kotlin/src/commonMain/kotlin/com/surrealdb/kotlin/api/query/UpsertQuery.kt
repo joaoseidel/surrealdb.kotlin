@@ -15,7 +15,7 @@ public class UpsertQuery<T, S : Table<T>> internal constructor(
     private val data: WriteData? = null,
     private val cond: Condition<T>? = null,
     private val returnMode: ReturnMode? = null,
-    private val only: Boolean? = null,
+    private val forceOnly: Boolean = false,
 ) : Query(context) {
     public fun content(data: JsonElement): UpsertQuery<T, S> = copy(data = ContentData(data))
 
@@ -32,12 +32,12 @@ public class UpsertQuery<T, S : Table<T>> internal constructor(
      * list of one. A record-id target already does. On a table or range target
      * the server rejects the statement the moment a second record matches.
      */
-    public fun only(): UpsertQuery<T, S> = copy(only = true)
+    public fun only(): UpsertQuery<T, S> = copy(forceOnly = true)
 
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPSERT ")
-        q.appendStatementTarget(what, only)
+        q.appendStatementTarget(what, forceOnly)
         data?.render(q)
         cond?.let {
             q.appendLiteral(" WHERE ")
@@ -51,6 +51,6 @@ public class UpsertQuery<T, S : Table<T>> internal constructor(
         data: WriteData? = this.data,
         cond: Condition<T>? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-        only: Boolean? = this.only,
-    ): UpsertQuery<T, S> = UpsertQuery(context, schema, what, data, cond, returnMode, only)
+        forceOnly: Boolean = this.forceOnly,
+    ): UpsertQuery<T, S> = UpsertQuery(context, schema, what, data, cond, returnMode, forceOnly)
 }

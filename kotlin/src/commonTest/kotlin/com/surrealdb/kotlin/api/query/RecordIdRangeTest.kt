@@ -6,10 +6,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * A record range is a record id whose key is a range, so it is built the same
- * way a single record id is: `type::record($tb, $start..$end)`, every half
- * bound. The bare literal form `tb:$start..$end` does not parse, because v3
- * refuses a parameter where it expects a record-id key.
+ * SurrealDB v3 refuses a parameter where it expects a record-id key, so the
+ * literal form `tb:$start..$end` does not parse.
  */
 class RecordIdRangeTest :
     ShouldSpec({

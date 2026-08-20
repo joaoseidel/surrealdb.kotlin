@@ -18,7 +18,7 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
     private val data: WriteData? = null,
     private val cond: Condition<T>? = null,
     private val returnMode: ReturnMode? = null,
-    private val only: Boolean? = null,
+    private val forceOnly: Boolean = false,
 ) : Query(context) {
     public fun content(data: JsonElement): UpdateQuery<T, S> = copy(data = ContentData(data))
 
@@ -35,12 +35,12 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
      * list of one. A record-id target already does. On a table or range target
      * the server rejects the statement the moment a second record matches.
      */
-    public fun only(): UpdateQuery<T, S> = copy(only = true)
+    public fun only(): UpdateQuery<T, S> = copy(forceOnly = true)
 
     override fun compile(): BoundQuery {
         val q = BoundQuery()
         q.appendLiteral("UPDATE ")
-        q.appendStatementTarget(what, only)
+        q.appendStatementTarget(what, forceOnly)
         data?.render(q)
         cond?.let {
             q.appendLiteral(" WHERE ")
@@ -54,6 +54,6 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
         data: WriteData? = this.data,
         cond: Condition<T>? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
-        only: Boolean? = this.only,
-    ): UpdateQuery<T, S> = UpdateQuery(context, schema, what, data, cond, returnMode, only)
+        forceOnly: Boolean = this.forceOnly,
+    ): UpdateQuery<T, S> = UpdateQuery(context, schema, what, data, cond, returnMode, forceOnly)
 }
