@@ -26,6 +26,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
     private val fetchFields: List<Field<*>> = emptyList(),
     private val timeoutSeconds: Double? = null,
     private val versionAt: String? = null,
+    private val only: Boolean? = null,
 ) : Query(context) {
     internal enum class Selection { All, Fields, Value }
 
@@ -49,6 +50,14 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
     /** Version cutoff as a SurrealQL datetime literal (e.g. `d'2024-01-01T00:00:00Z'`). */
     public fun version(literal: String): SelectQuery<T, S> = copy(versionAt = literal)
 
+    /**
+     * Emit `ONLY`, so the statement answers with the record itself instead of a
+     * list of one. A record-id target already does. On a table target pair this
+     * with [limit] (1), because the server rejects the statement the moment a
+     * second row matches; `only()` adds no limit of its own.
+     */
+    public fun only(): SelectQuery<T, S> = copy(only = true)
+
     /** Compile this query without dispatching it. */
     override fun compile(): BoundQuery {
         val q = BoundQuery()
@@ -58,8 +67,8 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
             Selection.Fields -> q.appendLiteral(" " + fields.joinToString(", ") { it.path })
             Selection.Value -> q.appendLiteral(" VALUE " + fields.first().path)
         }
-        q.appendLiteral(" FROM ONLY ")
-        q.appendTarget(what)
+        q.appendLiteral(" FROM ")
+        q.appendStatementTarget(what, only)
         cond?.let {
             q.appendLiteral(" WHERE ")
             q.appendCondition(it)
@@ -87,6 +96,7 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
         fetchFields: List<Field<*>> = this.fetchFields,
         timeoutSeconds: Double? = this.timeoutSeconds,
         versionAt: String? = this.versionAt,
+        only: Boolean? = this.only,
     ): SelectQuery<T, S> =
         SelectQuery(
             context,
@@ -100,5 +110,6 @@ public class SelectQuery<T, S : Table<T>> internal constructor(
             fetchFields,
             timeoutSeconds,
             versionAt,
+            only,
         )
 }

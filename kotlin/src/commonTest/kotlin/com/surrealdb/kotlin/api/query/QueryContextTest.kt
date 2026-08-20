@@ -88,7 +88,7 @@ class QueryContextTest :
                     transaction.select(Table("person")).await()
 
                     session.sent.shouldBeEmpty()
-                    transaction.sent.single().surql shouldStartWith "SELECT * FROM ONLY"
+                    transaction.sent.single().surql shouldStartWith "SELECT * FROM type::table("
                 }
             }
 

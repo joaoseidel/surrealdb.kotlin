@@ -90,6 +90,22 @@ val adults: List<Person> = db
     .awaitAs()
 ```
 
+A statement takes the SurrealQL `ONLY` keyword from what it points at. A record id answers with
+the record; a table or a record-id range answers with a list of them. `only()` asks for `ONLY` on a
+target that would not have taken it, and the server rejects the statement the moment a second record
+matches, so a table target needs a limit of its own:
+
+```kotlin
+val one: Person = db
+    .select(People)
+    .where { age greaterEq 18 }
+    .limit(1)
+    .only()
+    .awaitAs()
+```
+
+`create` is the exception: it writes exactly one record, so it always carries `ONLY`.
+
 The table declaration is what makes the fields typed. `field("agee")` throws as `People`
 initialises, naming the field and listing what `Person` actually serialises — and it reads the
 *serial* names, so a property carrying `@SerialName("first_name")` is declared under that name and
