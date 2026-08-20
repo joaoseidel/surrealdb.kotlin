@@ -6,41 +6,9 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-
-@Serializable
-private data class Person(
-    val name: String,
-)
-
-/**
- * A context that records what it was asked to send and answers with the
- * `[{status, result}]` envelope a real `query` RPC returns.
- */
-private class RecordingContext(
-    override val json: Json = Json,
-    private val result: JsonElement = JsonPrimitive("ok"),
-) : QueryContext {
-    val sent: MutableList<BoundQuery> = mutableListOf()
-
-    override suspend fun query(bound: BoundQuery): JsonElement {
-        sent += bound
-        return buildJsonArray {
-            add(
-                buildJsonObject {
-                    put("status", "OK")
-                    put("result", result)
-                },
-            )
-        }
-    }
-}
 
 /**
  * The execution contract behind the whole CRUD surface. A session and a
@@ -89,24 +57,6 @@ class QueryContextTest :
 
                     session.sent.shouldBeEmpty()
                     transaction.sent.single().surql shouldStartWith "SELECT * FROM type::table("
-                }
-            }
-
-            should("decode with the context's own serializer, so a session's configuration reaches every builder") {
-                runTest {
-                    val context =
-                        RecordingContext(
-                            json = Json { ignoreUnknownKeys = true },
-                            result =
-                                buildJsonObject {
-                                    put("name", JsonPrimitive("Ada"))
-                                    put("unmodelled", JsonPrimitive(1))
-                                },
-                        )
-
-                    val person = context.select(Table("person")).awaitAs<Person>()
-
-                    person shouldBe Person("Ada")
                 }
             }
         }

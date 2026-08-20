@@ -4,7 +4,6 @@ import com.surrealdb.kotlin.api.Feature
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
-import com.surrealdb.kotlin.api.query.awaitAs
 import com.surrealdb.kotlin.api.query.select
 import com.surrealdb.kotlin.runtime.RpcResponse
 import com.surrealdb.kotlin.runtime.codec.parseLiveNotification
@@ -171,7 +170,8 @@ class SurrealTest {
                     .select(
                         com.surrealdb.kotlin.api.data
                             .RecordId("person", "1"),
-                    ).awaitAs()
+                    ).decodeAs<Person>()
+                    .awaitSingleOrNull()!!
 
             assertEquals("Ada", person.name)
         }
