@@ -59,6 +59,29 @@ db.patch(People, patches).returnMode(ReturnMode.Diff).await()
 db.update(People).content(data).returnMode(ReturnMode.Fields(listOf(People.name))).await()
 ```
 
+## Install
+
+```kotlin
+dependencies {
+    implementation("com.surrealdb:kotlin:1.0.0")
+}
+```
+
+One coordinate covers every target. The Gradle module metadata a Kotlin
+Multiplatform publication carries picks `kotlin-jvm`, `kotlin-android` or the
+matching `kotlin-ios*` variant for whatever is asking.
+
+Nothing is published under `com.surrealdb:kotlin` yet, so until the first
+release, build it and take it from your local Maven repository:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+That writes `com.surrealdb:kotlin:1.0.0` and `com.surrealdb:kotlin-spectron:1.0.0`
+into `~/.m2/repository`, which a consuming build reaches by listing
+`mavenLocal()` among its repositories.
+
 ## Quick start
 
 ```kotlin
