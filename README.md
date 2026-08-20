@@ -22,15 +22,16 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
 - Client-side transactions via `begin` / `commit` / `cancel` RPCs with the transaction id carried in the JSON-RPC envelope's `txn` field — every CRUD
   method inside the block is automatically scoped to that transaction.
 - Coroutines `Flow` API for live query notifications.
-- Fluent query builder DSL: `db.select(Users).where { age greater 18 }.limit(10).awaitAs<List<User>>()`. Every CRUD operation names what it
+- Fluent query builder DSL: `db.select(Users).where { age greater 18 }.limit(10).await()`. Every CRUD operation names what it
   acts on with a `Table`, `RecordId` or `RecordIdRange` — the `Target` type, so
   `select("user")` cannot compile into a query for the *string* `"user"` — then
   compiles to local SurrealQL with bound parameters and dispatches via the
   `query` RPC, mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
 - One declaration per table. `object People : Table("person")` names the fields once, with no wire
   type beside it. Inside `where { }` they come from that declaration and each operator is typed, so
-  `age greater "18"` does not compile. `db.checkSchema(People)` asks a SCHEMAFULL database whether
-  it agrees, and names every field it does not have.
+  `age greater "18"` does not compile. The same declaration reads the result back: `row[People.name]`
+  is a `String`, and `db.checkSchema(People)` asks a SCHEMAFULL database whether it agrees, naming
+  every field it does not have.
 - [Spectron](#spectron) client for memory and knowledge management, shipped as a separate opt-in artifact (`com.surrealdb:kotlin-spectron`).
 
 ## Supported RPC methods
@@ -48,16 +49,22 @@ CRUD operations (`select`, `create`, `update`, `upsert`, `merge`, `patch`, `dele
 RPC methods — they compile locally to SurrealQL and dispatch through `query`. This matches
 the [surrealdb.js](https://github.com/surrealdb/surrealdb.js/tree/main/packages/sdk/src/query) approach and keeps the wire protocol slim.
 
-For typed decoding, every builder exposes `awaitAs<T>()` and the raw `query()` family has `queryAs<T>()`. Every call throws on failure; a caller who
-wants a `Result` writes `runCatching { session.ping() }`.
+Every builder ends in one of two terminals. `await()` returns `List<Row>` and `awaitSingleOrNull()`
+returns `Row?`, whatever the statement pointed at: SurrealDB answers a table with a list, a record id
+with the record itself, and a statement that matched nothing with null. `decodeAs<T>()` in front of
+either one decodes each record into a type of your own instead. Every call throws on failure; a
+caller who wants a `Result` writes `runCatching { session.ping() }`.
 
 Every write verb takes a `returnMode`, which is the SurrealQL
 `RETURN NONE | BEFORE | AFTER | DIFF | <fields>` clause. That covers `create`, `update`, `upsert`, `merge`, `patch`, `delete` and `relate`.
 
 ```kotlin
-db.patch(People, patches).returnMode(ReturnMode.Diff).await()
 db.update(People).content(data).returnMode(ReturnMode.Fields(listOf(People.name))).await()
+db.patch(People, patches).returnMode(ReturnMode.Diff).decodeAs<List<JsonObject>>().await()
 ```
+
+`RETURN DIFF` is the one mode that does not answer with records. It answers with a list of JSON Patch
+operations per record, so it is read through `decodeAs` rather than `await()`.
 
 ## Install
 
@@ -94,8 +101,8 @@ db.signin(buildJsonObject {
 })
 db.use("main", "main")
 
-// Raw SurrealQL
-val rows = db.query("SELECT * FROM person")
+// Raw SurrealQL, which answers with the [{ status, result }] envelope as it arrived
+val envelope = db.query("SELECT * FROM person")
 
 // Or the fluent builder
 object People : Table("person") {
@@ -104,14 +111,29 @@ object People : Table("person") {
     val age by field<Int>()
 }
 
-@Serializable
-data class Person(val id: String, val name: String, val age: Int)
-
-val adults: List<Person> = db
+val adults: List<Row> = db
     .select(People)
     .where { age greaterEq 18 }
     .limit(50)
-    .awaitAs()
+    .await()
+
+adults.first()[People.name]   // String
+adults.first()[People.id]     // RecordId
+```
+
+A row is read through the fields the table declared, so the value type comes from the field and
+`val n: Int = row[People.name]` does not compile. A caller with a type of their own names it before
+the terminal:
+
+```kotlin
+@Serializable
+data class Person(val id: RecordId, val name: String, val age: Int)
+
+val people: List<Person> = db
+    .select(People)
+    .where { age greaterEq 18 }
+    .decodeAs<Person>()
+    .await()
 ```
 
 A statement takes the SurrealQL `ONLY` keyword from what it points at. A record id answers with
@@ -120,19 +142,22 @@ target that would not have taken it, and the server rejects the statement the mo
 matches, so a table target needs a limit of its own:
 
 ```kotlin
-val one: Person = db
+val one: Row? = db
     .select(People)
     .where { age greaterEq 18 }
     .limit(1)
     .only()
-    .awaitAs()
+    .awaitSingleOrNull()
 ```
+
+`awaitSingleOrNull()` reads either answer. It throws rather than picking one when the statement
+answered with two records, because that is a query that asked the wrong question.
 
 `create` is the exception: it writes exactly one record, so it always carries `ONLY`.
 
-The table declaration is the only one the driver needs. `Person` above is the caller's own type,
-there to decode the result, and nothing makes the two agree. A field of a nested object is declared
-by its path, and so is the object itself when you want to assign the whole of it:
+The table declaration is the only one the driver needs. `Person` above is the caller's own type, and
+nothing makes the two agree. A field of a nested object is declared by its path, and so is the object
+itself when you want to assign or read the whole of it:
 
 ```kotlin
 object People : Table("person") {
@@ -142,6 +167,7 @@ object People : Table("person") {
 
 db.select(People).where { city eq "Cambridge" }
 db.update(People).set { it[city] = "Cambridge" }
+row[People.city]      // "Cambridge", because SurrealDB rebuilds the nesting rather than flattening it
 ```
 
 Whether the database has those fields is a separate question, and `checkSchema` is what asks it. A

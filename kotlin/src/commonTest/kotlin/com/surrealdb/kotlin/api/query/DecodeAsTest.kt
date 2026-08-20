@@ -11,6 +11,8 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 private data class Person(
@@ -111,6 +113,40 @@ class DecodeAsTest :
                         .run("time::now")
                         .decodeAs<String>()
                         .awaitSingleOrNull() shouldBe "2026-08-20T00:00:00Z"
+                }
+            }
+        }
+
+        context("a result that is not made of records") {
+            should("decode through decodeAs, which is how RETURN DIFF answers with patches per record") {
+                runTest {
+                    val diff =
+                        answering("""[[{"op":"replace","path":"/name","value":"Ada"}]]""")
+                            .patch(People, JsonArray(emptyList()))
+                            .returnMode(ReturnMode.Diff)
+                            .decodeAs<List<JsonObject>>()
+                            .await()
+
+                    diff shouldBe
+                        listOf(
+                            listOf(
+                                Json.parseToJsonElement("""{"op":"replace","path":"/name","value":"Ada"}"""),
+                            ),
+                        )
+                }
+            }
+
+            should("say so when read as rows, rather than handing back something that is not a record") {
+                runTest {
+                    val failure =
+                        shouldThrow<SurrealProtocolException> {
+                            answering("""[[{"op":"replace","path":"/name","value":"Ada"}]]""")
+                                .patch(People, JsonArray(emptyList()))
+                                .returnMode(ReturnMode.Diff)
+                                .await()
+                        }
+
+                    failure.message shouldContain "Expected a record"
                 }
             }
         }
