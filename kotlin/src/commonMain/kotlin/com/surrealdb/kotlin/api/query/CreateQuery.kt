@@ -11,10 +11,13 @@ public class CreateQuery<T, S : Table<T>> internal constructor(
     context: QueryContext,
     private val schema: S,
     private val what: Target,
-    private val data: JsonElement? = null,
+    private val data: WriteData? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
-    public fun content(data: JsonElement): CreateQuery<T, S> = copy(data = data)
+    public fun content(data: JsonElement): CreateQuery<T, S> = copy(data = ContentData(data))
+
+    /** Assign fields by name: `set { it[title] = "SICP" }`. Replaces any [content]. */
+    public fun set(block: S.(Assignments) -> Unit): CreateQuery<T, S> = copy(data = buildAssignments(schema, block))
 
     public fun returnMode(mode: ReturnMode): CreateQuery<T, S> = copy(returnMode = mode)
 
@@ -22,16 +25,13 @@ public class CreateQuery<T, S : Table<T>> internal constructor(
         val q = BoundQuery()
         q.appendLiteral("CREATE ONLY ")
         q.appendTarget(what)
-        data?.let {
-            q.appendLiteral(" CONTENT ")
-            q.bind(it)
-        }
+        data?.render(q)
         returnMode?.render(q)
         return q
     }
 
     private fun copy(
-        data: JsonElement? = this.data,
+        data: WriteData? = this.data,
         returnMode: ReturnMode? = this.returnMode,
     ): CreateQuery<T, S> = CreateQuery(context, schema, what, data, returnMode)
 }
