@@ -137,6 +137,43 @@ val people: List<Person> = db
     .await()
 ```
 
+`fields(...)` narrows a statement to the fields you name, and the rows read back through the same
+declarations:
+
+```kotlin
+object Talks : Table("talk") {
+    val title by field<String>()
+    val firstTag = field<String>("tags[0]")
+    val city = field<String>("venue.city")
+}
+
+val talks: List<Row> = db.select(Talks).fields(Talks.title, Talks.city, Talks.firstTag).await()
+
+talks.first()[Talks.city]       // "Boston", because SurrealDB rebuilds the object it projected out of
+talks.first()[Talks.firstTag]   // "cs"
+```
+
+An index is the one part of a path SurrealDB drops on the way back: `SELECT tags[0]` answers
+`{"tags": "cs"}`, and `SELECT tags[0], tags[1]` answers `{"tags": "lisp"}`, one value where two were
+asked for. The builder therefore aliases an indexed projection to its own path, so every value
+arrives where the field that asked for it reads it. `[*]` reads every element, so
+`field<List<String?>>("authors[*].name")` is the list of names with a null wherever an element has
+none.
+
+A projected field the record does not carry arrives as an explicit null instead of being left out,
+and reads as null through a nullable field either way.
+
+`value(...)` projects one field as SurrealQL `SELECT VALUE`, so the statement answers with the values
+themselves rather than with records. Read those with `decodeAs`, since `await()` reads records:
+
+```kotlin
+val cities: List<String?> = db.select(Talks).value(Talks.city).decodeAs<String?>().await()
+```
+
+The builder has no alias of its own, deliberately. A row resolves a field by the path its declaration
+names, so a projection free to rename fields would break the lookup that lets a row be read without
+declaring a type for it.
+
 A statement takes the SurrealQL `ONLY` keyword from what it points at. A record id answers with
 the record; a table or a record-id range answers with a list of them. `only()` asks for `ONLY` on a
 target that would not have taken it, and the server rejects the statement the moment a second record

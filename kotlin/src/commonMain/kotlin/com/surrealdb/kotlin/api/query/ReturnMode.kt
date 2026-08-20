@@ -31,7 +31,7 @@ public sealed class ReturnMode {
             Before -> into.appendLiteral("BEFORE")
             After -> into.appendLiteral("AFTER")
             Diff -> into.appendLiteral("DIFF")
-            is Fields -> into.appendLiteral(fields.joinToString(separator = ", ") { it.path })
+            is Fields -> into.appendProjections(fields)
         }
     }
 }

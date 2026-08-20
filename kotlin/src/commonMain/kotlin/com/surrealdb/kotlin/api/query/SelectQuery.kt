@@ -34,7 +34,12 @@ public class SelectQuery<S : Table> internal constructor(
     public fun fields(vararg fields: Field<*>): SelectQuery<S> =
         copy(selection = Selection.Fields, fields = fields.toList())
 
-    /** Project a single field as VALUE. */
+    /**
+     * Project a single field as `SELECT VALUE`, so the statement answers with
+     * the values themselves rather than with records. [Query.await] reads
+     * records and rejects those, so read them with
+     * `decodeAs<V>().await()`.
+     */
     public fun value(field: Field<*>): SelectQuery<S> = copy(selection = Selection.Value, fields = listOf(field))
 
     public fun start(start: Int): SelectQuery<S> = copy(start = start)
@@ -63,9 +68,18 @@ public class SelectQuery<S : Table> internal constructor(
         val q = BoundQuery()
         q.appendLiteral("SELECT")
         when (selection) {
-            Selection.All -> q.appendLiteral(" *")
-            Selection.Fields -> q.appendLiteral(" " + fields.joinToString(", ") { it.path })
-            Selection.Value -> q.appendLiteral(" VALUE " + fields.first().path)
+            Selection.All -> {
+                q.appendLiteral(" *")
+            }
+
+            Selection.Fields -> {
+                q.appendLiteral(" ")
+                q.appendProjections(fields)
+            }
+
+            Selection.Value -> {
+                q.appendLiteral(" VALUE " + fields.first().path)
+            }
         }
         q.appendLiteral(" FROM ")
         q.appendStatementTarget(what, forceOnly)
