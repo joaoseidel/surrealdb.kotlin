@@ -21,10 +21,12 @@ public abstract class Fields internal constructor(
     internal val groupDescriptor: SerialDescriptor?,
     internal val groupLabel: String,
 ) {
+    internal val declaredFields: MutableList<Field<*>> = mutableListOf()
+
     /** Declare a field, optionally as a dotted path into nested objects. */
     protected fun <V> field(name: String): Field<V> {
         walkPath(groupDescriptor, name, groupLabel)
-        return Field(childPath(groupPath, name))
+        return Field<V>(childPath(groupPath, name)).also { declaredFields += it }
     }
 
     /** Declare a field taking its name from the property it initialises. */
@@ -37,7 +39,9 @@ public abstract class Fields internal constructor(
     /** Declare a nested object, addressed by property reference. */
     protected fun <V> nested(name: String): Nested<V> {
         val descriptor = walkPath(groupDescriptor, name, groupLabel)
-        return Nested(childPath(groupPath, name), descriptor, descriptor?.let(::labelOf) ?: name)
+        val group = Nested<V>(childPath(groupPath, name), descriptor, descriptor?.let(::labelOf) ?: name)
+        declaredFields += group
+        return group
     }
 
     /** Declare a nested object taking its name from the property it initialises. */
