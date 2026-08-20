@@ -10,11 +10,11 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 ktor = "3.5.2"
 
-junit = "5.11.4"
+junit = "5.14.4"
 kotest = "6.2.4"
-androidx-test-junit = "1.2.1"
-androidx-test-runner = "1.6.2"
-androidx-test-core = "1.6.1"
+androidx-test-junit = "1.3.0"
+androidx-test-runner = "1.7.0"
+androidx-test-core = "1.7.0"
 
 [libraries]
 # KotlinX
