@@ -3,30 +3,21 @@ package com.surrealdb.kotlin.api.query
 import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.data.RecordIdRange
+import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 private object Slots : Table("rt_slot") {
+    val id = recordId()
     val n by field<Int>()
 }
 
-private fun keysOf(rows: JsonElement): List<String> =
-    rows.jsonArray.map {
-        it.jsonObject["id"]!!
-            .jsonPrimitive.content
-            .substringAfter(':')
-    }
+private fun keysOf(rows: List<Row>): List<String> = rows.map { it[Slots.id].id }
 
 private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
 
@@ -97,7 +88,7 @@ class RangeTargetIntegrationTest :
                             .await()
 
                     keysOf(updated) shouldBe listOf("a", "m")
-                    updated.jsonArray.map { it.jsonObject["n"]!!.jsonPrimitive.int } shouldBe listOf(7, 7)
+                    updated.map { it[Slots.n] } shouldBe listOf(7, 7)
 
                     db.delete(range("a", "z")).await()
 

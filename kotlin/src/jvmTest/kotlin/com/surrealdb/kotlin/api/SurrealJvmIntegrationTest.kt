@@ -141,7 +141,14 @@ class SurrealJvmIntegrationTest {
                             ),
                         ).returnMode(ReturnMode.Before)
                         .await()
-                assertEquals("Chiru D", patchedBefore.jsonObject["name"]?.jsonPrimitive?.content)
+                assertEquals(
+                    "Chiru D",
+                    patchedBefore
+                        .single()
+                        .content["name"]
+                        ?.jsonPrimitive
+                        ?.content,
+                )
 
                 db
                     .relate(

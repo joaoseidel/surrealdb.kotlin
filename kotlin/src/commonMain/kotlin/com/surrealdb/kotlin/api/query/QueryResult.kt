@@ -1,7 +1,9 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.api.error.SurrealRpcException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -49,6 +51,27 @@ internal fun resultRecords(result: JsonElement): List<JsonElement> =
         is JsonArray -> result
         JsonNull -> emptyList()
         else -> listOf(result)
+    }
+
+/**
+ * Every record of one statement's result as a [Row].
+ *
+ * A result that is not a record, which is what `RETURN` and a `VALUE`
+ * projection answer with, has no fields to name and is read with
+ * [Query.decodeAs] instead.
+ */
+internal fun resultRows(
+    json: Json,
+    result: JsonElement,
+): List<Row> =
+    resultRecords(result).map { record ->
+        Row(
+            json,
+            record as? JsonObject
+                ?: throw SurrealProtocolException(
+                    "Expected a record in the result, got $record. Read a value that is not a record with decodeAs().",
+                ),
+        )
     }
 
 /**
