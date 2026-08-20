@@ -27,10 +27,10 @@ API surface and behaviour mirror [surrealdb.js v2.0.3](https://github.com/surrea
   `select("user")` cannot compile into a query for the *string* `"user"` — then
   compiles to local SurrealQL with bound parameters and dispatches via the
   `query` RPC, mirroring [surrealdb.js v2.0.3](https://github.com/surrealdb/surrealdb.js).
-- Typed field references: declaring a `Table<T>` with its serializer checks every field name against
-  the record type as the declaration initialises, so a misspelt or renamed field throws there instead
-  of compiling to a `WHERE` the server answers with an empty result. Inside `where { }` the fields
-  come from the declaration and each operator is typed, so `age greater "18"` does not compile.
+- One declaration per table. `object People : Table("person")` names the fields once, with no wire
+  type beside it. Inside `where { }` they come from that declaration and each operator is typed, so
+  `age greater "18"` does not compile. `db.checkSchema(People)` asks a SCHEMAFULL database whether
+  it agrees, and names every field it does not have.
 - [Spectron](#spectron) client for memory and knowledge management, shipped as a separate opt-in artifact (`com.surrealdb:kotlin-spectron`).
 
 ## Supported RPC methods
@@ -98,13 +98,14 @@ db.use("main", "main")
 val rows = db.query("SELECT * FROM person")
 
 // Or the fluent builder
-@Serializable
-data class Person(val id: String, val name: String, val age: Int)
-
-object People : Table<Person>("person", Person.serializer()) {
+object People : Table("person") {
+    val id = recordId()
     val name by field<String>()
     val age by field<Int>()
 }
+
+@Serializable
+data class Person(val id: String, val name: String, val age: Int)
 
 val adults: List<Person> = db
     .select(People)
@@ -129,22 +130,36 @@ val one: Person = db
 
 `create` is the exception: it writes exactly one record, so it always carries `ONLY`.
 
-The table declaration is what makes the fields typed. `field("agee")` throws as `People`
-initialises, naming the field and listing what `Person` actually serialises — and it reads the
-*serial* names, so a property carrying `@SerialName("first_name")` is declared under that name and
-its Kotlin name is rejected. Nested objects need no declaration of their own:
+The table declaration is the only one the driver needs. `Person` above is the caller's own type,
+there to decode the result, and nothing makes the two agree. A field of a nested object is declared
+by its path, and so is the object itself when you want to assign the whole of it:
 
 ```kotlin
-object People : Table<Person>("person", Person.serializer()) {
-    val address by nested<Address>()
+object People : Table("person") {
+    val address = field<Address>("address")
+    val city = field<String>("address.city")
 }
 
-db.select(People).where { address[Address::city] eq "Cambridge" }
+db.select(People).where { city eq "Cambridge" }
+db.update(People).set { it[city] = "Cambridge" }
 ```
 
-A table with no record type — `Table("person")` — is still a target for every verb. It has no
-fields to name, so a `where { }` over one is written with the `raw { }` escape hatch, which binds
-its interpolated values as parameters like everything else.
+Whether the database has those fields is a separate question, and `checkSchema` is what asks it. A
+`WHERE` naming a field the record does not have is answered with an empty result set rather than an
+error, so a misspelt name is a query that silently matches nothing:
+
+```kotlin
+db.checkSchema(People) shouldBe emptyList()
+// "person.agee is not defined on the server. Known fields: age, name."
+```
+
+Only a SCHEMAFULL table can answer. `INFO FOR TABLE` reports no fields at all for a SCHEMALESS one,
+and reports that same empty shape for a table nobody has defined, so `checkSchema` returns a message
+saying so rather than counting it as agreement.
+
+`Table("person")` on its own is still a target for every verb. It has no fields to name, so a
+`where { }` over one is written with the `raw { }` escape hatch, which binds its interpolated values
+as parameters like everything else.
 
 Switch to WebSocket transport simply by changing the URL scheme:
 
