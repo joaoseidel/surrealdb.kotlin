@@ -196,22 +196,23 @@ fun Project.configurePublishing() {
                     .toSortedSet()
             val skipped =
                 if (onApple) emptySet() else appleArtifactSuffixes.map { "$base$it" }.toSortedSet()
-            val actual = publications.withType<MavenPublication>().map { it.artifactId }.toSortedSet()
-
-            val publicationSet = publications.withType<MavenPublication>()
+            val mavenPublications = publications.withType<MavenPublication>().toList()
+            val actual = mavenPublications.map { it.artifactId }.toSortedSet()
+            val withJavadoc =
+                provider {
+                    mavenPublications
+                        .filter { pub -> pub.artifacts.any { it.classifier == "javadoc" } }
+                        .map { it.artifactId }
+                        .toSortedSet()
+                }
 
             tasks.register("verifyPublicationJavadoc") {
                 group = "verification"
                 description = "Fails if a publication would be released without a -javadoc.jar."
                 doLast {
-                    val withoutJavadoc =
-                        publicationSet
-                            .filter { pub -> pub.artifacts.none { it.classifier == "javadoc" } }
-                            .map { it.name }
-                            .sorted()
-
-                    check(withoutJavadoc.isEmpty()) {
-                        "$path has publications with no javadoc artifact: $withoutJavadoc. " +
+                    val missing = expected - withJavadoc.get()
+                    check(missing.isEmpty()) {
+                        "$path would publish ${missing.joinToString()} without a -javadoc.jar. " +
                             "Maven Central rejects a release without one."
                     }
                 }
