@@ -17,16 +17,32 @@ import kotlinx.serialization.json.jsonPrimitive
  * Throws [SurrealRpcException] if the statement reports `status: "ERR"`.
  */
 internal fun firstQueryResult(response: JsonElement): JsonElement {
-    val array =
-        response as? JsonArray
-            ?: throw SurrealProtocolException("Expected array response from query, got: $response")
-    val first =
-        array.firstOrNull() as? JsonObject
-            ?: return JsonNull
-    val status = first["status"]?.jsonPrimitive?.content
-    if (status == "ERR") {
-        val message = first["result"]?.jsonPrimitive?.content ?: "query failed"
-        throw SurrealRpcException(code = null, message = message, data = first)
+    val first = statementArray(response).firstOrNull() as? JsonObject ?: return JsonNull
+    return unwrapStatement(first)
+}
+
+/**
+ * Every statement's `result`, in the order they were sent, for the callers that
+ * send more than one in a single round trip.
+ *
+ * Throws [SurrealRpcException] for the first statement reporting `status: "ERR"`.
+ */
+internal fun statementResults(response: JsonElement): List<JsonElement> =
+    statementArray(response).map { entry ->
+        unwrapStatement(
+            entry as? JsonObject
+                ?: throw SurrealProtocolException("Expected a statement object in query response, got: $entry"),
+        )
     }
-    return first["result"] ?: JsonNull
+
+private fun statementArray(response: JsonElement): JsonArray =
+    response as? JsonArray
+        ?: throw SurrealProtocolException("Expected array response from query, got: $response")
+
+private fun unwrapStatement(statement: JsonObject): JsonElement {
+    if (statement["status"]?.jsonPrimitive?.content == "ERR") {
+        val message = statement["result"]?.jsonPrimitive?.content ?: "query failed"
+        throw SurrealRpcException(code = null, message = message, data = statement)
+    }
+    return statement["result"] ?: JsonNull
 }
