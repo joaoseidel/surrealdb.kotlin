@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.RecordIdRange
+import com.surrealdb.kotlin.api.data.SurqlDsl
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.TableRecord
 import com.surrealdb.kotlin.api.data.Target
@@ -162,6 +163,7 @@ internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
  * }
  * ```
  */
+@SurqlDsl
 public class SurqlBuilder internal constructor() {
     private val query = BoundQuery()
 
