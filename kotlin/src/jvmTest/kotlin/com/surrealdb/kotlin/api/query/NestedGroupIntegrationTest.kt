@@ -50,19 +50,9 @@ private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "
 private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
 
 /**
- * A nested declaration against a real server, because the path being the one we
- * intended says nothing about SurrealDB reading it.
- *
- * `ng_leaf` defines the leaf and neither object above it, which is the shape
- * that answers whether a group has to declare its intermediate objects for the
- * schema check to agree.
- *
  * Every nested field is `option<...>`, because a SCHEMAFULL object field a
  * record does not carry is rejected with "Expected `object` but found `NONE`",
  * and these records each write one branch of the object.
- *
- * Opt-in through `SURREAL_RUN_INTEGRATION=true`, so an ordinary `jvmTest` needs
- * no server.
  */
 private fun onServer(block: suspend (Session) -> Unit) {
     if (!integrationEnabled()) return

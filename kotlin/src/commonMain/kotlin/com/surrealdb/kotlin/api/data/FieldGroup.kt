@@ -8,15 +8,9 @@ import kotlin.properties.ReadOnlyProperty
  * fields.
  *
  * A group prefixes every field it declares with its own path, so one
- * declaration reads the same at any depth. Adopting a group with [nested]
- * carries its fields up, which is how
- * [com.surrealdb.kotlin.api.query.checkSchema] sees a nested field as one the
- * table declared.
- *
- * Those two are the only groups there are, so this cannot be extended outside
- * the library.
+ * declaration reads the same at any depth.
  */
-public abstract class FieldGroup internal constructor(
+public sealed class FieldGroup(
     internal val pathPrefix: String,
 ) {
     internal val declaredFields: MutableList<Field<*>> = mutableListOf()
@@ -35,10 +29,7 @@ public abstract class FieldGroup internal constructor(
      * Take [group] as part of this one: `val address = nested(Address)`.
      *
      * The call carries the group's fields into this group, in the order the
-     * properties are written, and rejects a path that does not belong here. A
-     * nested `object` is a singleton with no reference to the declaration it
-     * sits in, so it cannot work its own path out. Naming it in full is the
-     * only form that survives a second level.
+     * properties are written, and rejects a path that does not belong here.
      */
     protected fun <G : Nested> nested(group: G): G {
         require(group.pathPrefix.startsWith(pathPrefix)) {
