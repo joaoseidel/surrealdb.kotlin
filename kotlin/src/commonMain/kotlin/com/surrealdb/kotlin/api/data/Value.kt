@@ -56,7 +56,7 @@ public data class RecordIdRange(
  */
 public class TableRecord<T, S : Table<T>> internal constructor(
     internal val schema: S,
-    internal val record: RecordId,
+    public val record: RecordId,
 ) : Target {
     override fun toString(): String = record.toString()
 

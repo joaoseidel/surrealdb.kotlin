@@ -15,11 +15,14 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
     context: QueryContext,
     private val schema: S,
     private val what: Target,
-    private val data: JsonElement? = null,
+    private val data: WriteData? = null,
     private val cond: Condition<T>? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
-    public fun content(data: JsonElement): UpdateQuery<T, S> = copy(data = data)
+    public fun content(data: JsonElement): UpdateQuery<T, S> = copy(data = ContentData(data))
+
+    /** Assign fields by name: `set { it[pages] = 0 }`. Replaces any [content]. */
+    public fun set(block: S.(Assignments) -> Unit): UpdateQuery<T, S> = copy(data = buildAssignments(schema, block))
 
     public fun where(build: S.() -> Condition<T>): UpdateQuery<T, S> = copy(cond = schema.build())
 
@@ -29,10 +32,7 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
         val q = BoundQuery()
         q.appendLiteral("UPDATE ONLY ")
         q.appendTarget(what)
-        data?.let {
-            q.appendLiteral(" CONTENT ")
-            q.bind(it)
-        }
+        data?.render(q)
         cond?.let {
             q.appendLiteral(" WHERE ")
             q.appendCondition(it)
@@ -42,7 +42,7 @@ public class UpdateQuery<T, S : Table<T>> internal constructor(
     }
 
     private fun copy(
-        data: JsonElement? = this.data,
+        data: WriteData? = this.data,
         cond: Condition<T>? = this.cond,
         returnMode: ReturnMode? = this.returnMode,
     ): UpdateQuery<T, S> = UpdateQuery(context, schema, what, data, cond, returnMode)

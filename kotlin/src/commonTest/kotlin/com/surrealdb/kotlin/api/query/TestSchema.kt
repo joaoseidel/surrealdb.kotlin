@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -44,4 +45,20 @@ internal object People : Table<Human>("person", Human.serializer()) {
 internal object Posts : Table<Article>("post", Article.serializer()) {
     val author by field<String>()
     val comments by field<List<String>>()
+}
+
+@Serializable
+internal data class Note(
+    val body: String,
+    val author: String,
+)
+
+/**
+ * `author` holds a link. The DTO types it `String` because that is what a link
+ * decodes to over JSON, while the field handle types it [RecordId] because that
+ * is what a statement may assign to it.
+ */
+internal object Notes : Table<Note>("note", Note.serializer()) {
+    val body by field<String>()
+    val author = field<RecordId>("author")
 }
