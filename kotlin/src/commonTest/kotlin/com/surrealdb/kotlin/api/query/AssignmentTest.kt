@@ -169,6 +169,60 @@ class AssignmentTest :
             }
         }
 
+        context("a composite value") {
+            should("encode through the context serializer, so a field need not carry one") {
+                val compiled =
+                    compileOnly
+                        .update(People)
+                        .set { it[address] = Postal("Boston", "02110") }
+                        .compile()
+
+                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET address = \$_1"
+                compiled.bindings["_1"].toString() shouldBe "{\"city\":\"Boston\",\"postal_code\":\"02110\"}"
+            }
+
+            should("replace the whole object, which is what SET on an object field does") {
+                compileOnly
+                    .update(People)
+                    .set { it[address] = Postal("Boston", "02110") }
+                    .compile()
+                    .surql shouldNotContain "address.city"
+            }
+        }
+
+        context("the array operators") {
+            should("append with SurrealQL's own +=, which builds the array when the field is absent") {
+                val compiled =
+                    compileOnly
+                        .update(People)
+                        .set { it[tags] += "cs" }
+                        .compile()
+
+                compiled.surql shouldBe "UPDATE ONLY type::table(\$_0) SET tags += \$_1"
+                compiled.bindings shouldContainValue JsonPrimitive("cs")
+            }
+
+            should("remove with -=") {
+                compileOnly
+                    .update(People)
+                    .set { it[tags] -= "cs" }
+                    .compile()
+                    .surql shouldBe "UPDATE ONLY type::table(\$_0) SET tags -= \$_1"
+            }
+
+            should("mix with plain assignments in one statement, in the order written") {
+                compileOnly
+                    .update(People)
+                    .set {
+                        it[age] = 30
+                        it[tags] += "cs"
+                        it[tags] -= "lisp"
+                    }.compile()
+                    .surql shouldBe
+                    "UPDATE ONLY type::table(\$_0) SET age = \$_1, tags += \$_2, tags -= \$_3"
+            }
+        }
+
         context("a list value") {
             should("bind as an array, so a whole list can replace a field") {
                 val compiled =
