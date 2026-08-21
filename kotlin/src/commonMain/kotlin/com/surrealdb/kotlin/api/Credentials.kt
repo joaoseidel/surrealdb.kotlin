@@ -10,30 +10,17 @@ import kotlinx.serialization.json.put
  * The `signin` RPC takes one flat object and reads the *set* of keys in it as
  * the level to authenticate at: `{user, pass}` is root, adding `ns` makes it a
  * namespace-level user, adding `db` as well makes it a database-level one, and
- * `{ns, db, ac, …}` is a record access method. Sending a key too many or too
- * few does not report a key, it authenticates at a different level, where the
- * user does not exist, and answers `There was a problem with authentication`.
- * A namespace-level user who also sends `db` gets that message. So does a root
- * user who sends `ns`. So does a caller who spells `ns` as `namespace`, because
- * an unrecognised key is ignored rather than refused. It is the same message a
- * wrong password gets, which is how a working password comes to be doubted.
- *
- * Each case here sends exactly the keys its level takes, so the level is chosen
- * by the type rather than assembled by hand.
+ * `{ns, db, ac, …}` is a record access method. One key too many, one too few or
+ * one misspelled authenticates at a different level rather than naming the key,
+ * and answers `There was a problem with authentication`, which is also what a
+ * wrong password answers.
  *
  * @see Session.signin
  * @see Session.signup
  */
 public sealed interface Credentials {
-    /** The shapes the `signin` RPC accepts. A [Token] is not one; [Session.authenticate] takes that. */
     public sealed interface ForSignIn : Credentials
 
-    /**
-     * The shapes the `signup` RPC accepts, which is a record access method and
-     * nothing else. Root, namespace and database users all answer
-     * `There was a problem with signing up`, as does a record sign-up that
-     * omits `ac`.
-     */
     public sealed interface ForSignUp : ForSignIn
 
     /** A root user, defined by `DEFINE USER … ON ROOT`. */
@@ -62,10 +49,7 @@ public sealed interface Credentials {
      * defined by `DEFINE ACCESS … TYPE RECORD`.
      *
      * [vars] are the variables the access method's own `SIGNIN` and `SIGNUP`
-     * queries read as `$email`, `$pass` and whatever else they name. They are
-     * sent flattened beside `ac` rather than under a `vars` key: a `vars` key
-     * is not read, so the queries see nothing and the server answers
-     * `No record was returned`, which is what a wrong password answers.
+     * queries read as `$email`, `$pass` and whatever else they name.
      */
     public data class RecordUser(
         public val namespace: Namespace,

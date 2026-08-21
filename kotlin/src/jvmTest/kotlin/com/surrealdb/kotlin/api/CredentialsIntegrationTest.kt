@@ -49,10 +49,6 @@ private val TEARDOWN =
     REMOVE TABLE IF EXISTS cr_person;
     """.trimIndent()
 
-/**
- * Hands [block] a session that has authenticated as nothing, on a connection
- * whose namespace holds one user per level and one record access method.
- */
 private fun onServer(block: suspend (Session) -> Unit) {
     if (!integrationEnabled()) return
 
