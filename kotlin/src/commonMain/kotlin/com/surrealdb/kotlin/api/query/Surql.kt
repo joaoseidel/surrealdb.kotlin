@@ -147,8 +147,6 @@ internal fun BoundQuery.appendProjections(projections: List<Projection>): BoundQ
 
 private fun Projection.keptAtItsOwnPath(): String = if (holdsAnIndex) "$path AS `$path`" else path
 
-private val Projection.holdsAnIndex: Boolean get() = '[' in path
-
 /**
  * Append [value] to the query, choosing the right SurrealQL expression based
  * on the value's type. Strings/numbers/booleans become bound parameters; a

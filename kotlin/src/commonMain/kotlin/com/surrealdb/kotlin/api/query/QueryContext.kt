@@ -33,6 +33,10 @@ public interface QueryContext {
  * declared table, and a bare [Target]. The first two carry the declaration
  * through, so `where { }` and `set { }` still name fields. The third is what a
  * [RecordId] or a [RecordIdRange] lands on, and it has no fields to name.
+ *
+ * A `merge { }` block has only the first two, since a block over
+ * a bare target would have nothing to name. `Users[id]` reaches the block form
+ * from a record id.
  */
 public fun <S : Table> QueryContext.select(table: S): SelectQuery<S> = SelectQuery(this, table, table)
 
@@ -62,6 +66,27 @@ public fun <S : Table> QueryContext.update(record: TableRecord<S>): UpdateQuery<
 
 public fun QueryContext.update(what: Target): UpdateQuery<Table> = UpdateQuery(this, schemaOf(what), what)
 
+/**
+ * Merge the fields a block names into whatever the statement points at:
+ * `merge(Users) { it[address.zip] = "99999" }`. Fields the block does not name
+ * are left alone, which is what separates `MERGE` from `CONTENT`.
+ */
+public fun <S : Table> QueryContext.merge(
+    table: S,
+    build: S.(MergePayload) -> Unit,
+): MergeQuery<S> = MergeQuery(this, table, table, buildMergePayload(json, table, build))
+
+public fun <S : Table> QueryContext.merge(
+    record: TableRecord<S>,
+    build: S.(MergePayload) -> Unit,
+): MergeQuery<S> = MergeQuery(this, record.schema, record, buildMergePayload(json, record.schema, build))
+
+/**
+ * The escape from the merge block: a payload assembled elsewhere, sent as it
+ * is. SurrealDB reads each key of one as a key rather than as a path, so
+ * `{"address.zip": …}` writes a top-level key by that name and leaves the
+ * nested field alone, with status OK.
+ */
 public fun <S : Table> QueryContext.merge(
     table: S,
     data: JsonElement,
