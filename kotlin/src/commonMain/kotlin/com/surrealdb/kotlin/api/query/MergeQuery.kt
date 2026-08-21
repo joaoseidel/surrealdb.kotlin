@@ -6,7 +6,11 @@ import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
- * Builder for `UPDATE … MERGE …` queries.
+ * Builder for `UPDATE … MERGE …` queries: the fields the payload names are
+ * written and the rest of the record is left alone.
+ *
+ * The payload is built by a `merge { }` block over the table's fields; see
+ * [MergePayload].
  */
 public class MergeQuery<S : Table> internal constructor(
     context: QueryContext,
