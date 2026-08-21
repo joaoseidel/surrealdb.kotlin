@@ -109,12 +109,7 @@ class SurrealTest {
                         url = "http://localhost:8000",
                         autoAuthenticate = true,
                         credentialProvider = {
-                            Credentials.SignIn(
-                                buildJsonObject {
-                                    put("user", JsonPrimitive("root"))
-                                    put("pass", JsonPrimitive("root"))
-                                },
-                            )
+                            Credentials.RootUser("root", "root")
                         },
                         httpClientFactory = { _ -> HttpClient(engine) },
                     ),
@@ -224,7 +219,7 @@ class SurrealTest {
             val sessionA = client.session()
             val sessionB = client.session()
 
-            sessionA.signin(buildJsonObject { put("user", JsonPrimitive("a")) })
+            sessionA.signin(Credentials.RootUser("a", "pass"))
             // sessionB should NOT see sessionA's token
             assertEquals(null, sessionB.accessToken())
             assertEquals("jwt-token-1", sessionA.accessToken())

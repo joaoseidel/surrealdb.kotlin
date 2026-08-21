@@ -131,7 +131,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.use("ns1", "db1")
+                    h.db.use(Namespace("ns1"), Database("db1"))
 
                     h.lastMethod shouldBe "use"
                     h.paramCount() shouldBe 2
@@ -158,7 +158,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.signup(buildJsonObject { put("user", JsonPrimitive("u")) })
+                    h.db.signup(Credentials.Raw(buildJsonObject { put("user", JsonPrimitive("u")) }))
 
                     h.lastMethod shouldBe "signup"
                     h
@@ -174,7 +174,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.signin(buildJsonObject { put("user", JsonPrimitive("u")) })
+                    h.db.signin(Credentials.Raw(buildJsonObject { put("user", JsonPrimitive("u")) }))
 
                     h.lastMethod shouldBe "signin"
                     h

@@ -47,14 +47,21 @@ public class Session internal constructor(
 
     public suspend fun version(): JsonElement = withAutoAuthRetry { controller.version(sessionId) }
 
+    /**
+     * Point this session at [namespace] and [database].
+     *
+     * See [Namespace] for what the server does with a name that is not there:
+     * as root it defines it, and at every other level it answers `OK` and
+     * selects nothing.
+     */
     public suspend fun use(
-        namespace: String,
-        database: String,
+        namespace: Namespace,
+        database: Database,
     ): JsonElement {
-        val result = withAutoAuthRetry { controller.use(sessionId, namespace, database) }
+        val result = withAutoAuthRetry { controller.use(sessionId, namespace.value, database.value) }
         controller.update(sessionId) {
-            this.namespace = namespace
-            this.database = database
+            this.namespace = namespace.value
+            this.database = database.value
         }
         return result
     }
@@ -72,14 +79,34 @@ public class Session internal constructor(
             }
         }
 
-    public suspend fun signup(params: JsonObject): JsonElement {
-        val result = withAutoAuthRetry { controller.signup(sessionId, params) }
+    /**
+     * Register a record through its access method and hold the token it returns.
+     *
+     * Only a record access method can sign up. [Credentials.ForSignUp] is the
+     * two shapes that reach one, so a root, namespace or database user cannot be
+     * passed here; the server answers all three with the same
+     * `There was a problem with signing up`.
+     */
+    public suspend fun signup(credentials: Credentials.ForSignUp): JsonElement {
+        val result = withAutoAuthRetry { controller.signup(sessionId, credentials.toParams()) }
         applyTokenResult(result)
         return result
     }
 
-    public suspend fun signin(params: JsonObject): JsonElement {
-        val result = withAutoAuthRetry { controller.signin(sessionId, params) }
+    /**
+     * Authenticate this session and hold the token it returns.
+     *
+     * [Credentials] chooses the level, because the server infers it from which
+     * keys the parameters object carries and reports every mismatch as
+     * `There was a problem with authentication`.
+     *
+     * A password containing something the parser reads as a record id, such as
+     * `note: remember the milk`, cannot be used: the RPC turns a bound string
+     * into a record before anything type-checks it, and the call fails with
+     * `Expected string, got record`.
+     */
+    public suspend fun signin(credentials: Credentials.ForSignIn): JsonElement {
+        val result = withAutoAuthRetry { controller.signin(sessionId, credentials.toParams()) }
         applyTokenResult(result)
         return result
     }
@@ -279,8 +306,8 @@ public class Session internal constructor(
 
     private suspend fun applyAuthInput(authInput: Credentials) {
         when (authInput) {
-            is Credentials.SignIn -> {
-                val result = controller.signin(sessionId, authInput.params)
+            is Credentials.ForSignIn -> {
+                val result = controller.signin(sessionId, authInput.toParams())
                 applyTokenResult(result)
             }
 

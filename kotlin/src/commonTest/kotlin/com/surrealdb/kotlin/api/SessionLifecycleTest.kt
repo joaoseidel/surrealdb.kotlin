@@ -34,7 +34,7 @@ private fun client(): Surreal {
     )
 }
 
-private fun credentials(user: String) = buildJsonObject { put("user", JsonPrimitive(user)) }
+private fun credentials(user: String) = Credentials.RootUser(user, "pass")
 
 class SessionLifecycleTest :
     ShouldSpec({
@@ -86,7 +86,7 @@ class SessionLifecycleTest :
                     val one = client.session()
                     val other = client.session()
 
-                    one.use("ns1", "db1")
+                    one.use(Namespace("ns1"), Database("db1"))
 
                     one.namespace() shouldBe "ns1"
                     one.database() shouldBe "db1"
@@ -116,9 +116,9 @@ class SessionLifecycleTest :
                     val one = client.session()
                     val other = client.session()
                     one.signin(credentials("u"))
-                    one.use("ns1", "db1")
+                    one.use(Namespace("ns1"), Database("db1"))
                     other.signin(credentials("v"))
-                    other.use("ns2", "db2")
+                    other.use(Namespace("ns2"), Database("db2"))
 
                     one.reset()
 
