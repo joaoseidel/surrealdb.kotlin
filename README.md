@@ -60,8 +60,8 @@ Every write verb takes a `returnMode`, which is the SurrealQL
 `RETURN NONE | BEFORE | AFTER | DIFF | <fields>` clause. That covers `create`, `update`, `upsert`, `merge`, `patch`, `delete` and `relate`.
 
 ```kotlin
-db.update(People).content(data).returnMode(ReturnMode.Fields(listOf(People.name))).await()
-db.patch(People, patches).returnMode(ReturnMode.Diff).decodeAs<List<JsonObject>>().await()
+db.update(People).set { it[name] = "Ada" }.returnMode(ReturnMode.Fields(listOf(People.name))).await()
+db.patch(People) { it.replace(name, "Ada") }.returnMode(ReturnMode.Diff).decodeAs<List<JsonObject>>().await()
 ```
 
 `RETURN DIFF` is the one mode that does not answer with records. It answers with a list of JSON Patch
@@ -103,7 +103,7 @@ db.signin(buildJsonObject {
 db.use("main", "main")
 
 // Raw SurrealQL, which answers with the [{ status, result }] envelope as it arrived
-val envelope = db.query("SELECT * FROM person")
+val envelope = db.query(surql("SELECT * FROM person"))
 
 // Or the fluent builder
 object People : Table("person") {
@@ -261,6 +261,51 @@ Switch to WebSocket transport simply by changing the URL scheme:
 val client = Surreal(Surreal.Config(url = "ws://localhost:8000"))
 ```
 
+## Changing a record
+
+Four clauses, and one declaration names the fields for all of them.
+
+```kotlin
+db.update(People["ada"]).set { it[age] = 41 }               // SET age = $_1
+db.merge(People["ada"]) { it[address.city] = "Cambridge" }  // MERGE {"address": {"city": ...}}
+db.patch(People["ada"]) { it.replace(name, "Grace") }       // PATCH [{"op": "replace", ...}]
+db.update(People["ada"]).content(document)                  // CONTENT {...}
+```
+
+`set` and `merge` change the fields they name and leave the rest of the record alone. `content`
+replaces the record, so every field it does not mention is gone; it takes a `JsonElement` because it
+is the escape for a document assembled elsewhere.
+
+A merge block folds a dotted path into the nested object `MERGE` needs, and that is not a nicety.
+SurrealDB reads a payload key as a key rather than as a path, so `{"address.city": "Cambridge"}`
+answers OK and leaves the record holding a top-level key of exactly that name beside an untouched
+`address` object. Two fields of one object fold into one object, and the object's other fields
+survive at every depth.
+
+A patch block sends RFC 6902 operations, translating each declared path into the JSON Pointer they
+take: `address.city` goes out as `/address/city` and `tags[0]` as `/tags/0`. The path as the field
+declares it would arrive as a key literally named `tags[0]`.
+
+```kotlin
+db.patch(People["ada"]) {
+    it.test(name, "Ada")
+    it.replace(name, "Grace")
+    it.append(tags, "compilers")
+    it.remove(nickname)
+}
+```
+
+A patch is atomic, so `test` makes the whole statement conditional on what it is changing: when it
+does not hold, the statement fails and the operations before it do not stick.
+
+SurrealDB cannot read through an array index in a patch, and says nothing about it: its own
+`replace` at `/tags/0` answers OK and changes nothing. `replace` is therefore sent as a remove
+followed by an add, which addresses the element, and the operations that have to read through their
+path (`test`, `copy`, `move`) refuse an index rather than reporting success on `[NONE, NONE]`.
+
+Both blocks refuse what cannot land: an array element in a merge, and in a patch either `[*]` or an
+index anywhere but the last segment.
+
 ## Live queries
 
 `live(table)` subscribes to changes on a single table and returns a subscription whose `events` is a `Flow`:
@@ -290,7 +335,7 @@ db.live(Table("person"))                   // {"id": "person:one", "name": "Ada"
 db.live(Table("person"), LiveMode.Diffs)   // [{"op": "replace", "path": "/name", "value": "Ada"}]
 ```
 
-For complex `LIVE SELECT` queries with `WHERE` clauses, run the SurrealQL through `query("LIVE SELECT ...")` to obtain the live UUID.
+For complex `LIVE SELECT` queries with `WHERE` clauses, run the SurrealQL through `query(surql("LIVE SELECT ..."))` to obtain the live UUID.
 
 ## Multi-session
 
@@ -306,8 +351,8 @@ tenantA.use("ns", "db")
 tenantB.signin(buildJsonObject { put("user", JsonPrimitive("b")) })
 tenantB.use("ns", "db")
 
-tenantA.query("SELECT * FROM person")  // runs as tenant A
-tenantB.query("SELECT * FROM person")  // runs as tenant B, isolated
+tenantA.query(surql("SELECT * FROM person"))  // runs as tenant A
+tenantB.query(surql("SELECT * FROM person"))  // runs as tenant B, isolated
 
 client.closeSession(tenantA)
 ```
@@ -324,8 +369,8 @@ Block form (commits on success, cancels on throw):
 
 ```kotlin
 db.transaction {
-    create(RecordId("person", "tx")).content(buildJsonObject { put("name", JsonPrimitive("Tx")) }).await()
-    update(RecordId("counter", "1")).content(buildJsonObject { put("hits", JsonPrimitive(2)) }).await()
+    create(People["tx"]).set { it[name] = "Tx" }.await()
+    merge(People["ada"]) { it[age] = 41 }.await()
 }
 ```
 
@@ -334,7 +379,7 @@ Explicit form for cases where you need finer control:
 ```kotlin
 val tx = db.beginTransaction()
 try {
-    tx.create(Table("person")).content(buildJsonObject { put("name", JsonPrimitive("Ada")) }).await()
+    tx.create(People["ada"]).set { it[name] = "Ada" }.await()
     tx.commit()
 } catch (cause: Throwable) {
     tx.cancel()
@@ -705,5 +750,9 @@ Mobile integration tests are opt-in and expect a reachable SurrealDB endpoint:
 
 - Embedded mode is intentionally not included in this release.
 - The wire codec is JSON-only. CBOR and flatbuffers can be added behind the codec layer in future versions without breaking the public API.
+- A JSON parameter is parsed into a SurrealQL value before any field type is consulted, and a string
+  that reads as a record id becomes one. `"note: remember the milk"` is stored as the record
+  `note:remember`, with status OK and the rest of the string discarded. This applies to every bound
+  value, whichever clause carries it, and CBOR is the layer that would fix it.
 - Buffered call replay after a WebSocket reconnect can produce duplicate side effects if the original send succeeded but the response was lost during
   the disconnect. This trade-off matches the surrealdb.js behaviour.

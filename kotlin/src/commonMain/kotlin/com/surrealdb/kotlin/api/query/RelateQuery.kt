@@ -20,6 +20,11 @@ public class RelateQuery internal constructor(
     private val data: JsonElement? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
+    /**
+     * Give the edge record exactly the fields [data] names. It arrives as a
+     * [JsonElement] because a relation carries no declaration to name them
+     * against.
+     */
     public fun content(data: JsonElement): RelateQuery = copy(data = data)
 
     public fun returnMode(mode: ReturnMode): RelateQuery = copy(returnMode = mode)

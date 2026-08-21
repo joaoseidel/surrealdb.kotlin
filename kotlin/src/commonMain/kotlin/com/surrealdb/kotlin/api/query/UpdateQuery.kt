@@ -20,6 +20,13 @@ public class UpdateQuery<S : Table> internal constructor(
     private val returnMode: ReturnMode? = null,
     private val forceOnly: Boolean = false,
 ) : Query(context) {
+    /**
+     * Write [data] as the whole record: every field it does not name is gone.
+     * A merge leaves the rest alone; this does not.
+     *
+     * The document arrives as a [JsonElement] because this is the escape for a
+     * payload assembled elsewhere. [set] is the route that names fields.
+     */
     public fun content(data: JsonElement): UpdateQuery<S> = copy(data = ContentData(data))
 
     /** Assign fields by name: `set { it[pages] = 0 }`. Replaces any [content]. */
