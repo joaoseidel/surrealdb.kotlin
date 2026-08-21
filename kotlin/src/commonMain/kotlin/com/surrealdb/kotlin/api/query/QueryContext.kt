@@ -34,7 +34,7 @@ public interface QueryContext {
  * through, so `where { }` and `set { }` still name fields. The third is what a
  * [RecordId] or a [RecordIdRange] lands on, and it has no fields to name.
  *
- * A `merge { }` block has only the first two, since a block over
+ * A `merge { }` or `patch { }` block has only the first two, since a block over
  * a bare target would have nothing to name. `Users[id]` reaches the block form
  * from a record id.
  */
@@ -102,6 +102,25 @@ public fun QueryContext.merge(
     data: JsonElement,
 ): MergeQuery<Table> = MergeQuery(this, schemaOf(what), what, data)
 
+/**
+ * Send the JSON Patch operations a block names:
+ * `patch(Users) { it.replace(name, "Grace") }`.
+ */
+public fun <S : Table> QueryContext.patch(
+    table: S,
+    build: S.(Patches) -> Unit,
+): PatchQuery<S> = PatchQuery(this, table, table, buildPatches(json, table, build))
+
+public fun <S : Table> QueryContext.patch(
+    record: TableRecord<S>,
+    build: S.(Patches) -> Unit,
+): PatchQuery<S> = PatchQuery(this, record.schema, record, buildPatches(json, record.schema, build))
+
+/**
+ * The escape from the patch block: operations assembled elsewhere, sent as they
+ * are. It is the only route to SurrealDB's own `change` operation, which takes
+ * a diff-match-patch string and is not part of RFC 6902.
+ */
 public fun <S : Table> QueryContext.patch(
     table: S,
     patches: JsonElement,

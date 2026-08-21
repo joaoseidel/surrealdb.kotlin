@@ -6,7 +6,10 @@ import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.JsonElement
 
 /**
- * Builder for `UPDATE … PATCH …` queries (JSON-Patch RFC 6902).
+ * Builder for `UPDATE … PATCH …` queries (JSON Patch, RFC 6902).
+ *
+ * The operations are built by a `patch { }` block over the table's fields; see
+ * [Patches].
  */
 public class PatchQuery<S : Table> internal constructor(
     context: QueryContext,
