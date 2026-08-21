@@ -14,6 +14,12 @@ public class CreateQuery<S : Table> internal constructor(
     private val data: WriteData? = null,
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
+    /**
+     * Create the record with exactly the fields [data] names, and no others.
+     *
+     * The document arrives as a [JsonElement] because this is the escape for a
+     * payload assembled elsewhere. [set] is the route that names fields.
+     */
     public fun content(data: JsonElement): CreateQuery<S> = copy(data = ContentData(data))
 
     /** Assign fields by name: `set { it[title] = "SICP" }`. Replaces any [content]. */
