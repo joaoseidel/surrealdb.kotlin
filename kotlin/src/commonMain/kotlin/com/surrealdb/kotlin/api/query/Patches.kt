@@ -143,12 +143,6 @@ public class Patches internal constructor(
     }
 }
 
-/**
- * Run a `patch { }` block against [schema] and collect the operations it named.
- *
- * A block that names none yields `[]`, which the server accepts and answers
- * with the record untouched.
- */
 internal fun <S : Table> buildPatches(
     json: Json,
     schema: S,

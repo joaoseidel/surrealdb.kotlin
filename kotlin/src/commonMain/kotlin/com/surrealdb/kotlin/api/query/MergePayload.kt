@@ -56,13 +56,6 @@ public class MergePayload internal constructor(
     }
 }
 
-/**
- * Run a `merge { }` block against [schema] and fold what it named into one
- * object.
- *
- * A block that names nothing yields `{}`, which the server accepts and answers
- * with the record untouched.
- */
 internal fun <S : Table> buildMergePayload(
     json: Json,
     schema: S,
