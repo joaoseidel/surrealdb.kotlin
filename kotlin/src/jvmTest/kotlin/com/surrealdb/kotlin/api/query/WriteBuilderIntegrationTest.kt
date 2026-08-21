@@ -57,8 +57,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
                 },
             )
             db.use("main", "main")
-            db.query("DEFINE TABLE ${Books.tableName} SCHEMALESS")
-            db.query("DELETE ${Books.tableName}")
+            db.query(surql("DEFINE TABLE ${Books.tableName} SCHEMALESS"))
+            db.query(surql("DELETE ${Books.tableName}"))
 
             block(db)
         } finally {

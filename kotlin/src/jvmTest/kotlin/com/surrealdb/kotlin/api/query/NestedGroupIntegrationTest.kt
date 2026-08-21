@@ -70,19 +70,21 @@ private fun onServer(block: suspend (Session) -> Unit) {
             db.use("main", "main")
             statementResults(
                 db.query(
-                    """
-                    REMOVE TABLE IF EXISTS ${Profiles.tableName};
-                    REMOVE TABLE IF EXISTS ${LeafOnly.tableName};
-                    DEFINE TABLE ${Profiles.tableName} SCHEMAFULL;
-                    DEFINE FIELD name ON ${Profiles.tableName} TYPE option<string>;
-                    DEFINE FIELD address ON ${Profiles.tableName} TYPE object;
-                    DEFINE FIELD address.city ON ${Profiles.tableName} TYPE option<string>;
-                    DEFINE FIELD address.postal_code ON ${Profiles.tableName} TYPE option<string>;
-                    DEFINE FIELD address.geo ON ${Profiles.tableName} TYPE option<object>;
-                    DEFINE FIELD address.geo.lat ON ${Profiles.tableName} TYPE option<float>;
-                    DEFINE TABLE ${LeafOnly.tableName} SCHEMAFULL;
-                    DEFINE FIELD address.geo.lat ON ${LeafOnly.tableName} TYPE option<float>;
-                    """.trimIndent(),
+                    surql(
+                        """
+                        REMOVE TABLE IF EXISTS ${Profiles.tableName};
+                        REMOVE TABLE IF EXISTS ${LeafOnly.tableName};
+                        DEFINE TABLE ${Profiles.tableName} SCHEMAFULL;
+                        DEFINE FIELD name ON ${Profiles.tableName} TYPE option<string>;
+                        DEFINE FIELD address ON ${Profiles.tableName} TYPE object;
+                        DEFINE FIELD address.city ON ${Profiles.tableName} TYPE option<string>;
+                        DEFINE FIELD address.postal_code ON ${Profiles.tableName} TYPE option<string>;
+                        DEFINE FIELD address.geo ON ${Profiles.tableName} TYPE option<object>;
+                        DEFINE FIELD address.geo.lat ON ${Profiles.tableName} TYPE option<float>;
+                        DEFINE TABLE ${LeafOnly.tableName} SCHEMAFULL;
+                        DEFINE FIELD address.geo.lat ON ${LeafOnly.tableName} TYPE option<float>;
+                        """.trimIndent(),
+                    ),
                 ),
             )
 

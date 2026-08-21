@@ -52,7 +52,7 @@ private fun onServer(block: suspend (Session) -> Unit) {
                 },
             )
             db.use("main", "main")
-            statementResults(db.query("REMOVE TABLE IF EXISTS ${Talks.tableName}"))
+            statementResults(db.query(surql("REMOVE TABLE IF EXISTS ${Talks.tableName}")))
 
             db
                 .create(Talks["ada"])

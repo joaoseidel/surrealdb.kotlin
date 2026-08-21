@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.api
 
 import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.query.create
+import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.runtime.engine.FakeSurrealServer
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -60,7 +61,7 @@ class TransactionScopeTest :
                 withServer { server, db ->
                     val transaction = db.beginTransaction()
 
-                    transaction.query("CREATE person:bob")
+                    transaction.query(surql("CREATE person:bob"))
 
                     server.lastQuery().txn() shouldBe transaction.txnId
                     transaction.commit()
@@ -73,7 +74,7 @@ class TransactionScopeTest :
                 withServer { server, db ->
                     db.beginTransaction()
 
-                    db.query("SELECT 1")
+                    db.query(surql("SELECT 1"))
 
                     server.lastQuery().txn().shouldBeNull()
                 }

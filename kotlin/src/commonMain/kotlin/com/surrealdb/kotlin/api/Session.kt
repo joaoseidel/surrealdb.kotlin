@@ -10,6 +10,7 @@ import com.surrealdb.kotlin.api.live.toLiveStatement
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.QueryContext
 import com.surrealdb.kotlin.api.query.firstQueryResult
+import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.runtime.ConnectionController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
@@ -166,7 +167,7 @@ public class Session internal constructor(
             notifications = controller.liveNotifications,
             failures = controller.liveFailures,
             start = {
-                val id = firstQueryResult(query(statement)).jsonPrimitive.content
+                val id = firstQueryResult(query(surql(statement))).jsonPrimitive.content
                 controller.trackLive(sessionId, id, statement)
                 id
             },

@@ -37,8 +37,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
                 },
             )
             db.use("main", "main")
-            db.query("DEFINE TABLE ${Slots.tableName} SCHEMALESS")
-            db.query("DELETE ${Slots.tableName}")
+            db.query(surql("DEFINE TABLE ${Slots.tableName} SCHEMALESS"))
+            db.query(surql("DELETE ${Slots.tableName}"))
             listOf("a" to 1, "m" to 2, "z" to 3).forEach { (key, value) ->
                 db.create(Slots[key]).set { it[n] = value }.await()
             }

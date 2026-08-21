@@ -52,16 +52,18 @@ private fun onServer(block: suspend (Session) -> Unit) {
             db.use("main", "main")
             statementResults(
                 db.query(
-                    """
-                    REMOVE TABLE IF EXISTS ${InSync.tableName};
-                    REMOVE TABLE IF EXISTS ${Loose.tableName};
-                    REMOVE TABLE IF EXISTS ${Absent.tableName};
-                    DEFINE TABLE ${InSync.tableName} SCHEMAFULL;
-                    DEFINE FIELD name ON ${InSync.tableName} TYPE string;
-                    DEFINE FIELD age ON ${InSync.tableName} TYPE int;
-                    DEFINE FIELD tags ON ${InSync.tableName} TYPE array<string>;
-                    DEFINE TABLE ${Loose.tableName} SCHEMALESS;
-                    """.trimIndent(),
+                    surql(
+                        """
+                        REMOVE TABLE IF EXISTS ${InSync.tableName};
+                        REMOVE TABLE IF EXISTS ${Loose.tableName};
+                        REMOVE TABLE IF EXISTS ${Absent.tableName};
+                        DEFINE TABLE ${InSync.tableName} SCHEMAFULL;
+                        DEFINE FIELD name ON ${InSync.tableName} TYPE string;
+                        DEFINE FIELD age ON ${InSync.tableName} TYPE int;
+                        DEFINE FIELD tags ON ${InSync.tableName} TYPE array<string>;
+                        DEFINE TABLE ${Loose.tableName} SCHEMALESS;
+                        """.trimIndent(),
+                    ),
                 ),
             )
 
