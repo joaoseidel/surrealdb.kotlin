@@ -96,11 +96,8 @@ into `~/.m2/repository`, which a consuming build reaches by listing
 val client = Surreal(Surreal.Config(url = "http://localhost:8000"))
 val db = client.session()
 
-db.signin(buildJsonObject {
-    put("user", JsonPrimitive("root"))
-    put("pass", JsonPrimitive("root"))
-})
-db.use("main", "main")
+db.signin(Credentials.RootUser("root", "root"))
+db.use(Namespace("main"), Database("main"))
 
 // Raw SurrealQL, which answers with the [{ status, result }] envelope as it arrived
 val envelope = db.query(surql("SELECT * FROM person"))
@@ -337,6 +334,60 @@ db.live(Table("person"), LiveMode.Diffs)   // [{"op": "replace", "path": "/name"
 
 For complex `LIVE SELECT` queries with `WHERE` clauses, run the SurrealQL through `query(surql("LIVE SELECT ..."))` to obtain the live UUID.
 
+## Authenticating
+
+`signin` takes one `Credentials`, and the case picks the level:
+
+```kotlin
+db.signin(Credentials.RootUser("root", "root"))
+db.signin(Credentials.NamespaceUser(Namespace("app"), "editor", "secret"))
+db.signin(Credentials.DatabaseUser(Namespace("app"), Database("prod"), "editor", "secret"))
+
+db.signin(Credentials.RecordUser(Namespace("app"), Database("prod"), access = "account", vars = buildJsonObject {
+    put("email", "ada@example.com")
+    put("pass", "secret")
+}))
+
+db.authenticate(jwt)     // a token you already hold
+db.invalidate()
+```
+
+The reason the level is a type rather than a set of keys you assemble: the `signin` RPC infers the
+level from which keys the parameters object carries, and reports every mismatch as
+`There was a problem with authentication`, which is also what a wrong password reports. Sending
+`namespace` where the server wanted `ns` reads as bad credentials. So does a namespace user who also
+sends `db`, and so does a root user who sends `ns`. Each case here sends exactly the keys its level
+takes.
+
+A record access method's variables go beside `ac`, not under a `vars` key. The nested form is
+accepted and answers `No record was returned`, which is what a wrong password answers, so
+`RecordUser` flattens them and refuses a variable named `ns`, `db` or `ac`.
+
+Only a record access method can sign up. `signup` takes `Credentials.ForSignUp`, which is
+`RecordUser` and the raw escape, so passing a root, namespace or database user does not compile;
+the server answers all three with the same `There was a problem with signing up`.
+
+For an access method this version does not model, `Credentials.Raw(params)` sends the object
+unchanged. It is checked by nothing and it is the only untyped door.
+
+A password the RPC reads as a record id cannot be used. `signin` with `pass = "note: remember the
+milk"` fails with `Expected string, got record`, because a bound JSON string is parsed into a
+SurrealQL value before any type is consulted.
+
+`use` names a namespace and a database that cannot be swapped:
+
+```kotlin
+db.use(Namespace("main"), Database("main"))
+```
+
+That is all the pair prevents. Signed in as root, selecting a namespace that is not there
+**defines** it along with the database and answers `OK`, so a typo points the session at an empty
+database rather than failing. At every other level the same call answers `OK` and selects nothing,
+and the next statement fails with `The database 'x' does not exist`. The library does not ask the
+server to confirm the names, because only root and a namespace-level user may read `INFO FOR ROOT`
+and `INFO FOR NS`; a database-level or record user is answered `IAM error: Not enough permissions`,
+so the check would find nothing and pass exactly where it was least able to look.
+
 ## Multi-session
 
 One connection can host many sessions, each with its own namespace, database, auth token, and variables:
@@ -345,11 +396,11 @@ One connection can host many sessions, each with its own namespace, database, au
 val tenantA = client.session()
 val tenantB = client.session()
 
-tenantA.signin(buildJsonObject { put("user", JsonPrimitive("a")) })
-tenantA.use("ns", "db")
+tenantA.signin(Credentials.DatabaseUser(Namespace("ns"), Database("db"), "a", "a-pass"))
+tenantA.use(Namespace("ns"), Database("db"))
 
-tenantB.signin(buildJsonObject { put("user", JsonPrimitive("b")) })
-tenantB.use("ns", "db")
+tenantB.signin(Credentials.DatabaseUser(Namespace("ns"), Database("db"), "b", "b-pass"))
+tenantB.use(Namespace("ns"), Database("db"))
 
 tenantA.query(surql("SELECT * FROM person"))  // runs as tenant A
 tenantB.query(surql("SELECT * FROM person"))  // runs as tenant B, isolated
@@ -420,12 +471,7 @@ Surreal.Config(
     ),
     tokenRenewalLeadMillis = 60_000,  // renew 60s before exp
     autoAuthenticate = true,
-    credentialProvider = {
-        Credentials.SignIn(buildJsonObject {
-            put("user", JsonPrimitive("root"))
-            put("pass", JsonPrimitive("root"))
-        })
-    },
+    credentialProvider = { Credentials.RootUser("root", "root") },
 )
 ```
 
