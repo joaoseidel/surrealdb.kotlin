@@ -159,7 +159,7 @@ class SurrealJvmIntegrationTest {
                     ).content(buildJsonObject { put("strength", JsonPrimitive("high")) })
                     .await()
 
-                db.`let`("tb", JsonPrimitive("person"))
+                db.`let`("tb", "person")
                 val queryResult = db.query(surql("SELECT * FROM type::table(\$tb)"))
                 assertTrue(queryResult.jsonArray.isNotEmpty())
                 db.unset("tb")

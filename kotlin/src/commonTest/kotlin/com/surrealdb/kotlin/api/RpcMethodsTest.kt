@@ -233,6 +233,17 @@ class RpcMethodsTest :
                 }
             }
 
+            should("encode the value by its Kotlin type, so a variable is bound without assembling JSON") {
+                runTest {
+                    val h = harness()
+
+                    h.db.`let`("k", 18)
+
+                    h.param(1)?.jsonPrimitive?.content shouldBe "18"
+                    h.param(1)?.jsonPrimitive?.isString shouldBe false
+                }
+            }
+
             should("send unset with the key alone") {
                 runTest {
                     val h = harness()
