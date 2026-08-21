@@ -1,5 +1,8 @@
 package com.surrealdb.kotlin.api.query
 
+import com.surrealdb.kotlin.api.Credentials
+import com.surrealdb.kotlin.api.Database
+import com.surrealdb.kotlin.api.Namespace
 import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.data.Table
@@ -33,13 +36,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
         val client = Surreal(Surreal.Config(url = endpoint()))
         val db = client.session()
         try {
-            db.signin(
-                buildJsonObject {
-                    put("user", JsonPrimitive("root"))
-                    put("pass", JsonPrimitive("root"))
-                },
-            )
-            db.use("main", "main")
+            db.signin(Credentials.RootUser("root", "root"))
+            db.use(Namespace("main"), Database("main"))
             db.query(surql("DEFINE TABLE ${Lines.tableName} SCHEMALESS"))
             db.query(surql("DELETE ${Lines.tableName}"))
             db

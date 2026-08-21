@@ -52,13 +52,8 @@ class SurrealJvmIntegrationTest {
                 // Engine capabilities
                 assertTrue(Feature.ExportImport in client.features)
 
-                db.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                db.use("main", "main")
+                db.signin(Credentials.RootUser("root", "root"))
+                db.use(Namespace("main"), Database("main"))
                 db.ping()
                 db.version()
                 assertNotNull(db.auth())
@@ -166,13 +161,8 @@ class SurrealJvmIntegrationTest {
 
                 // Multi-session — sessionB shares the connection but has independent state
                 val sessionB = client.session()
-                sessionB.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                sessionB.use("main", "main")
+                sessionB.signin(Credentials.RootUser("root", "root"))
+                sessionB.use(Namespace("main"), Database("main"))
                 // Both sessions see the same data — compare the inner result, not the
                 // outer envelope (which includes per-call timing).
                 val countA =
@@ -207,13 +197,8 @@ class SurrealJvmIntegrationTest {
             try {
                 assertTrue(Feature.Transactions in client.features)
 
-                db.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                db.use("main", "main")
+                db.signin(Credentials.RootUser("root", "root"))
+                db.use(Namespace("main"), Database("main"))
                 db.query(surql("DEFINE TABLE tx_person SCHEMALESS"))
                 db.query(surql("DELETE tx_person"))
 
@@ -288,13 +273,8 @@ class SurrealJvmIntegrationTest {
                     }
                 assertNotNull(firstEvent)
 
-                db.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                db.use("main", "main")
+                db.signin(Credentials.RootUser("root", "root"))
+                db.use(Namespace("main"), Database("main"))
                 db.query(surql("DEFINE TABLE live_person SCHEMALESS"))
                 db.query(surql("DELETE live_person"))
 
@@ -349,13 +329,8 @@ class SurrealJvmIntegrationTest {
             val client = Surreal(Surreal.Config(url = wsEndpoint, autoConnect = true))
             val db = client.session()
             try {
-                db.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                db.use("main", "main")
+                db.signin(Credentials.RootUser("root", "root"))
+                db.use(Namespace("main"), Database("main"))
                 db.query(surql("DEFINE TABLE live_book SCHEMALESS"))
                 db.query(surql("DELETE live_book"))
 

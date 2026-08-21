@@ -22,11 +22,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SurrealAndroidIntegrationTest {
-    private val rootCredentials =
-        buildJsonObject {
-            put("user", JsonPrimitive("root"))
-            put("pass", JsonPrimitive("root"))
-        }
+    private val rootCredentials = Credentials.RootUser("root", "root")
 
     private fun argument(name: String): String? = InstrumentationRegistry.getArguments().getString(name)
 
@@ -44,7 +40,7 @@ class SurrealAndroidIntegrationTest {
 
             try {
                 db.signin(rootCredentials)
-                db.use("main", "main")
+                db.use(Namespace("main"), Database("main"))
                 db.ping()
 
                 db.query(surql("DEFINE TABLE android_person SCHEMALESS"))
@@ -90,7 +86,7 @@ class SurrealAndroidIntegrationTest {
 
             try {
                 db.signin(rootCredentials)
-                db.use("main", "main")
+                db.use(Namespace("main"), Database("main"))
                 db.query(surql("DEFINE TABLE android_live SCHEMALESS"))
                 db.query(surql("DELETE android_live"))
 

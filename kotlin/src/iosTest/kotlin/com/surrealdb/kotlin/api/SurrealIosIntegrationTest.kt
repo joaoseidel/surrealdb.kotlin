@@ -28,13 +28,8 @@ class SurrealIosIntegrationTest :
                     )
                 val db = client.session()
 
-                db.signin(
-                    buildJsonObject {
-                        put("user", JsonPrimitive("root"))
-                        put("pass", JsonPrimitive("root"))
-                    },
-                )
-                db.use("main", "main")
+                db.signin(Credentials.RootUser("root", "root"))
+                db.use(Namespace("main"), Database("main"))
                 val result = db.query(surql("SELECT * FROM person LIMIT 1"))
 
                 result.toString().shouldNotBeEmpty()
