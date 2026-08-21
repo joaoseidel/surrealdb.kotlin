@@ -13,4 +13,4 @@ internal fun Field<*>.endsAtAnIndex(): Boolean = segments().last().isAnIndex()
 
 internal fun Field<*>.reachesThroughAnIndex(): Boolean = segments().dropLast(1).any { it.isAnIndex() }
 
-private fun String.isAnIndex(): Boolean = all { it.isDigit() }
+private fun String.isAnIndex(): Boolean = isNotEmpty() && all { it.isDigit() }
