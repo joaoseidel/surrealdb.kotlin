@@ -19,6 +19,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.serializer
 
 /**
  * A namespace, database, auth token and set of variables on a [Surreal]
@@ -115,11 +116,8 @@ public class Session internal constructor(
         return result
     }
 
-    // Backticked because it is named for the SurrealDB RPC method it calls, and
-    // `let` is a soft keyword here. Renaming it would break every caller, so the
-    // naming rule is suppressed at this one declaration rather than repo-wide.
-    @Suppress("ktlint:standard:function-naming")
-    public suspend fun `let`(
+    @PublishedApi
+    internal suspend fun setVariable(
         key: String,
         value: JsonElement,
     ): JsonElement {
@@ -127,6 +125,24 @@ public class Session internal constructor(
         controller.update(sessionId) { variables[key] = value }
         return result
     }
+
+    /**
+     * Bind [value] to the session variable [key], so `$key` names it in every
+     * statement this session sends until [unset] removes it or [reset] clears
+     * them all.
+     *
+     * The value is encoded by its Kotlin type with this session's serializer,
+     * so a variable is bound the way a field is assigned rather than assembled
+     * as a [JsonElement].
+     *
+     * Written in backticks at the call site as well, because it is named for
+     * the `let` RPC method and `let` is a soft keyword in Kotlin.
+     */
+    @Suppress("ktlint:standard:function-naming")
+    public suspend inline fun <reified V> `let`(
+        key: String,
+        value: V,
+    ): JsonElement = setVariable(key, json.encodeToJsonElement(serializer<V>(), value))
 
     public suspend fun unset(key: String): JsonElement {
         val result = withAutoAuthRetry { controller.unset(sessionId, key) }
