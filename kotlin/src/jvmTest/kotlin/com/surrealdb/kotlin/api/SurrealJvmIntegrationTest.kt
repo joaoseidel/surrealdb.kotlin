@@ -13,6 +13,7 @@ import com.surrealdb.kotlin.api.query.insert
 import com.surrealdb.kotlin.api.query.merge
 import com.surrealdb.kotlin.api.query.patch
 import com.surrealdb.kotlin.api.query.relate
+import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.api.query.update
 import com.surrealdb.kotlin.api.query.upsert
 import kotlinx.coroutines.cancelAndJoin
@@ -62,12 +63,12 @@ class SurrealJvmIntegrationTest {
                 db.version()
                 assertNotNull(db.auth())
 
-                db.query("DEFINE TABLE person SCHEMALESS")
-                db.query("DEFINE TABLE likes SCHEMALESS")
+                db.query(surql("DEFINE TABLE person SCHEMALESS"))
+                db.query(surql("DEFINE TABLE likes SCHEMALESS"))
                 // Start from an empty table rather than trusting the cleanup at the end of
                 // this test, which does not run when an assertion above it fails.
-                db.query("DELETE person")
-                db.query("DELETE likes")
+                db.query(surql("DELETE person"))
+                db.query(surql("DELETE likes"))
 
                 // Each CRUD builder compiles to a `query` RPC carrying SurrealQL.
                 db
@@ -159,7 +160,7 @@ class SurrealJvmIntegrationTest {
                     .await()
 
                 db.`let`("tb", JsonPrimitive("person"))
-                val queryResult = db.query("SELECT * FROM type::table(\$tb)")
+                val queryResult = db.query(surql("SELECT * FROM type::table(\$tb)"))
                 assertTrue(queryResult.jsonArray.isNotEmpty())
                 db.unset("tb")
 
@@ -176,12 +177,12 @@ class SurrealJvmIntegrationTest {
                 // outer envelope (which includes per-call timing).
                 val countA =
                     db
-                        .query("SELECT count() FROM person GROUP ALL")
+                        .query(surql("SELECT count() FROM person GROUP ALL"))
                         .jsonArray[0]
                         .jsonObject["result"]
                 val countB =
                     sessionB
-                        .query("SELECT count() FROM person GROUP ALL")
+                        .query(surql("SELECT count() FROM person GROUP ALL"))
                         .jsonArray[0]
                         .jsonObject["result"]
                 assertEquals(countA.toString(), countB.toString())
@@ -213,8 +214,8 @@ class SurrealJvmIntegrationTest {
                     },
                 )
                 db.use("main", "main")
-                db.query("DEFINE TABLE tx_person SCHEMALESS")
-                db.query("DELETE tx_person")
+                db.query(surql("DEFINE TABLE tx_person SCHEMALESS"))
+                db.query(surql("DELETE tx_person"))
 
                 // Commit path
                 db.transaction {
@@ -224,7 +225,7 @@ class SurrealJvmIntegrationTest {
                 }
                 val afterCommit =
                     db
-                        .query("SELECT * FROM tx_person")
+                        .query(surql("SELECT * FROM tx_person"))
                         .jsonArray[0]
                         .jsonObject["result"]!!
                         .jsonArray
@@ -243,7 +244,7 @@ class SurrealJvmIntegrationTest {
                 assertTrue(cancelled.isFailure)
                 val afterCancel =
                     db
-                        .query("SELECT * FROM tx_person")
+                        .query(surql("SELECT * FROM tx_person"))
                         .jsonArray[0]
                         .jsonObject["result"]!!
                         .jsonArray
@@ -258,7 +259,7 @@ class SurrealJvmIntegrationTest {
                 tx.commit()
                 val afterExplicit =
                     db
-                        .query("SELECT * FROM tx_person")
+                        .query(surql("SELECT * FROM tx_person"))
                         .jsonArray[0]
                         .jsonObject["result"]!!
                         .jsonArray
@@ -294,8 +295,8 @@ class SurrealJvmIntegrationTest {
                     },
                 )
                 db.use("main", "main")
-                db.query("DEFINE TABLE live_person SCHEMALESS")
-                db.query("DELETE live_person")
+                db.query(surql("DEFINE TABLE live_person SCHEMALESS"))
+                db.query(surql("DELETE live_person"))
 
                 val subscription = db.live(Table("live_person"))
                 val diffs = db.live(Table("live_person"), LiveMode.Diffs)
@@ -355,8 +356,8 @@ class SurrealJvmIntegrationTest {
                     },
                 )
                 db.use("main", "main")
-                db.query("DEFINE TABLE live_book SCHEMALESS")
-                db.query("DELETE live_book")
+                db.query(surql("DEFINE TABLE live_book SCHEMALESS"))
+                db.query(surql("DELETE live_book"))
 
                 val received = Channel<LiveQueryEvent<JsonElement>>(Channel.UNLIMITED)
                 val collector =

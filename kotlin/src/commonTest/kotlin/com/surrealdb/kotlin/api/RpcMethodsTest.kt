@@ -13,6 +13,7 @@ import com.surrealdb.kotlin.api.query.patch
 import com.surrealdb.kotlin.api.query.relate
 import com.surrealdb.kotlin.api.query.run
 import com.surrealdb.kotlin.api.query.select
+import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.api.query.update
 import com.surrealdb.kotlin.api.query.upsert
 import io.kotest.core.spec.style.ShouldSpec
@@ -250,7 +251,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.query("SELECT 1")
+                    h.db.query(surql("SELECT 1"))
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 1
@@ -262,10 +263,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.query(
-                        "SELECT type::table(\$tb)",
-                        buildJsonObject { put("tb", JsonPrimitive("person")) },
-                    )
+                    h.db.query(surql("SELECT type::table(\$tb)", "tb" to "person"))
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 2

@@ -7,7 +7,6 @@ import com.surrealdb.kotlin.api.data.TableRecord
 import com.surrealdb.kotlin.api.data.Target
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 /**
  * The context a query runs in: somewhere to send a [BoundQuery], and the
@@ -27,17 +26,6 @@ public interface QueryContext {
 
     /** Send a compiled [BoundQuery] via the `query` RPC. */
     public suspend fun query(bound: BoundQuery): JsonElement
-
-    /** Send a raw SurrealQL string with optional name-keyed bindings. */
-    public suspend fun query(
-        sql: String,
-        vars: JsonObject? = null,
-    ): JsonElement =
-        query(
-            BoundQuery(sql).apply {
-                vars?.forEach { (name, value) -> attachBinding(name, value) }
-            },
-        )
 }
 
 /**

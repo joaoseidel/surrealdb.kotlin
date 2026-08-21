@@ -6,6 +6,7 @@ import com.surrealdb.kotlin.api.data.RecordId
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.query.create
 import com.surrealdb.kotlin.api.query.delete
+import com.surrealdb.kotlin.api.query.surql
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -46,8 +47,8 @@ class SurrealAndroidIntegrationTest {
                 db.use("main", "main")
                 db.ping()
 
-                db.query("DEFINE TABLE android_person SCHEMALESS")
-                db.query("DELETE android_person")
+                db.query(surql("DEFINE TABLE android_person SCHEMALESS"))
+                db.query(surql("DELETE android_person"))
 
                 db
                     .create(RecordId("android_person", "ada"))
@@ -56,7 +57,7 @@ class SurrealAndroidIntegrationTest {
 
                 val rows =
                     db
-                        .query("SELECT * FROM android_person")
+                        .query(surql("SELECT * FROM android_person"))
                         .jsonArray[0]
                         .jsonObject["result"]!!
                         .jsonArray
@@ -90,8 +91,8 @@ class SurrealAndroidIntegrationTest {
             try {
                 db.signin(rootCredentials)
                 db.use("main", "main")
-                db.query("DEFINE TABLE android_live SCHEMALESS")
-                db.query("DELETE android_live")
+                db.query(surql("DEFINE TABLE android_live SCHEMALESS"))
+                db.query(surql("DELETE android_live"))
 
                 val subscription = db.live(Table("android_live"))
                 withTimeout(10_000) { client.activeLiveQueries.first { subscription.id in it } }

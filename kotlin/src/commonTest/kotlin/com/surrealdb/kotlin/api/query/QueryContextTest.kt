@@ -23,10 +23,7 @@ class QueryContextTest :
                     runTest {
                         val context = RecordingContext()
 
-                        context.query(
-                            "SELECT * FROM type::table(\$tb)",
-                            buildJsonObject { put("tb", JsonPrimitive("person")) },
-                        )
+                        context.query(surql("SELECT * FROM type::table(\$tb)", "tb" to "person"))
 
                         context.sent.single().surql shouldBe "SELECT * FROM type::table(\$tb)"
                         context.sent
@@ -39,7 +36,7 @@ class QueryContextTest :
                     runTest {
                         val context = RecordingContext()
 
-                        context.query("SELECT 1")
+                        context.query(surql("SELECT 1"))
 
                         context.sent.single().bindings shouldBe emptyMap()
                     }

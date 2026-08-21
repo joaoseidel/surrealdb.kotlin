@@ -5,6 +5,7 @@ import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.error.SurrealAuthenticationException
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.query.select
+import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.runtime.RpcResponse
 import com.surrealdb.kotlin.runtime.codec.parseLiveNotification
 import io.ktor.client.HttpClient
@@ -119,7 +120,7 @@ class SurrealTest {
                     ),
                 )
 
-            val result = client.session().query("SELECT * FROM person")
+            val result = client.session().query(surql("SELECT * FROM person"))
             val status =
                 result.jsonArray[0]
                     .jsonObject["status"]
@@ -145,7 +146,7 @@ class SurrealTest {
             val client = testClient(engine = engine)
 
             assertFailsWith<SurrealAuthenticationException> {
-                client.session().query("SELECT * FROM person")
+                client.session().query(surql("SELECT * FROM person"))
             }
         }
 

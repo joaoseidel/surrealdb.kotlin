@@ -40,8 +40,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
                 },
             )
             db.use("main", "main")
-            db.query("DEFINE TABLE ${Lines.tableName} SCHEMALESS")
-            db.query("DELETE ${Lines.tableName}")
+            db.query(surql("DEFINE TABLE ${Lines.tableName} SCHEMALESS"))
+            db.query(surql("DELETE ${Lines.tableName}"))
             db
                 .create(Lines["a"])
                 .set {

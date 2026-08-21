@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.api
 
+import com.surrealdb.kotlin.api.query.surql
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.string.shouldNotBeEmpty
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -34,7 +35,7 @@ class SurrealIosIntegrationTest :
                     },
                 )
                 db.use("main", "main")
-                val result = db.query("SELECT * FROM person LIMIT 1")
+                val result = db.query(surql("SELECT * FROM person LIMIT 1"))
 
                 result.toString().shouldNotBeEmpty()
                 client.close()
