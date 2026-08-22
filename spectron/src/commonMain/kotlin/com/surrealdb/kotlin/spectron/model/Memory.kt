@@ -3,8 +3,6 @@ package com.surrealdb.kotlin.spectron.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// ---------------------------------------------------------------- geo filters
-
 @Serializable
 public data class GeoNearJson(
     val lat: Double,
@@ -17,8 +15,6 @@ public data class GeoFilterJson(
     val near: GeoNearJson? = null,
     val within: String? = null,
 )
-
-// ----------------------------------------------------------- extraction shapes
 
 @Serializable
 public data class EntitySummaryJson(
@@ -78,8 +74,6 @@ public data class ExtractionResultJson(
     val uncertainties: List<UncertaintySummaryJson> = emptyList(),
 )
 
-// --------------------------------------------------------------- detail shapes
-
 @Serializable
 public data class AttributeDetailJson(
     val createdAt: String,
@@ -117,8 +111,6 @@ public data class RelationDetailJson(
     val validFrom: String? = null,
     val validUntil: String? = null,
 )
-
-// ------------------------------------------------------------------- responses
 
 @Serializable
 public data class ChatResponseJson(
@@ -206,8 +198,6 @@ public data class ProfileResponseJson(
     val static: List<ProfileEntryJson> = emptyList(),
 )
 
-// -------------------------------------------------------------------- entities
-
 @Serializable
 public data class EntityListResponseJson(
     val entities: List<EntityDetailJson> = emptyList(),
@@ -224,8 +214,6 @@ public data class EntityResponseJson(
 public data class EntityHistoryResponseJson(
     val history: List<AttributeDetailJson> = emptyList(),
 )
-
-// -------------------------------------------------------------------- sessions
 
 @Serializable
 public data class SessionResponseJson(
@@ -253,8 +241,6 @@ public data class TurnListResponseJson(
 public data class SessionContextResponseJson(
     val context: String,
 )
-
-// ------------------------------------------------------------------- lifecycle
 
 @Serializable
 public data class LifecycleResponseJson(

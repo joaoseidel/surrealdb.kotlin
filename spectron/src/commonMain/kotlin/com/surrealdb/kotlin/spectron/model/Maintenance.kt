@@ -3,8 +3,6 @@ package com.surrealdb.kotlin.spectron.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// ----------------------------------------------------------------- consolidate
-
 @Serializable
 public data class ConsolidateOutcomeJson(
     val entityName: String,
@@ -25,8 +23,6 @@ public data class ConsolidateResponseJson(
     val traceId: String? = null,
     val updated: Int = 0,
 )
-
-// ------------------------------------------------------------------- elaborate
 
 @Serializable
 public data class ElaborateProposedRelationJson(
@@ -50,8 +46,6 @@ public data class ElaborateResponseJson(
     val outcomes: List<ElaborateOutcomeJson> = emptyList(),
     val relationsEmitted: Int = 0,
 )
-
-// ------------------------------------------------------------------------ fsck
 
 @Serializable
 public data class ContradictionFindingJson(
@@ -81,8 +75,6 @@ public data class FsckReportJson(
     val injection: List<InjectionFindingJson> = emptyList(),
     val total: Int = 0,
 )
-
-// ---------------------------------------------------------------------- inspect
 
 /**
  * The polymorphic `GET /inspect` response. The populated fields depend on

@@ -246,7 +246,6 @@ class SpectronTransportTest {
                     )
                 }
             val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
-            // OR of two singleton clauses.
             s.sessions.create(scopes = scopeSets(listOf("org=anneal/"), listOf("user=tobie/")))
             val bodyText =
                 (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)

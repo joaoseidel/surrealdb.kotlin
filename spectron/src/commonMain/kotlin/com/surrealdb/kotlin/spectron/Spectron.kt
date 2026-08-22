@@ -103,8 +103,6 @@ public class Spectron(
             transport.apiKey = value
         }
 
-    // ----------------------------------------------------------- write verbs
-
     /** Write a fact or triples. Maps to `POST /{ctx}/facts`. */
     public suspend fun remember(
         text: String? = null,
@@ -137,8 +135,6 @@ public class Spectron(
         onBehalfOf: String? = null,
     ): FactsBatchResponseJson =
         mem.createFactsBatch(messages, scopes = scopes, sessionId = sessionId, onBehalfOf = onBehalfOf)
-
-    // ----------------------------------------------------------- read verbs
 
     /** Hybrid retrieval over facts and document passages. Maps to `POST /{ctx}/query`. */
     public suspend fun recall(
@@ -213,8 +209,6 @@ public class Spectron(
     ): ChatResponseJson =
         mem.chat(message, sessionId, scopes, model = model, bypassCache = bypassCache, onBehalfOf = onBehalfOf)
 
-    // ----------------------------------------------------------- maintenance
-
     public suspend fun consolidate(
         dryRun: Boolean = false,
         factLimit: Int? = null,
@@ -249,8 +243,6 @@ public class Spectron(
         limit: Int? = null,
         onBehalfOf: String? = null,
     ): List<AuditRowJson> = auditApi.list(principal, key, kind, since, until, limit, onBehalfOf)
-
-    // ----------------------------------------------------------- introspection
 
     /** Caller identity and resolved grants. Maps to `GET /{ctx}/me`. */
     public suspend fun whoami(onBehalfOf: String? = null): WhoamiResponse {
