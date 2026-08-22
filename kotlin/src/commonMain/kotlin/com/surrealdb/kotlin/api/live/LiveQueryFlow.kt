@@ -12,8 +12,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
+
+private sealed interface LiveFlowSignal {
+    data class Notification(
+        val value: LiveNotification,
+    ) : LiveFlowSignal
+
+    data class Failure(
+        val cause: Throwable,
+    ) : LiveFlowSignal
+}
 
 internal fun <T> liveEventFlow(
     notifications: SharedFlow<LiveNotification>,
@@ -28,6 +39,7 @@ internal fun <T> liveEventFlow(
         // Confined to this collection, so it says what *this* collector started —
         // which is exactly what onCompletion may need to kill, and nothing else.
         var startedId: String? = null
+        var killed = false
 
         val events =
             notifications
@@ -41,21 +53,30 @@ internal fun <T> liveEventFlow(
                             throw it
                         }
                 }.filter { it.liveQueryId == queryId.await() }
-                .map { it.toEvent(decode) }
+                .map<LiveNotification, LiveFlowSignal> { LiveFlowSignal.Notification(it) }
 
-        // A subscription that can no longer deliver reaches the collector as a
-        // thrown exception. Nothing on the notification flow can say "this query is
-        // over", so a collector filtering it would otherwise just stop seeing events.
         val broken =
             failures
                 .filter { it.liveQueryId == queryId.await() }
-                .map<LiveQueryFailure, LiveQueryEvent<T>> { throw it.cause }
+                .map<LiveQueryFailure, LiveFlowSignal> { LiveFlowSignal.Failure(it.cause) }
 
         emitAll(
-            merge(events, broken).onCompletion { cause ->
-                val id = startedId ?: return@onCompletion
-                if (cause is SurrealLiveQueryException) return@onCompletion
-                withContext(NonCancellable) { runCatching { stop(id) } }
-            },
+            merge(events, broken)
+                .takeWhile { signal ->
+                    val isKilled =
+                        signal is LiveFlowSignal.Notification &&
+                            signal.value.action.equals("KILLED", ignoreCase = true)
+                    if (isKilled) killed = true
+                    !isKilled
+                }.map { signal ->
+                    when (signal) {
+                        is LiveFlowSignal.Notification -> signal.value.toEvent(decode)
+                        is LiveFlowSignal.Failure -> throw signal.cause
+                    }
+                }.onCompletion { cause ->
+                    val id = startedId ?: return@onCompletion
+                    if (cause is SurrealLiveQueryException || killed) return@onCompletion
+                    withContext(NonCancellable) { runCatching { stop(id) } }
+                },
         )
     }

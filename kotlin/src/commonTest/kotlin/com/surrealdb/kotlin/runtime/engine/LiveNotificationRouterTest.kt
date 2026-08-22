@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.runtime.engine
 import com.surrealdb.kotlin.api.error.SurrealTransportException
 import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
+import com.surrealdb.kotlin.api.query.BoundQuery
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 
 private fun notification(
@@ -28,7 +30,7 @@ private fun notification(
 )
 
 private fun source(sql: String = "LIVE SELECT * FROM book") =
-    LiveQuerySource(LiveQuerySpec.Statement(sql)) {
+    LiveQuerySource(LiveQuerySpec.Statement(BoundQuery().appendLiteral(sql))) {
         SessionSnapshot(token = null, namespace = "test", database = "test")
     }
 
@@ -140,6 +142,19 @@ class LiveNotificationRouterTest :
                         router.untrack("lq-1")
 
                         events.toList().shouldBeEmpty()
+                    }
+                }
+
+                should("deliver KILLED and then end, because the server has removed the query") {
+                    runTest {
+                        val router = LiveNotificationRouter()
+                        val events = router.register("lq-1")
+                        val killed = notification(action = "KILLED").copy(result = JsonNull, record = null)
+
+                        router.route(killed)
+
+                        events.toList() shouldContainExactly listOf(killed)
+                        router.activeQueries.value.shouldBeEmpty()
                     }
                 }
 

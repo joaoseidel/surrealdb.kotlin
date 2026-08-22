@@ -7,6 +7,7 @@ import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.live.LiveNotification
 import com.surrealdb.kotlin.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.api.live.LiveQuerySubscription
+import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.runtime.codec.Codec
 import com.surrealdb.kotlin.runtime.engine.Engine
 import com.surrealdb.kotlin.runtime.engine.HttpEngine
@@ -64,7 +65,7 @@ internal class ConnectionController(
     suspend fun trackLive(
         sessionId: String,
         liveQueryId: String,
-        statement: String,
+        statement: BoundQuery,
     ): Unit =
         engine.trackLiveQuery(
             liveQueryId,

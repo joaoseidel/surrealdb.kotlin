@@ -266,7 +266,16 @@ internal class WebSocketEngine(
             }
 
             is LiveQuerySpec.Statement -> {
-                newRequest("query", listOf(JsonPrimitive(spec.sql)))
+                newRequest(
+                    "query",
+                    buildList {
+                        add(JsonPrimitive(spec.query.surql))
+                        spec.query
+                            .bindingsAsJsonObject()
+                            .takeIf { it.isNotEmpty() }
+                            ?.let(::add)
+                    },
+                )
             }
         }
 

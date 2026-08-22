@@ -42,6 +42,7 @@ internal class LiveNotificationRouter {
     private class Dispatch(
         val notification: LiveNotification?,
         val channel: Channel<LiveNotification>?,
+        val closesChannel: Boolean = false,
     )
 
     // DROP_OLDEST, never SUSPEND: this is emitted into from the socket read loop,
@@ -188,9 +189,23 @@ internal class LiveNotificationRouter {
             mutex.withLock {
                 val entry = serverIds[notification.liveQueryId]?.let(entries::get)
                 when {
-                    entry != null -> Dispatch(relabelled(entry, notification), entry.channel)
-                    registrationsInFlight == 0 -> Dispatch(notification, null)
-                    else -> Dispatch(hold(notification), null)
+                    entry != null && notification.action.equals("KILLED", ignoreCase = true) -> {
+                        val terminal = relabelled(entry, notification)
+                        remove(entry.id)
+                        Dispatch(terminal, entry.channel, closesChannel = true)
+                    }
+
+                    entry != null -> {
+                        Dispatch(relabelled(entry, notification), entry.channel)
+                    }
+
+                    registrationsInFlight == 0 -> {
+                        Dispatch(notification, null)
+                    }
+
+                    else -> {
+                        Dispatch(hold(notification), null)
+                    }
                 }
             }
 
@@ -198,6 +213,7 @@ internal class LiveNotificationRouter {
             _notifications.tryEmit(it)
             dispatch.channel?.trySend(it)
         }
+        if (dispatch.closesChannel) dispatch.channel?.close()
     }
 
     suspend fun closeAll(cause: Throwable? = null) {

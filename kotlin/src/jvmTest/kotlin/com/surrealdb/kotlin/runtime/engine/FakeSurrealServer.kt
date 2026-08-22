@@ -28,6 +28,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -41,6 +42,7 @@ internal data class IssuedLiveQuery(
     val method: String,
     val target: String,
     val liveQueryId: String,
+    val bindings: JsonObject?,
 )
 
 /**
@@ -142,6 +144,53 @@ internal class FakeSurrealServer(
         socket?.send(Frame.Text(json.encodeToString(JsonElement.serializer(), notification)))
     }
 
+    suspend fun notifyAge(
+        liveQueryId: String,
+        recordId: String,
+        age: Int,
+    ) {
+        val issuedQuery = issued.last { it.liveQueryId == liveQueryId }
+        val minimum =
+            issuedQuery.bindings
+                ?.get("_1")
+                ?.jsonPrimitive
+                ?.int
+                ?: error("No minimum-age binding")
+        if (age < minimum) return
+
+        val notification =
+            buildJsonObject {
+                put(
+                    "result",
+                    buildJsonObject {
+                        put("action", "CREATE")
+                        put("id", liveQueryId)
+                        put("record", "user:$recordId")
+                        put("result", buildJsonObject { put("age", age) })
+                    },
+                )
+            }
+
+        socket?.send(Frame.Text(json.encodeToString(JsonElement.serializer(), notification)))
+    }
+
+    suspend fun notifyKilled(liveQueryId: String) {
+        val notification =
+            buildJsonObject {
+                put(
+                    "result",
+                    buildJsonObject {
+                        put("action", "KILLED")
+                        put("id", liveQueryId)
+                        put("record", JsonNull)
+                        put("result", JsonNull)
+                    },
+                )
+            }
+
+        socket?.send(Frame.Text(json.encodeToString(JsonElement.serializer(), notification)))
+    }
+
     private suspend fun announce() {
         while (true) {
             val liveQueryId = announcements.poll() ?: return
@@ -173,7 +222,7 @@ internal class FakeSurrealServer(
         val outcome =
             when (method) {
                 "live" -> startLiveQuery(method, firstParam)
-                "query" -> runStatement(firstParam)
+                "query" -> runStatement(firstParam, params.getOrNull(1) as? JsonObject)
                 "begin" -> Outcome.Ok(JsonPrimitive("txn-${ids.incrementAndGet()}"))
                 else -> Outcome.Ok(JsonNull)
             }
@@ -204,19 +253,23 @@ internal class FakeSurrealServer(
     private fun startLiveQuery(
         method: String,
         target: String,
+        bindings: JsonObject? = null,
     ): Outcome {
         if (started.incrementAndGet() > liveQueriesBeforeRejecting) return Outcome.Rejected
 
         val liveQueryId = "lq-${ids.incrementAndGet()}"
-        issued += IssuedLiveQuery(method, target, liveQueryId)
+        issued += IssuedLiveQuery(method, target, liveQueryId, bindings)
         if (notifyOnStart != null) announcements += liveQueryId
         return Outcome.Ok(JsonPrimitive(liveQueryId))
     }
 
-    private fun runStatement(sql: String): Outcome {
+    private fun runStatement(
+        sql: String,
+        bindings: JsonObject?,
+    ): Outcome {
         val result =
             if (sql.startsWith("LIVE ", ignoreCase = true)) {
-                when (val started = startLiveQuery("query", sql)) {
+                when (val started = startLiveQuery("query", sql, bindings)) {
                     is Outcome.Ok -> started.result
                     Outcome.Rejected -> return Outcome.Rejected
                 }

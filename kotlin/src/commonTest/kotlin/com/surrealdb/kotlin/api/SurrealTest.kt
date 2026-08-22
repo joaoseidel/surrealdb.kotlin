@@ -19,6 +19,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -196,6 +197,16 @@ class SurrealTest {
             assertTrue(Feature.LiveQueries !in client.features)
             assertFailsWith<SurrealFeatureNotSupportedException> {
                 client.session().live(Table("person"))
+            }
+            val people =
+                object : Table("person") {
+                    val age by field<Int>()
+                }
+            assertFailsWith<SurrealFeatureNotSupportedException> {
+                client.session().live(people) { age greaterEq 18 }
+            }
+            assertFailsWith<SurrealFeatureNotSupportedException> {
+                client.session().liveEvents<JsonElement>("DELETE person")
             }
         }
 
