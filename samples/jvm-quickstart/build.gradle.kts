@@ -21,7 +21,7 @@ java {
 }
 
 dependencies {
-    implementation(project(":kotlin"))
+    implementation(project(":query"))
 }
 
 application {

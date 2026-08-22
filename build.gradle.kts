@@ -4,6 +4,57 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.konan.target.HostManager
 
+abstract class VerifyCoreQueryBoundary : DefaultTask() {
+    @get:InputFile
+    abstract val coreBuild: RegularFileProperty
+
+    @get:InputFiles
+    abstract val coreSources: ConfigurableFileCollection
+
+    @get:Classpath
+    abstract val coreClasspath: ConfigurableFileCollection
+
+    @TaskAction
+    fun verify() {
+        val dependency = Regex("""project\s*\(\s*[\"']?:query[\"']?\s*\)""")
+        check(!dependency.containsMatchIn(coreBuild.get().asFile.readText())) {
+            "core -> query project dependency found in ${coreBuild.get().asFile}"
+        }
+
+        val allowed =
+            setOf(
+                "com.surrealdb.kotlin.api.query.BoundQuery",
+                "com.surrealdb.kotlin.api.query.QueryContext",
+                "com.surrealdb.kotlin.api.query.firstQueryResult",
+            )
+        val queryImport = Regex("""^import (com\.surrealdb\.kotlin\.api\.query(?:\.[A-Za-z0-9_*]+)?)""")
+        val forbidden =
+            coreSources.files
+                .sorted()
+                .flatMap { source ->
+                    source.readLines().mapNotNull { line ->
+                        queryImport.find(line)?.groupValues?.get(1)?.takeUnless { it in allowed }?.let {
+                            "$source -> $it"
+                        }
+                    }
+                }
+
+        check(forbidden.isEmpty()) {
+            "core imports query-owned API:\n${forbidden.joinToString("\n") { "  $it" }}"
+        }
+
+        val queryArtifacts =
+            coreClasspath.files.filter { file ->
+                file.name.startsWith("query-") ||
+                    file.name.startsWith("kotlin-query-") ||
+                    file.invariantSeparatorsPath.contains("/query/build/")
+            }
+        check(queryArtifacts.isEmpty()) {
+            "core compile classpath contains query artifacts: ${queryArtifacts.joinToString()}"
+        }
+    }
+}
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
@@ -23,7 +74,8 @@ val ktlintVersion =
         .get()
 
 dependencies {
-    dokka(project(":kotlin"))
+    dokka(project(":core"))
+    dokka(project(":query"))
     dokka(project(":spectron"))
 }
 
@@ -36,9 +88,19 @@ val expectedArtifactSuffixes =
 
 val expectedArtifactBases =
     mapOf(
-        "kotlin" to "kotlin",
+        "core" to "kotlin-core",
+        "query" to "kotlin",
         "spectron" to "kotlin-spectron",
     )
+
+val verifyCoreQueryBoundary =
+    tasks.register<VerifyCoreQueryBoundary>("verifyCoreQueryBoundary") {
+        group = "verification"
+        description = "Fails if core depends on query or imports query-owned API."
+        coreBuild.set(layout.projectDirectory.file("core/build.gradle.kts"))
+        coreSources.from(fileTree("core/src") { include("**/*.kt") })
+        coreClasspath.from(project(":core").configurations.named("jvmTestCompileClasspath"))
+    }
 
 val appleArtifactSuffixes =
     listOf(

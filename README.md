@@ -13,6 +13,9 @@ dependencies {
 }
 ```
 
+Applications that only need connection, session, transaction, live-query, and raw `BoundQuery` APIs can use
+`com.surrealdb:kotlin-core:1.0.0` instead.
+
 The artifact is not published yet. For a local build, run `./gradlew publishToMavenLocal` and add
 `mavenLocal()` to the consuming project. Kotlin Multiplatform module metadata selects the JVM, Android, or matching iOS variant.
 
@@ -248,8 +251,8 @@ db.live(People) { age greaterEq 18 }
     .collect { event -> println(event) }
 ```
 
-Filter values are sent as query bindings, including when the client restores the subscription after
-a reconnect. The filtered overload is a cold `Flow` whose collection owns the query lifetime.
+Filter values are sent as query bindings, including when the client restores the subscription after a reconnect. The filtered overload is a cold
+`Flow` whose collection owns the query lifetime.
 `live(People)` without a filter remains an explicitly cancellable server handle.
 
 ## Transactions
@@ -312,7 +315,7 @@ SurrealDB driver and uses the same coroutine-first, Kotlin Multiplatform convent
 
 ```bash
 ./gradlew jvmTest
-./gradlew :kotlin:iosSimulatorArm64Test
+./gradlew :core:iosSimulatorArm64Test :query:iosSimulatorArm64Test
 ./gradlew ktlintCheck
 ./gradlew verifyPublicationCoordinates verifyPublicationJavadoc
 ```
@@ -325,5 +328,5 @@ docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:v3.2.4 \
 
 SURREAL_RUN_INTEGRATION=true \
 SURREAL_JVM_ENDPOINT=ws://127.0.0.1:8000 \
-./gradlew :kotlin:jvmTest --rerun-tasks
+./gradlew :core:jvmTest :query:jvmTest --rerun-tasks
 ```
