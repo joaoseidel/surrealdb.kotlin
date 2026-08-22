@@ -13,6 +13,9 @@ dependencies {
 }
 ```
 
+The query module also publishes as `com.surrealdb:kotlin-query:1.0.0`. The original `kotlin` coordinate remains the full-driver compatibility entry
+point and resolves the same platform variants.
+
 Applications that only need connection, session, transaction, live-query, and raw `BoundQuery` APIs can use
 `com.surrealdb:kotlin-core:1.0.0` instead.
 
@@ -315,7 +318,7 @@ SurrealDB driver and uses the same coroutine-first, Kotlin Multiplatform convent
 
 ```bash
 ./gradlew jvmTest
-./gradlew :core:iosSimulatorArm64Test :query:iosSimulatorArm64Test
+./gradlew :surrealdb-kotlin-core:iosSimulatorArm64Test :surrealdb-kotlin-query:iosSimulatorArm64Test
 ./gradlew ktlintCheck
 ./gradlew verifyPublicationCoordinates verifyPublicationJavadoc
 ```
@@ -328,5 +331,5 @@ docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:v3.2.4 \
 
 SURREAL_RUN_INTEGRATION=true \
 SURREAL_JVM_ENDPOINT=ws://127.0.0.1:8000 \
-./gradlew :core:jvmTest :query:jvmTest --rerun-tasks
+./gradlew :surrealdb-kotlin-core:jvmTest :surrealdb-kotlin-query:jvmTest --rerun-tasks
 ```

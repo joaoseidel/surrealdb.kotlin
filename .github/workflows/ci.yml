@@ -21,7 +21,7 @@ jobs:
         run: ./gradlew --no-daemon ktlintCheck
 
       - name: Verify the core boundary and compile classpath
-        run: ./gradlew --no-daemon verifyCoreQueryBoundary
+        run: ./gradlew --no-daemon verifyCoreQueryBoundary verifyCoreQueryClasspath
 
       - name: Compile the JVM quickstart
         run: ./gradlew --no-daemon :samples:jvm-quickstart:compileKotlin
@@ -46,7 +46,7 @@ jobs:
           pages=$(find build/dokka/html -name '*.html' | wc -l)
           echo "rendered pages: $pages"
           test "$pages" -gt 50
-          for jar in core/build/libs/*-javadoc.jar query/build/libs/*-javadoc.jar spectron/build/libs/*-javadoc.jar; do
+          for jar in surrealdb-kotlin-core/build/libs/*-javadoc.jar surrealdb-kotlin-query/build/libs/*-javadoc.jar surrealdb-kotlin-spectron/build/libs/*-javadoc.jar; do
             entries=$(unzip -l "$jar" | tail -1 | awk '{print $2}')
             echo "$jar: $entries entries"
             test "$entries" -gt 50
@@ -122,20 +122,20 @@ jobs:
           java-version: "25"
 
       - name: Run iOS simulator tests
-        run: ./gradlew --no-daemon :core:iosSimulatorArm64Test :query:iosSimulatorArm64Test
+        run: ./gradlew --no-daemon :surrealdb-kotlin-core:iosSimulatorArm64Test :surrealdb-kotlin-query:iosSimulatorArm64Test
 
       - name: Confirm the iOS tests actually ran
         # A test task that compiles nothing and runs nothing still exits 0. These
         # tests went uncompiled for months precisely because no job looked, so
         # assert a real count rather than trusting the exit status.
         run: |
-          count=$(cat core/build/test-results/iosSimulatorArm64Test/*.xml query/build/test-results/iosSimulatorArm64Test/*.xml | grep -c '<testcase')
+          count=$(cat surrealdb-kotlin-core/build/test-results/iosSimulatorArm64Test/*.xml surrealdb-kotlin-query/build/test-results/iosSimulatorArm64Test/*.xml | grep -c '<testcase')
           echo "iOS tests run: $count"
           test "$count" -gt 0
 
       - name: iOS test report
         if: failure()
-        run: cat core/build/test-results/iosSimulatorArm64Test/*.xml query/build/test-results/iosSimulatorArm64Test/*.xml || true
+        run: cat surrealdb-kotlin-core/build/test-results/iosSimulatorArm64Test/*.xml surrealdb-kotlin-query/build/test-results/iosSimulatorArm64Test/*.xml || true
 
   android:
     runs-on: ubuntu-latest
@@ -183,7 +183,7 @@ jobs:
           # not exist — the gate and the endpoint have to arrive as instrumentation
           # arguments. 10.0.2.2 is the host loopback as seen from the emulator.
           script: >
-            ./gradlew --no-daemon :query:connectedAndroidDeviceTest
+            ./gradlew --no-daemon :surrealdb-kotlin-query:connectedAndroidDeviceTest
             -Pandroid.testInstrumentationRunnerArguments.SURREAL_RUN_INTEGRATION=true
             -Pandroid.testInstrumentationRunnerArguments.SURREAL_ANDROID_ENDPOINT=http://10.0.2.2:8000
 
@@ -192,7 +192,7 @@ jobs:
         # count is checked too: the gate above is an assumption, and an assumption
         # that fails reports as a pass while testing nothing at all.
         run: |
-          results="query/build/outputs/androidTest-results/connected"
+          results="surrealdb-kotlin-query/build/outputs/androidTest-results/connected"
           shopt -s nullglob globstar
           files=("$results"/**/TEST-*.xml)
           if [ ${#files[@]} -eq 0 ]; then
@@ -207,7 +207,7 @@ jobs:
 
       - name: Android test report
         if: failure()
-        run: find query/build/outputs/androidTest-results/connected -name 'TEST-*.xml' -exec cat {} + || true
+        run: find surrealdb-kotlin-query/build/outputs/androidTest-results/connected -name 'TEST-*.xml' -exec cat {} + || true
 
       - name: SurrealDB logs
         if: always()

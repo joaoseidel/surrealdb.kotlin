@@ -2,58 +2,6 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.konan.target.HostManager
-
-abstract class VerifyCoreQueryBoundary : DefaultTask() {
-    @get:InputFile
-    abstract val coreBuild: RegularFileProperty
-
-    @get:InputFiles
-    abstract val coreSources: ConfigurableFileCollection
-
-    @get:Classpath
-    abstract val coreClasspath: ConfigurableFileCollection
-
-    @TaskAction
-    fun verify() {
-        val dependency = Regex("""project\s*\(\s*[\"']?:query[\"']?\s*\)""")
-        check(!dependency.containsMatchIn(coreBuild.get().asFile.readText())) {
-            "core -> query project dependency found in ${coreBuild.get().asFile}"
-        }
-
-        val allowed =
-            setOf(
-                "com.surrealdb.kotlin.api.query.BoundQuery",
-                "com.surrealdb.kotlin.api.query.QueryContext",
-                "com.surrealdb.kotlin.api.query.firstQueryResult",
-            )
-        val queryImport = Regex("""^import (com\.surrealdb\.kotlin\.api\.query(?:\.[A-Za-z0-9_*]+)?)""")
-        val forbidden =
-            coreSources.files
-                .sorted()
-                .flatMap { source ->
-                    source.readLines().mapNotNull { line ->
-                        queryImport.find(line)?.groupValues?.get(1)?.takeUnless { it in allowed }?.let {
-                            "$source -> $it"
-                        }
-                    }
-                }
-
-        check(forbidden.isEmpty()) {
-            "core imports query-owned API:\n${forbidden.joinToString("\n") { "  $it" }}"
-        }
-
-        val queryArtifacts =
-            coreClasspath.files.filter { file ->
-                file.name.startsWith("query-") ||
-                    file.name.startsWith("kotlin-query-") ||
-                    file.invariantSeparatorsPath.contains("/query/build/")
-            }
-        check(queryArtifacts.isEmpty()) {
-            "core compile classpath contains query artifacts: ${queryArtifacts.joinToString()}"
-        }
-    }
-}
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -74,40 +22,25 @@ val ktlintVersion =
         .get()
 
 dependencies {
-    dokka(project(":core"))
-    dokka(project(":query"))
-    dokka(project(":spectron"))
+    dokka(project(":surrealdb-kotlin-core"))
+    dokka(project(":surrealdb-kotlin-query"))
+    dokka(project(":surrealdb-kotlin-spectron"))
 }
 
-val expectedArtifactSuffixes =
-    listOf(
-        "",
-        "-jvm",
-        "-android",
-    )
+tasks.register<VerifyCoreQueryBoundary>("verifyCoreQueryBoundary") {
+    group = "verification"
+    description = "Fails if core declares a dependency on query or imports query-owned API."
+    coreBuild.set(layout.projectDirectory.file("surrealdb-kotlin-core/build.gradle.kts"))
+    coreSources.from(fileTree("surrealdb-kotlin-core/src") { include("**/*.kt") })
+}
 
-val expectedArtifactBases =
-    mapOf(
-        "core" to "kotlin-core",
-        "query" to "kotlin",
-        "spectron" to "kotlin-spectron",
+tasks.register<VerifyCoreQueryClasspath>("verifyCoreQueryClasspath") {
+    group = "verification"
+    description = "Fails if the core compile classpath contains a query artifact."
+    coreClasspath.from(
+        project(":surrealdb-kotlin-core").configurations.named("jvmTestCompileClasspath"),
     )
-
-val verifyCoreQueryBoundary =
-    tasks.register<VerifyCoreQueryBoundary>("verifyCoreQueryBoundary") {
-        group = "verification"
-        description = "Fails if core depends on query or imports query-owned API."
-        coreBuild.set(layout.projectDirectory.file("core/build.gradle.kts"))
-        coreSources.from(fileTree("core/src") { include("**/*.kt") })
-        coreClasspath.from(project(":core").configurations.named("jvmTestCompileClasspath"))
-    }
-
-val appleArtifactSuffixes =
-    listOf(
-        "-iosX64",
-        "-iosArm64",
-        "-iosSimulatorArm64",
-    )
+}
 
 allprojects {
     group = providers.gradleProperty("GROUP").get()
@@ -181,127 +114,6 @@ subprojects {
             }
         }
 
-        configurePublishing()
-    }
-}
-
-/**
- * Maps the KMP publications onto the artifact ids consumers write down, and fills in
- * the POM. The base id comes from each module's own `gradle.properties`.
- *
- * Runs in [afterEvaluate] because the Android publication's artifactId is set by the
- * Kotlin plugin's own afterEvaluate hook; configuring earlier is silently overwritten.
- */
-fun Project.configurePublishing() {
-    // `providers.gradleProperty` deliberately does not see a subproject's own
-    // gradle.properties, so the module-scoped values are read off the project.
-    fun prop(name: String): String =
-        findProperty(name)?.toString()
-            ?: error("$path is missing the '$name' property (module gradle.properties)")
-
-    val artifactBase = prop("POM_ARTIFACT_ID")
-    val pomName = prop("POM_NAME")
-    val pomDescription = prop("POM_DESCRIPTION")
-
-    val javadocJar =
-        tasks.register<Jar>("javadocJar") {
-            group = "documentation"
-            description = "Packages the Dokka HTML output as the publishable -javadoc.jar."
-            archiveClassifier.set("javadoc")
-            from(tasks.named("dokkaGeneratePublicationHtml"))
-        }
-
-    afterEvaluate {
-        configure<PublishingExtension> {
-            publications.withType<MavenPublication>().configureEach {
-                artifact(javadocJar)
-
-                artifactId =
-                    when (name) {
-                        "kotlinMultiplatform" -> artifactBase
-                        else -> "$artifactBase-$name"
-                    }
-
-                pom {
-                    this.name.set(pomName)
-                    this.description.set(pomDescription)
-                    url.set(prop("POM_URL"))
-
-                    licenses {
-                        license {
-                            this.name.set(prop("POM_LICENSE_NAME"))
-                            url.set(prop("POM_LICENSE_URL"))
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id.set(prop("POM_DEVELOPER_ID"))
-                            this.name.set(prop("POM_DEVELOPER_NAME"))
-                        }
-                    }
-
-                    scm {
-                        url.set(prop("POM_SCM_URL"))
-                        connection.set(prop("POM_SCM_CONNECTION"))
-                        developerConnection.set(prop("POM_SCM_DEV_CONNECTION"))
-                    }
-                }
-            }
-
-            val onApple = HostManager.hostIsMac
-            val base =
-                expectedArtifactBases[project.name]
-                    ?: error("$path publishes but has no entry in expectedArtifactBases")
-            val expected =
-                (expectedArtifactSuffixes + if (onApple) appleArtifactSuffixes else emptyList())
-                    .map { "$base$it" }
-                    .toSortedSet()
-            val skipped =
-                if (onApple) emptySet() else appleArtifactSuffixes.map { "$base$it" }.toSortedSet()
-            val mavenPublications = publications.withType<MavenPublication>().toList()
-            val actual = mavenPublications.map { it.artifactId }.toSortedSet()
-            val withJavadoc =
-                provider {
-                    mavenPublications
-                        .filter { pub -> pub.artifacts.any { it.classifier == "javadoc" } }
-                        .map { it.artifactId }
-                        .toSortedSet()
-                }
-
-            tasks.register("verifyPublicationJavadoc") {
-                group = "verification"
-                description = "Fails if a publication would be released without a -javadoc.jar."
-                doLast {
-                    val missing = expected - withJavadoc.get()
-                    check(missing.isEmpty()) {
-                        "$path would publish ${missing.joinToString()} without a -javadoc.jar. " +
-                            "Maven Central rejects a release without one."
-                    }
-                }
-            }
-
-            tasks.register("verifyPublicationCoordinates") {
-                group = "verification"
-                description = "Fails if this module's published Maven coordinates change."
-                doLast {
-                    val missing = expected - actual
-                    val unexpected = actual - expected - skipped
-                    check(missing.isEmpty() && unexpected.isEmpty()) {
-                        buildString {
-                            appendLine("$path publishes different coordinates than expected.")
-                            appendLine("  missing:   ${missing.ifEmpty { "-" }}")
-                            appendLine("  unexpected: ${unexpected.ifEmpty { "-" }}")
-                            appendLine("  not checked on this host: ${skipped.ifEmpty { "-" }}")
-                            append(
-                                "If the change is intended, update expectedArtifactBases or " +
-                                    "expectedArtifactSuffixes in the root build to match — but note " +
-                                    "that a released coordinate cannot be taken back.",
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        apply(plugin = "surrealdb.publishing")
     }
 }
