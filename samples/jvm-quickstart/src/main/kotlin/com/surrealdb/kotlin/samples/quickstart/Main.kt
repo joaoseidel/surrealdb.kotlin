@@ -1,16 +1,16 @@
 package com.surrealdb.kotlin.samples.quickstart
 
-import com.surrealdb.kotlin.api.Credentials
-import com.surrealdb.kotlin.api.Database
-import com.surrealdb.kotlin.api.Namespace
-import com.surrealdb.kotlin.api.Surreal
-import com.surrealdb.kotlin.api.data.get
-import com.surrealdb.kotlin.api.query.merge
-import com.surrealdb.kotlin.api.query.patch
-import com.surrealdb.kotlin.api.query.select
-import com.surrealdb.kotlin.api.query.surqlTemplate
-import com.surrealdb.kotlin.api.query.update
-import com.surrealdb.kotlin.api.query.upsert
+import com.surrealdb.kotlin.core.api.Credentials
+import com.surrealdb.kotlin.core.api.Database
+import com.surrealdb.kotlin.core.api.Namespace
+import com.surrealdb.kotlin.core.api.Surreal
+import com.surrealdb.kotlin.query.api.data.get
+import com.surrealdb.kotlin.query.api.query.merge
+import com.surrealdb.kotlin.query.api.query.patch
+import com.surrealdb.kotlin.query.api.query.select
+import com.surrealdb.kotlin.query.api.query.surqlTemplate
+import com.surrealdb.kotlin.query.api.query.update
+import com.surrealdb.kotlin.query.api.query.upsert
 import com.surrealdb.kotlin.samples.quickstart.tables.People
 import com.surrealdb.kotlin.samples.quickstart.tables.toPersonList
 import kotlinx.coroutines.cancelAndJoin

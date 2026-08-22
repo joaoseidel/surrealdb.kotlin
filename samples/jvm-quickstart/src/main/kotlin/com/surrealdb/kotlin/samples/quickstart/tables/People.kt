@@ -1,8 +1,8 @@
 package com.surrealdb.kotlin.samples.quickstart.tables
 
-import com.surrealdb.kotlin.api.data.Nested
-import com.surrealdb.kotlin.api.data.Row
-import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.core.api.data.Row
+import com.surrealdb.kotlin.query.api.data.Nested
+import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.samples.quickstart.domain.Person
 import com.surrealdb.kotlin.samples.quickstart.tables.People.address
 import com.surrealdb.kotlin.samples.quickstart.tables.People.age

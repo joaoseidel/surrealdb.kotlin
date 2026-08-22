@@ -20,22 +20,14 @@ abstract class VerifyCoreQueryBoundary : DefaultTask() {
             "core -> query project dependency found in ${coreBuild.get().asFile}"
         }
 
-        val allowed =
-            setOf(
-                "com.surrealdb.kotlin.api.query.BoundQuery",
-                "com.surrealdb.kotlin.api.query.QueryContext",
-                "com.surrealdb.kotlin.api.query.firstQueryResult",
-            )
         val queryImport =
-            Regex("""^import (com\.surrealdb\.kotlin\.api\.query(?:\.[A-Za-z0-9_*]+)?)""")
+            Regex("""^import (com\.surrealdb\.kotlin\.query(?:\.[A-Za-z0-9_*]+)?)""")
         val forbidden =
             coreSources.files
                 .sorted()
                 .flatMap { source ->
                     source.readLines().mapNotNull { line ->
-                        queryImport.find(line)?.groupValues?.get(1)?.takeUnless { it in allowed }?.let {
-                            "$source -> $it"
-                        }
+                        queryImport.find(line)?.groupValues?.get(1)?.let { "$source -> $it" }
                     }
                 }
 

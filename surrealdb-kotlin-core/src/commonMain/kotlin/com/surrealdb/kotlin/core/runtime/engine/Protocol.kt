@@ -1,0 +1,87 @@
+package com.surrealdb.kotlin.core.runtime.engine
+
+import com.surrealdb.kotlin.core.api.live.LiveQuerySubscription
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+
+/**
+ * The communication contract between the SDK and a SurrealDB datastore. Mirrors
+ * the protocol defined at https://github.com/surrealdb/surrealdb-protocol; the
+ * concept of raw method-keyed RPCs is intentionally absent here so non
+ * JSON-RPC engines (e.g. a future gRPC engine) can implement the same interface.
+ *
+ * Higher-level consumers (`ConnectionController`, `Session`,
+ * `Transaction`) communicate to engines through these functions.
+ * `RpcEngine` translates them into JSON-RPC payloads.
+ */
+internal interface Protocol {
+    suspend fun health(session: SessionSnapshot): JsonElement
+
+    suspend fun version(session: SessionSnapshot): JsonElement
+
+    suspend fun use(
+        namespace: String,
+        database: String,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun signup(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun signin(
+        params: JsonObject,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun authenticate(
+        token: String,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun invalidate(session: SessionSnapshot): JsonElement
+
+    suspend fun reset(session: SessionSnapshot): JsonElement
+
+    suspend fun set(
+        name: String,
+        value: JsonElement,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun unset(
+        name: String,
+        session: SessionSnapshot,
+    ): JsonElement
+
+    suspend fun begin(session: SessionSnapshot): String
+
+    suspend fun commit(
+        txnId: String,
+        session: SessionSnapshot,
+    )
+
+    suspend fun cancel(
+        txnId: String,
+        session: SessionSnapshot,
+    )
+
+    suspend fun query(
+        sql: String,
+        vars: JsonObject?,
+        session: SessionSnapshot,
+        txn: String?,
+    ): JsonElement
+
+    suspend fun liveQuery(
+        table: String,
+        diff: Boolean?,
+        session: suspend () -> SessionSnapshot,
+    ): LiveQuerySubscription
+
+    suspend fun kill(
+        liveQueryId: String,
+        session: SessionSnapshot,
+    ): JsonElement
+}

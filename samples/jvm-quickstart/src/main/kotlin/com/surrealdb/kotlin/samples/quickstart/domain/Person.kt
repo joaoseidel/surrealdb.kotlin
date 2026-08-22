@@ -1,6 +1,6 @@
 package com.surrealdb.kotlin.samples.quickstart.domain
 
-import com.surrealdb.kotlin.api.data.RecordId
+import com.surrealdb.kotlin.core.api.data.RecordId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Core and query packages now include their module prefix while retaining the existing `api` and `runtime` hierarchy.
 - Conditions now accept fields from the table declaration instead of a serializable record type, so
   field validity is checked where the query is written.
 - `and` and `or` no longer mix without `all`, `any`, or another explicit group, which prevents Kotlin
