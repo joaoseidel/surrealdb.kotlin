@@ -1,5 +1,7 @@
 package com.surrealdb.kotlin.api
 
+import com.surrealdb.kotlin.api.data.Condition
+import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.error.SurrealFeatureNotSupportedException
 import com.surrealdb.kotlin.api.live.LiveMode
@@ -9,6 +11,8 @@ import com.surrealdb.kotlin.api.live.liveEventFlow
 import com.surrealdb.kotlin.api.live.toLiveStatement
 import com.surrealdb.kotlin.api.query.BoundQuery
 import com.surrealdb.kotlin.api.query.QueryContext
+import com.surrealdb.kotlin.api.query.appendCondition
+import com.surrealdb.kotlin.api.query.appendTarget
 import com.surrealdb.kotlin.api.query.firstQueryResult
 import com.surrealdb.kotlin.api.query.surql
 import com.surrealdb.kotlin.runtime.ConnectionController
@@ -166,40 +170,55 @@ public class Session internal constructor(
             controller.query(sessionId, bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
         }
 
-    /**
-     * Subscribe to live notifications for changes on a table.
-     *
-     * To watch one record, or to filter, write the `LIVE SELECT` yourself and
-     * run it via [query], which returns a live query UUID.
-     */
     public suspend fun live(
         table: Table,
         mode: LiveMode = LiveMode.Records,
     ): LiveQuerySubscription = withAutoAuthRetry { controller.live(sessionId, table.tableName, mode.wantsDiff) }
 
+    public fun <S : Table> live(
+        table: S,
+        filter: S.() -> Condition,
+    ): Flow<LiveQueryEvent<Row>> {
+        requireLiveQueries()
+        val statement =
+            BoundQuery()
+                .appendLiteral("LIVE SELECT * FROM ")
+                .appendTarget(table)
+                .appendLiteral(" WHERE ")
+                .appendCondition(table.filter())
+        return liveEvents(statement) { Row(json, it.jsonObject) }
+    }
+
     public fun <T> liveEvents(
         spec: String,
         decode: (JsonElement) -> T,
     ): Flow<LiveQueryEvent<T>> {
-        if (Feature.LiveQueries !in controller.features) {
-            throw SurrealFeatureNotSupportedException(
-                "Live queries need a ws:// or wss:// connection; this client is on ${controller.config.url}",
-            )
-        }
+        requireLiveQueries()
+        return liveEvents(BoundQuery().appendLiteral(toLiveStatement(spec)), decode)
+    }
 
-        val statement = toLiveStatement(spec)
-
-        return liveEventFlow(
+    private fun <T> liveEvents(
+        statement: BoundQuery,
+        decode: (JsonElement) -> T,
+    ): Flow<LiveQueryEvent<T>> =
+        liveEventFlow(
             notifications = controller.liveNotifications,
             failures = controller.liveFailures,
             start = {
-                val id = firstQueryResult(query(BoundQuery().appendLiteral(statement))).jsonPrimitive.content
+                val id = firstQueryResult(query(statement)).jsonPrimitive.content
                 controller.trackLive(sessionId, id, statement)
                 id
             },
             stop = { id -> kill(id) },
             decode = decode,
         )
+
+    private fun requireLiveQueries() {
+        if (Feature.LiveQueries !in controller.features) {
+            throw SurrealFeatureNotSupportedException(
+                "Live queries need a ws:// or wss:// connection; this client is on ${controller.config.url}",
+            )
+        }
     }
 
     /** As [liveEvents], decoding each record with this session's serializer. */

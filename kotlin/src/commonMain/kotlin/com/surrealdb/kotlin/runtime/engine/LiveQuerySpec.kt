@@ -1,5 +1,7 @@
 package com.surrealdb.kotlin.runtime.engine
 
+import com.surrealdb.kotlin.api.query.BoundQuery
+
 /**
  * How a live query was started, kept so the engine can start it again on a new
  * socket. A SurrealDB server forgets its live queries when the session behind
@@ -13,7 +15,7 @@ internal sealed interface LiveQuerySpec {
     ) : LiveQuerySpec
 
     data class Statement(
-        val sql: String,
+        val query: BoundQuery,
     ) : LiveQuerySpec
 }
 
