@@ -62,7 +62,7 @@ public class Session internal constructor(
 
     public suspend fun auth(): JsonElement =
         try {
-            firstQueryResult(query(BoundQuery("SELECT * FROM ONLY \$auth")))
+            firstQueryResult(query(BoundQuery().appendLiteral("SELECT * FROM ONLY \$auth")))
         } catch (cause: com.surrealdb.kotlin.api.error.SurrealRpcException) {
             // v3.0.5 emits this when `$auth` resolves to zero rows — the
             // semantically-correct return is "no auth record bound".

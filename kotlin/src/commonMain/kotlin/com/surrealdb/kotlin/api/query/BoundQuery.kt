@@ -17,8 +17,6 @@ public class BoundQuery internal constructor(
 ) {
     public constructor() : this(mutableListOf(), mutableMapOf())
 
-    public constructor(literal: String) : this(mutableListOf(literal), mutableMapOf())
-
     /** The compiled SurrealQL string. */
     public val surql: String get() = parts.joinToString(separator = "")
 

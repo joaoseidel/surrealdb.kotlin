@@ -100,7 +100,10 @@ db.signin(Credentials.RootUser("root", "root"))
 db.use(Namespace("main"), Database("main"))
 
 // Raw SurrealQL, which answers with the [{ status, result }] envelope as it arrived
-val envelope = db.query(surql("SELECT * FROM person"))
+val name = "Ada Lovelace"
+val envelope = db.query(surqlTemplate {
+    "SELECT * FROM person WHERE name = ${bind(name)}"
+})
 
 // Or the fluent builder
 object People : Table("person") {
@@ -118,6 +121,12 @@ val adults: List<Row> = db
 adults.first()[People.name]   // String
 adults.first()[People.id]     // RecordId
 ```
+
+`surqlTemplate` registers every value passed to `bind` and puts only its generated parameter in
+the SurrealQL string. Do not quote `bind(...)`. SurrealDB does not substitute parameters inside a
+string literal. Use `surql(sql)` for a literal statement with no caller-supplied values, and use the
+typed query builders when a table or field name varies because SurrealDB cannot parameterise an
+identifier.
 
 A row is read through the fields the table declared, so the value type comes from the field and
 `val n: Int = row[People.name]` does not compile. A caller with a type of their own names it before
