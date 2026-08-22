@@ -32,7 +32,7 @@ import kotlinx.serialization.json.jsonPrimitive
 public suspend fun QueryContext.checkSchema(vararg tables: Table): List<String> {
     if (tables.isEmpty()) return emptyList()
 
-    val request = BoundQuery("INFO FOR DB")
+    val request = BoundQuery().appendLiteral("INFO FOR DB")
     tables.forEach { table ->
         request.appendLiteral("; INFO FOR TABLE ")
         request.bind(JsonPrimitive(table.tableName))
