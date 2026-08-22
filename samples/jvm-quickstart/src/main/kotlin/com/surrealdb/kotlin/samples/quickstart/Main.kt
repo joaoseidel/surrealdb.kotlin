@@ -71,11 +71,10 @@ private suspend fun quickstart(endpoint: String) {
         println("Raw result: $rawResult")
 
         println("Live query for 10 seconds...")
-        val live = db.live(People)
         coroutineScope {
             val eventJob =
                 launch {
-                    live.events.collect { println("Live event: $it") }
+                    db.live(People) { age greaterEq 18 }.collect { println("Live event: $it") }
                 }
 
             try {
@@ -99,7 +98,6 @@ private suspend fun quickstart(endpoint: String) {
                 delay(10.seconds)
             } finally {
                 eventJob.cancelAndJoin()
-                live.cancel()
             }
         }
     }

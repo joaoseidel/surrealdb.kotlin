@@ -241,15 +241,16 @@ coroutineScope {
 `collect` waits for the live stream to end, while the stream remains open until cancellation.
 `launch` lets the scope issue writes during collection, and `coroutineScope` keeps the collector tied to that lifetime.
 
-Use `liveEvents<T>` when a filtered `LIVE SELECT` and decoded event stream are more useful:
+Use the table declaration and condition DSL for a filtered stream:
 
 ```kotlin
-db.liveEvents<Person>("LIVE SELECT * FROM person WHERE age >= 18")
+db.live(People) { age greaterEq 18 }
     .collect { event -> println(event) }
 ```
 
-The `live` subscription is an explicitly cancellable server handle. `liveEvents` is a cold `Flow`
-whose collection owns the query lifetime.
+Filter values are sent as query bindings, including when the client restores the subscription after
+a reconnect. The filtered overload is a cold `Flow` whose collection owns the query lifetime.
+`live(People)` without a filter remains an explicitly cancellable server handle.
 
 ## Transactions
 
