@@ -9,11 +9,15 @@ import com.surrealdb.kotlin.api.query.merge
 import com.surrealdb.kotlin.api.query.patch
 import com.surrealdb.kotlin.api.query.select
 import com.surrealdb.kotlin.api.query.surqlTemplate
+import com.surrealdb.kotlin.api.query.update
 import com.surrealdb.kotlin.api.query.upsert
 import com.surrealdb.kotlin.samples.quickstart.tables.People
 import com.surrealdb.kotlin.samples.quickstart.tables.toPersonList
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
 private suspend fun quickstart(endpoint: String) {
@@ -32,19 +36,22 @@ private suspend fun quickstart(endpoint: String) {
                 it[name] = "Ada Lovelace"
                 it[age] = 36
                 it[address.city] = "London"
-            }.await()
+            }.only()
+            .await()
 
         println("Updating `person:ada` `display_name` to Ada...")
         db
             .merge(People["ada"]) {
                 it[displayName] = "Ada"
-            }.await()
+            }.only()
+            .await()
 
         println("Updating `person:ada` `age` to 37...")
         db
             .patch(People["ada"]) {
                 it.replace(age, 37)
-            }.await()
+            }.only()
+            .await()
 
         println("Selecting `person` records...")
         val people =
@@ -65,13 +72,35 @@ private suspend fun quickstart(endpoint: String) {
 
         println("Live query for 10 seconds...")
         val live = db.live(People)
-        try {
-            withTimeoutOrNull(10.seconds) {
-                live.events.collect { println("Live event: $it") }
+        coroutineScope {
+            val eventJob =
+                launch {
+                    live.events.collect { println("Live event: $it") }
+                }
+
+            try {
+                db
+                    .upsert(People["bob"])
+                    .set {
+                        it[name] = "Bob"
+                        it[age] = 40
+                        it[displayName] = "Bob"
+                        it[address.city] = "Paris"
+                    }.only()
+                    .await()
+
+                db
+                    .update(People["ada"])
+                    .set {
+                        it[displayName] = "Ada Lovelace"
+                    }.only()
+                    .await()
+
+                delay(10.seconds)
+            } finally {
+                eventJob.cancelAndJoin()
+                live.cancel()
             }
-        } finally {
-            live.cancel()
-            println("Live query cancelled.")
         }
     }
 }
