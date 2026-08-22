@@ -9,6 +9,8 @@ import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
@@ -22,15 +24,9 @@ private object Slots : Table("rt_slot") {
 
 private fun keysOf(rows: List<Row>): List<String> = rows.map { it[Slots.id].id }
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -50,6 +46,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class RangeTargetIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("a select over a record-id range") {
             should("return the records inside it, leaving the end key out") {
                 onServer { db ->

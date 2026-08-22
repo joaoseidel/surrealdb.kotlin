@@ -9,6 +9,8 @@ import com.surrealdb.kotlin.api.data.Nested
 import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -48,20 +50,14 @@ private object LeafOnly : Table("ng_leaf") {
 
 private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 /**
  * Every nested field is `option<...>`, because a SCHEMAFULL object field a
  * record does not carry is rejected with "Expected `object` but found `NONE`",
  * and these records each write one branch of the object.
  */
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -95,6 +91,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class NestedGroupIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("a nested field in a SET") {
             should("write two levels down, building both objects above it") {
                 onServer { db ->

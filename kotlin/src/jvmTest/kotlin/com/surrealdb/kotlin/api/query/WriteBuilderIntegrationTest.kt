@@ -8,6 +8,8 @@ import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -34,10 +36,6 @@ private object Books : Table("wb_book") {
 
 private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 /**
  * Runs each statement this phase can emit against a real server, because a
  * rendered string being the one we intended says nothing about SurrealDB
@@ -47,10 +45,8 @@ private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.
  * no server.
  */
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -67,6 +63,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class WriteBuilderIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("create with SET") {
             should("write every assigned field") {
                 onServer { db ->

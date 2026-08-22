@@ -23,10 +23,6 @@ private const val RECORD_PASS = "cr_record_pass"
 private val MAIN = Namespace("main")
 private val MAIN_DB = Database("main")
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 private val FIXTURES =
     """
     REMOVE TABLE IF EXISTS cr_person;
@@ -50,10 +46,8 @@ private val TEARDOWN =
     """.trimIndent()
 
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val root = client.session()
         try {
             root.signin(Credentials.RootUser("root", "root"))
@@ -70,6 +64,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class CredentialsIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("a credential for each level the server defines") {
             should("authenticate a root user from user and pass alone") {
                 onServer { db ->
