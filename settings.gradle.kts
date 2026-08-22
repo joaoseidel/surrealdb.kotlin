@@ -23,3 +23,4 @@ rootProject.name = "surrealdb.kotlin"
 
 include(":kotlin")
 include(":spectron")
+include(":samples:jvm-quickstart")
