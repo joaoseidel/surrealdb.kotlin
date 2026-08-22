@@ -59,7 +59,6 @@ class SpectronScopeTest {
 
     @Test
     fun scopeSetIsOneAndClause() {
-        // Paths filed together become a single AND-clause: [["org/acme","team/eng"]].
         assertEquals(
             listOf(listOf("org/acme", "team/eng")),
             scopeSet(listOf("org/acme", "team/eng")),
@@ -74,7 +73,6 @@ class SpectronScopeTest {
 
     @Test
     fun scopeSetsAreOrOfClauses() {
-        // Independent owners become separate clauses joined by OR.
         assertEquals(
             listOf(listOf("org/apple"), listOf("org/beta", "region/eu")),
             scopeSets(listOf("org/apple"), listOf("org/beta", "region/eu")),
@@ -104,7 +102,6 @@ class SpectronScopeTest {
                     )
                 }
             val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
-            // One AND-clause across two paths, with a duplicate and an empty dropped.
             val session = s.sessions.create(scopes = scopeSet(listOf("org/acme", "team/eng", "org/acme", "")))
             val bodyText =
                 (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)
@@ -116,7 +113,6 @@ class SpectronScopeTest {
             assertEquals(2, clause.size)
             assertEquals("org/acme", clause[0].jsonPrimitive.content)
             assertEquals("team/eng", clause[1].jsonPrimitive.content)
-            // The response decodes the nested shape onto the session info.
             assertEquals(listOf(listOf("org/acme")), session.info.scopes)
         }
 
@@ -134,7 +130,6 @@ class SpectronScopeTest {
                     )
                 }
             val s = Spectron("ctx", "sk", "https://api.spectron.dev", httpClient = HttpClient(engine))
-            // OR of two clauses: org/apple OR (org/beta AND region/eu).
             s.recall("incidents", lens = scopeSets(listOf("org/apple"), listOf("org/beta", "region/eu")))
             val bodyText =
                 (recorded.single().body as io.ktor.http.content.OutgoingContent.ByteArrayContent)

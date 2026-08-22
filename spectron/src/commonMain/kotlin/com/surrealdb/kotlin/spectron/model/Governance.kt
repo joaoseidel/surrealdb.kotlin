@@ -3,8 +3,6 @@ package com.surrealdb.kotlin.spectron.model
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
-// ---------------------------------------------------------------------- audit
-
 @Serializable
 public data class AuditRowJson(
     val cost: Double = 0.0,
@@ -21,8 +19,6 @@ public data class AuditRowJson(
 public data class AuditResponseJson(
     val rows: List<AuditRowJson> = emptyList(),
 )
-
-// ------------------------------------------------------------------ principals
 
 /**
  * Per-verb scope-pattern map. Keys are grant verbs (`read`, `write`,
@@ -58,8 +54,6 @@ public data class WhoamiResponse(
     val delegatedPrincipalId: String? = null,
     val tokenGrants: JsonObject? = null,
 )
-
-// ---------------------------------------------------------------------- scopes
 
 @Serializable
 public data class ScopeNodeJson(
