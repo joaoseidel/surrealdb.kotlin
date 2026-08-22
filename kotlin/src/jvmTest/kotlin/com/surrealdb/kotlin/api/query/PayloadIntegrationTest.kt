@@ -11,6 +11,8 @@ import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
 import com.surrealdb.kotlin.api.error.SurrealException
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -48,15 +50,9 @@ private object Writers : Table("pl_writer") {
 
 private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -88,6 +84,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class PayloadIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("a merge over a nested field") {
             should("reach the field the path names, where the path sent as a key would not") {
                 onServer { db ->

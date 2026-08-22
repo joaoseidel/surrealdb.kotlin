@@ -10,6 +10,8 @@ import com.surrealdb.kotlin.api.data.Row
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.get
 import com.surrealdb.kotlin.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -37,15 +39,9 @@ private object Talks : Table("pj_talk") {
 
 private suspend fun Query.theRecord(): Row = awaitSingleOrNull() ?: error("the statement answered with no record")
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -71,6 +67,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class ProjectionIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("a projection over a nested field") {
             should("read back through the field that named it, since the server rebuilds the object") {
                 onServer { db ->

@@ -56,7 +56,7 @@ class SurrealJvmIntegrationTest {
                 db.use(Namespace("main"), Database("main"))
                 db.ping()
                 db.version()
-                assertNotNull(db.auth())
+                assertNotNull(db.whoami())
 
                 db.query(surql("DEFINE TABLE person SCHEMALESS"))
                 db.query(surql("DEFINE TABLE likes SCHEMALESS"))

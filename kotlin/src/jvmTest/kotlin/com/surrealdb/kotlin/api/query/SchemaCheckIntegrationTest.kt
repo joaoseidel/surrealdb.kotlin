@@ -6,6 +6,8 @@ import com.surrealdb.kotlin.api.Namespace
 import com.surrealdb.kotlin.api.Session
 import com.surrealdb.kotlin.api.Surreal
 import com.surrealdb.kotlin.api.data.Table
+import com.surrealdb.kotlin.api.integrationEndpoint
+import com.surrealdb.kotlin.api.integrationTestConfig
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -35,15 +37,9 @@ private object Absent : Table("sc_absent") {
     val name by field<String>()
 }
 
-private fun integrationEnabled() = System.getenv("SURREAL_RUN_INTEGRATION") == "true"
-
-private fun endpoint() = System.getenv("SURREAL_JVM_ENDPOINT") ?: "http://127.0.0.1:8000"
-
 private fun onServer(block: suspend (Session) -> Unit) {
-    if (!integrationEnabled()) return
-
     runBlocking {
-        val client = Surreal(Surreal.Config(url = endpoint()))
+        val client = Surreal(Surreal.Config(url = integrationEndpoint()))
         val db = client.session()
         try {
             db.signin(Credentials.RootUser("root", "root"))
@@ -74,6 +70,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
 
 class SchemaCheckIntegrationTest :
     ShouldSpec({
+        defaultTestConfig = integrationTestConfig
+
         context("checkSchema on a SCHEMAFULL table") {
             should("report nothing when the server defines every declared field") {
                 onServer { db ->
