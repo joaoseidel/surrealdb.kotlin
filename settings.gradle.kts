@@ -21,7 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "surrealdb.kotlin"
 
-include(":core")
-include(":query")
-include(":spectron")
+include(":surrealdb-kotlin-core")
+include(":surrealdb-kotlin-query")
+include(":surrealdb-kotlin-spectron")
 include(":samples:jvm-quickstart")

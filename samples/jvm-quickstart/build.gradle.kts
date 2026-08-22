@@ -21,7 +21,7 @@ java {
 }
 
 dependencies {
-    implementation(project(":query"))
+    implementation(project(":surrealdb-kotlin-query"))
 }
 
 application {
