@@ -5,6 +5,8 @@ A coroutine-first Kotlin Multiplatform driver for SurrealDB on Android, JVM, and
 The driver selects HTTP or WebSocket transport from the URL. A `Surreal` owns the connection, while each `Session` owns its namespace, database,
 authentication, and variables. Typed query builders compile to SurrealQL with bound values and send it through the `query` RPC.
 
+The [SurrealDB.js capability audit](SDK_PARITY.md) records the corresponding JavaScript exports and the remaining gaps.
+
 ## Install
 
 ```kotlin
