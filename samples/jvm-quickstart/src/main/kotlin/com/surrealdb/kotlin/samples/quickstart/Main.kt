@@ -9,46 +9,70 @@ import com.surrealdb.kotlin.api.query.merge
 import com.surrealdb.kotlin.api.query.patch
 import com.surrealdb.kotlin.api.query.select
 import com.surrealdb.kotlin.api.query.surqlTemplate
-import com.surrealdb.kotlin.api.query.update
+import com.surrealdb.kotlin.api.query.upsert
 import com.surrealdb.kotlin.samples.quickstart.tables.People
 import com.surrealdb.kotlin.samples.quickstart.tables.toPersonList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 private suspend fun quickstart(endpoint: String) {
     val client = Surreal(Surreal.Config(url = endpoint))
 
     client.use { client ->
+        println("Creating SurrealDB session...")
         val db = client.session()
         db.signin(Credentials.RootUser("root", "root"))
         db.use(Namespace("main"), Database("main"))
 
+        println("Inserting `person:ada` record...")
         db
-            .update(People["ada"])
+            .upsert(People["ada"])
             .set {
                 it[name] = "Ada Lovelace"
                 it[age] = 36
                 it[address.city] = "London"
             }.await()
 
-        db.merge(People["ada"]) { it[displayName] = "Ada" }.await()
-        db.patch(People["ada"]) { it.replace(age, 37) }.await()
+        println("Updating `person:ada` `display_name` to Ada...")
+        db
+            .merge(People["ada"]) {
+                it[displayName] = "Ada"
+            }.await()
 
+        println("Updating `person:ada` `age` to 37...")
+        db
+            .patch(People["ada"]) {
+                it.replace(age, 37)
+            }.await()
+
+        println("Selecting `person` records...")
         val people =
             db
                 .select(People)
                 .await()
                 .toPersonList()
-        println("decoded ${people.size} people")
+        println("People: $people")
 
+        println("Executing raw query...")
         val minimumAge = 18
         val raw =
             surqlTemplate {
                 "SELECT * FROM person WHERE age >= ${bind(minimumAge)}"
             }
-        db.query(raw)
+        val rawResult = db.query(raw)
+        println("Raw result: $rawResult")
 
+        println("Live query for 10 seconds...")
         val live = db.live(People)
-        live.cancel()
+        try {
+            withTimeoutOrNull(10.seconds) {
+                live.events.collect { println("Live event: $it") }
+            }
+        } finally {
+            live.cancel()
+            println("Live query cancelled.")
+        }
     }
 }
 
