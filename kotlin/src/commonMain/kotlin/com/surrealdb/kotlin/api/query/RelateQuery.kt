@@ -5,13 +5,12 @@ import com.surrealdb.kotlin.api.data.RecordIdRange
 import com.surrealdb.kotlin.api.data.Table
 import com.surrealdb.kotlin.api.data.TableRecord
 import com.surrealdb.kotlin.api.data.Target
+import com.surrealdb.kotlin.api.data.escapeIdent
 import kotlinx.serialization.json.JsonElement
 
 /**
  * Builder for `RELATE` queries.
  */
-private val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
-
 public class RelateQuery internal constructor(
     context: QueryContext,
     private val `in`: Target,
@@ -69,7 +68,7 @@ public class RelateQuery internal constructor(
             }
 
             is RecordIdRange -> {
-                rejectRange("RELATE operand")
+                rejectRange("RELATE operand", operand)
             }
         }
     }
@@ -80,10 +79,7 @@ public class RelateQuery internal constructor(
     ) {
         when (slot) {
             is Table -> {
-                require(IDENTIFIER.matches(slot.tableName)) {
-                    "Relation table must be an identifier (got '${slot.tableName}')"
-                }
-                q.appendLiteral(slot.tableName)
+                q.appendLiteral(escapeIdent(slot.tableName))
             }
 
             is RecordId -> {
@@ -95,7 +91,7 @@ public class RelateQuery internal constructor(
             }
 
             is RecordIdRange -> {
-                rejectRange("RELATE relation")
+                rejectRange("RELATE relation", slot)
             }
         }
     }
@@ -104,9 +100,12 @@ public class RelateQuery internal constructor(
      * A range does not parse in either RELATE position — the server answers
      * `Unexpected token '..', expected a relation arrow`.
      */
-    private fun rejectRange(position: String): Nothing =
+    private fun rejectRange(
+        position: String,
+        range: RecordIdRange,
+    ): Nothing =
         throw IllegalArgumentException(
-            "A RecordIdRange cannot be a $position — SurrealQL does not parse a range there.",
+            "Record-id range '$range' cannot be a $position; SurrealQL does not parse a range there.",
         )
 
     private fun copy(

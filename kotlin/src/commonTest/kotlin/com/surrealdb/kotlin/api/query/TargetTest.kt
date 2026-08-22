@@ -46,13 +46,27 @@ class TargetTest :
             should("be rejected while building, because the server cannot parse a range there") {
                 val range = RecordIdRange("person", "a", "z")
 
-                shouldThrow<IllegalArgumentException> {
-                    compileOnly.relate(range, Table("likes"), RecordId("person", "b")).compile()
-                }
+                val failure =
+                    shouldThrow<IllegalArgumentException> {
+                        compileOnly.relate(range, Table("likes"), RecordId("person", "b")).compile()
+                    }
 
                 shouldThrow<IllegalArgumentException> {
                     compileOnly.relate(RecordId("person", "a"), range, RecordId("person", "b")).compile()
                 }
+
+                failure.message shouldContain range.toString()
+            }
+        }
+
+        context("a relation table name") {
+            should("escape punctuation, so every valid table name remains reachable") {
+                val query =
+                    compileOnly
+                        .relate(RecordId("person", "a"), Table("best-friends"), RecordId("person", "b"))
+                        .compile()
+
+                query.surql shouldContain "->`best-friends`->"
             }
         }
 

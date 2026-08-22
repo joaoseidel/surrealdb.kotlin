@@ -94,15 +94,11 @@ class TableRecordTest :
 
         context("a TableRecord in a value position") {
             should("write the link, so a record can be handed to a field") {
-                val fragment = surql { value(People["alice"]) }
+                val fragment = BoundQuery().appendValue(People["alice"])
 
                 fragment.surql shouldBe "type::record(\$_0, \$_1)"
                 fragment.bindings shouldBe
                     mapOf("_0" to JsonPrimitive("person"), "_1" to JsonPrimitive("alice"))
-            }
-
-            should("bind as the record it names, so toJson agrees with the renderer") {
-                toJson(People["alice"]) shouldBe toJson(RecordId("person", "alice"))
             }
         }
 

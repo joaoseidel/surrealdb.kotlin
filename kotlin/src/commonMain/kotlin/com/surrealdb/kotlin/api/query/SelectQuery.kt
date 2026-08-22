@@ -84,7 +84,7 @@ public class SelectQuery<S : Table> internal constructor(
             }
 
             Selection.Value -> {
-                q.appendLiteral(" VALUE " + fields.first().path)
+                q.appendLiteral(" VALUE " + fields.first().path.value)
             }
         }
         q.appendLiteral(" FROM ")
@@ -101,7 +101,9 @@ public class SelectQuery<S : Table> internal constructor(
             q.appendLiteral(" LIMIT ")
             q.bind(JsonPrimitive(it))
         }
-        if (fetchFields.isNotEmpty()) q.appendLiteral(" FETCH " + fetchFields.joinToString(", ") { it.path })
+        if (fetchFields.isNotEmpty()) {
+            q.appendLiteral(" FETCH " + fetchFields.joinToString(", ") { it.path.value })
+        }
         timeoutSeconds?.let { q.appendLiteral(" TIMEOUT ${it}s") }
         versionAt?.let { q.appendLiteral(" VERSION $it") }
         return q

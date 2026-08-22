@@ -66,7 +66,7 @@ internal fun <S : Table> buildMergePayload(
     val fields = payload.entries.map { it.first }
     fields.forEach { it.requireMergeable() }
     fields.requireNoneInsideAnother()
-    return foldSegments(payload.entries.map { (field, value) -> field.path.split('.') to value })
+    return foldSegments(payload.entries.map { (field, value) -> field.path.value.split('.') to value })
 }
 
 private fun Field<*>.requireMergeable() {
@@ -88,7 +88,8 @@ private fun List<Field<*>>.requireNoneInsideAnother() {
     }
 }
 
-private fun Field<*>.encloses(other: Field<*>): Boolean = other.path == path || other.path.startsWith("$path.")
+private fun Field<*>.encloses(other: Field<*>): Boolean =
+    other.path == path || other.path.value.startsWith("${path.value}.")
 
 private fun foldSegments(entries: List<Pair<List<String>, JsonElement>>): JsonObject =
     JsonObject(

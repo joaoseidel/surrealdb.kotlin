@@ -13,21 +13,21 @@ class NestedGroupTest :
     ShouldSpec({
         context("a field declared in a group") {
             should("carry the group's path, so the declaration names the leaf and nothing else") {
-                Contacts.address.city.path shouldBe "address.city"
+                Contacts.address.city.path.value shouldBe "address.city"
             }
 
             should("carry it around an explicit name too, which is how a renamed field is declared") {
-                Contacts.address.zip.path shouldBe "address.postal_code"
+                Contacts.address.zip.path.value shouldBe "address.postal_code"
             }
 
             should("carry every group above it, because a path stopping short reads a field that does not exist") {
-                Contacts.address.geo.lat.path shouldBe "address.geo.lat"
+                Contacts.address.geo.lat.path.value shouldBe "address.geo.lat"
             }
         }
 
         context("what a table reports as declared") {
             should("hold the fields of its groups, so the schema check sees a nested field like any other") {
-                Contacts.declaredFields.map { it.path } shouldBe
+                Contacts.declaredFields.map { it.path.value } shouldBe
                     listOf("name", "address.city", "address.postal_code", "address.geo.lat", "address.geo.lon")
             }
         }

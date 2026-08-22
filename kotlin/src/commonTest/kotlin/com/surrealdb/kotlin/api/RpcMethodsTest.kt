@@ -13,7 +13,7 @@ import com.surrealdb.kotlin.api.query.patch
 import com.surrealdb.kotlin.api.query.relate
 import com.surrealdb.kotlin.api.query.run
 import com.surrealdb.kotlin.api.query.select
-import com.surrealdb.kotlin.api.query.surql
+import com.surrealdb.kotlin.api.query.surqlTemplate
 import com.surrealdb.kotlin.api.query.update
 import com.surrealdb.kotlin.api.query.upsert
 import io.kotest.core.spec.style.ShouldSpec
@@ -145,7 +145,7 @@ class RpcMethodsTest :
                     val h = harness()
                     h.stubResult = """{"id":"1","result":[{"status":"OK","result":{"id":"u:1"}}]}"""
 
-                    h.db.auth()
+                    h.db.whoami()
 
                     h.lastMethod shouldBe "query"
                     h.lastSurql() shouldBe "SELECT * FROM ONLY \$auth"
@@ -262,7 +262,7 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.query(surql("SELECT 1"))
+                    h.db.query(surqlTemplate { "SELECT 1" })
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 1
@@ -274,14 +274,14 @@ class RpcMethodsTest :
                 runTest {
                     val h = harness()
 
-                    h.db.query(surql("SELECT type::table(\$tb)", "tb" to "person"))
+                    h.db.query(surqlTemplate { "SELECT type::table(${bind("person")})" })
 
                     h.lastMethod shouldBe "query"
                     h.paramCount() shouldBe 2
                     h
                         .param(1)
                         ?.jsonObject
-                        ?.get("tb")
+                        ?.get("_0")
                         ?.jsonPrimitive
                         ?.content shouldBe "person"
                 }

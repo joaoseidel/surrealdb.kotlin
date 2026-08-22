@@ -18,25 +18,25 @@ import kotlinx.serialization.json.put
 class QueryContextTest :
     ShouldSpec({
         context("QueryContext.query") {
-            context("the raw string form") {
-                should("carry the caller's bindings onto the bound form it derives") {
+            context("a SurrealQL template") {
+                should("carry the caller's bindings into the request") {
                     runTest {
                         val context = RecordingContext()
 
-                        context.query(surql("SELECT * FROM type::table(\$tb)", "tb" to "person"))
+                        context.query(surqlTemplate { "SELECT * FROM type::table(${bind("person")})" })
 
-                        context.sent.single().surql shouldBe "SELECT * FROM type::table(\$tb)"
+                        context.sent.single().surql shouldBe "SELECT * FROM type::table(\$_0)"
                         context.sent
                             .single()
-                            .bindings["tb"] shouldBe JsonPrimitive("person")
+                            .bindings["_0"] shouldBe JsonPrimitive("person")
                     }
                 }
 
-                should("attach no bindings when the caller passed none") {
+                should("send no bindings when the template binds no values") {
                     runTest {
                         val context = RecordingContext()
 
-                        context.query(surql("SELECT 1"))
+                        context.query(surqlTemplate { "SELECT 1" })
 
                         context.sent.single().bindings shouldBe emptyMap()
                     }

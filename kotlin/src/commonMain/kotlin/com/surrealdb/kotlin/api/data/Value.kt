@@ -49,7 +49,7 @@ public data class RecordId(
     public val table: String,
     public val id: String,
 ) : Target {
-    override fun toString(): String = "${quoteIdent(table)}:${quoteIdent(id)}"
+    override fun toString(): String = "${escapeIdent(table)}:${escapeIdent(id)}"
 }
 
 internal object RecordIdSerializer : KSerializer<RecordId> {
@@ -118,15 +118,6 @@ private fun readQuotable(
     }
     throw SerializationException("Unterminated ` in record id '$text'")
 }
-
-private fun quoteIdent(text: String): String =
-    if (BARE_IDENT.matches(text)) {
-        text
-    } else {
-        "`" + text.replace("\\", "\\\\").replace("`", "\\`") + "`"
-    }
-
-private val BARE_IDENT = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
 
 private val UUID_KEY = Regex("""u'([0-9a-fA-F-]{36})'""")
 

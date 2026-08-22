@@ -60,7 +60,7 @@ public class Session internal constructor(
         return result
     }
 
-    public suspend fun auth(): JsonElement =
+    public suspend fun whoami(): JsonElement =
         try {
             firstQueryResult(query(BoundQuery().appendLiteral("SELECT * FROM ONLY \$auth")))
         } catch (cause: com.surrealdb.kotlin.api.error.SurrealRpcException) {
@@ -193,7 +193,7 @@ public class Session internal constructor(
             notifications = controller.liveNotifications,
             failures = controller.liveFailures,
             start = {
-                val id = firstQueryResult(query(surql(statement))).jsonPrimitive.content
+                val id = firstQueryResult(query(BoundQuery().appendLiteral(statement))).jsonPrimitive.content
                 controller.trackLive(sessionId, id, statement)
                 id
             },

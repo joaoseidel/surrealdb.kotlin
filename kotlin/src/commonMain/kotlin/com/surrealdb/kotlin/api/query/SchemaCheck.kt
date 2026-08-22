@@ -66,7 +66,7 @@ public suspend fun QueryContext.checkSchema(vararg tables: Table): List<String> 
 
 private fun Table.driftAgainst(known: Set<String>): List<String> =
     declaredFields
-        .map { it.path }
+        .map { it.path.value }
         .filter { it != "id" && serverPaths(it).none(known::contains) }
         .map { "$tableName.$it is not defined on the server. Known fields: ${known.joinToString(", ")}." }
 

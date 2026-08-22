@@ -141,10 +141,7 @@ class ConditionTest :
                 val compiled =
                     with(People) {
                         raw {
-                            +"geo::distance(location, "
-                            value("point")
-                            +") < "
-                            value(10)
+                            "geo::distance(location, ${bind("point")}) < ${bind(10)}"
                         }
                     }.toSurql()
 
@@ -167,8 +164,7 @@ class ConditionTest :
                         .select(People)
                         .where {
                             raw {
-                                +"stock > "
-                                value(7)
+                                "stock > ${bind(7)}"
                             }
                         }.compile()
 

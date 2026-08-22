@@ -31,14 +31,10 @@ package com.surrealdb.kotlin.api.data
  * beside the group.
  */
 public open class Nested(
-    override val path: String,
-) : FieldGroup("$path."),
+    path: String,
+) : FieldGroup("${FieldPath(path).value}."),
     Projection {
-    init {
-        require(Field.FIELD_PATH.matches(path)) {
-            "A nested group's path must match ${Field.FIELD_PATH} (got '$path')"
-        }
-    }
+    override val path: FieldPath = FieldPath(path)
 
-    override fun toString(): String = path
+    override fun toString(): String = path.value
 }

@@ -2,7 +2,6 @@ package com.surrealdb.kotlin.api.query
 
 import com.surrealdb.kotlin.api.data.Field
 import com.surrealdb.kotlin.api.data.RecordId
-import com.surrealdb.kotlin.api.data.Table
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldContainExactly
@@ -81,34 +80,6 @@ class SurqlTest :
             }
         }
 
-        context("surql with a builder") {
-            should("render typed targets and bind their values") {
-                val query =
-                    surql {
-                        +"SELECT * FROM "
-                        value(Table("person"))
-                        +" WHERE age > "
-                        value(18)
-                    }
-
-                query.surql shouldBe "SELECT * FROM type::table(\$_0) WHERE age > \$_1"
-                query.bindings shouldContainExactly
-                    mapOf(
-                        "_0" to JsonPrimitive("person"),
-                        "_1" to JsonPrimitive(18),
-                    )
-            }
-        }
-
-        context("surql with a literal") {
-            should("attach caller-named parameters") {
-                val query = surql("SELECT * FROM person WHERE id = \$id", "id" to "alice")
-
-                query.surql shouldBe "SELECT * FROM person WHERE id = \$id"
-                query.bindings shouldContainExactly mapOf("id" to JsonPrimitive("alice"))
-            }
-        }
-
         context("BoundQuery") {
             should("give consecutive binds distinct names") {
                 val query = BoundQuery()
@@ -136,6 +107,16 @@ class SurqlTest :
                         "_0" to JsonPrimitive("user"),
                         "_1" to JsonPrimitive("alice"),
                     )
+            }
+        }
+
+        context("toJson") {
+            should("reject a target, because JSON transport would send it as an ordinary object") {
+                val target = RecordId("person", "alice")
+
+                val failure = shouldThrow<IllegalArgumentException> { toJson(target) }
+
+                failure.message shouldContain target.toString()
             }
         }
 

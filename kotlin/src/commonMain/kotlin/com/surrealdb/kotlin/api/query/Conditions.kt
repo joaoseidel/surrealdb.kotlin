@@ -18,7 +18,7 @@ internal fun BoundQuery.appendCondition(condition: Condition): BoundQuery =
         when (condition) {
             is Comparison -> {
                 appendLiteral("(")
-                appendLiteral(condition.field.path)
+                appendLiteral(condition.field.path.value)
                 appendLiteral(" ${condition.op} ")
                 appendOperand(condition.operand)
                 appendLiteral(")")
@@ -26,13 +26,13 @@ internal fun BoundQuery.appendCondition(condition: Condition): BoundQuery =
 
             is FieldTest -> {
                 appendLiteral("(")
-                appendLiteral(condition.field.path)
+                appendLiteral(condition.field.path.value)
                 appendLiteral(" ${condition.op})")
             }
 
             is FunctionCall -> {
                 appendLiteral("${condition.function}(")
-                appendLiteral(condition.field.path)
+                appendLiteral(condition.field.path.value)
                 appendLiteral(", ")
                 appendOperand(condition.operand)
                 appendLiteral(")")
@@ -77,7 +77,7 @@ private fun BoundQuery.appendJoined(
 
 private fun BoundQuery.appendOperand(operand: Any?) {
     when (operand) {
-        is Field<*> -> appendLiteral(operand.path)
+        is Field<*> -> appendLiteral(operand.path.value)
         else -> appendValue(operand)
     }
 }
@@ -90,11 +90,9 @@ public fun Condition.toSurql(): BoundQuery = BoundQuery().appendCondition(this)
  * field, or an operator the DSL does not model. Interpolated values are bound
  * as parameters, the same rule as everywhere else.
  *
- * ```
- * where { raw { +"geo::distance(location, "; value(here); +") < "; value(radius) } }
- * ```
+ * `where { raw { "geo::distance(location, ${bind(here)}) < ${bind(radius)}" } }`
  */
-public fun Table.raw(block: SurqlBuilder.() -> Unit): Atom {
-    val fragment = surql(block)
+public fun Table.raw(block: SurqlTemplate.() -> String): Atom {
+    val fragment = surqlTemplate(block)
     return RawCondition(fragment.surql, fragment.bindings)
 }

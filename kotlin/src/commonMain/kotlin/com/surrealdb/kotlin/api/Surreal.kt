@@ -32,9 +32,6 @@ public class Surreal private constructor(
     public val features: Set<Feature>
         get() = controller.features
 
-    /** Returns true if the active engine supports the given feature. */
-    public fun supports(feature: Feature): Boolean = feature in features
-
     /**
      * Eagerly establish the connection. Calling this is only required when the
      * client was constructed with `autoConnect = false`.
