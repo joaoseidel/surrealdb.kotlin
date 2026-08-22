@@ -19,6 +19,9 @@ point and resolves the same platform variants.
 Applications that only need connection, session, transaction, live-query, and raw `BoundQuery` APIs can use
 `com.surrealdb:kotlin-core:1.0.0` instead.
 
+Core APIs use `com.surrealdb.kotlin.core.api`. Query types use `com.surrealdb.kotlin.query.api`. Runtime and nested API packages retain their existing
+suffixes under the owning module prefix. Spectron remains under `com.surrealdb.kotlin.spectron`.
+
 The artifact is not published yet. For a local build, run `./gradlew publishToMavenLocal` and add
 `mavenLocal()` to the consuming project. Kotlin Multiplatform module metadata selects the JVM, Android, or matching iOS variant.
 
