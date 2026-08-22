@@ -194,8 +194,6 @@ class SurrealTest {
 
             assertTrue(Feature.ExportImport in client.features)
             assertTrue(Feature.LiveQueries !in client.features)
-            assertEquals(false, client.supports(Feature.LiveQueries))
-
             assertFailsWith<SurrealFeatureNotSupportedException> {
                 client.session().live(Table("person"))
             }

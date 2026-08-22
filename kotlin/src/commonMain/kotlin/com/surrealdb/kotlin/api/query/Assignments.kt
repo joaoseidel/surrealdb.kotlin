@@ -125,7 +125,7 @@ internal class SetData(
         into.appendLiteral(" SET ")
         entries.forEachIndexed { index, entry ->
             if (index > 0) into.appendLiteral(", ")
-            into.appendLiteral(entry.field.path)
+            into.appendLiteral(entry.field.path.value)
             into.appendLiteral(" ${entry.op} ")
             into.appendValue(entry.value)
         }

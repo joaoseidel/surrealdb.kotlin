@@ -11,23 +11,14 @@ package com.surrealdb.kotlin.api.data
  * checked here. Whether the database has the field is a separate question, and
  * [com.surrealdb.kotlin.api.query.checkSchema] is what asks it.
  */
-public open class Field<V> internal constructor(
-    override val path: String,
+public class Field<V> internal constructor(
+    path: String,
 ) : Projection {
-    init {
-        require(FIELD_PATH.matches(path)) {
-            "Field path must match $FIELD_PATH (got '$path')"
-        }
-    }
+    override val path: FieldPath = FieldPath(path)
 
-    override fun toString(): String = path
+    override fun toString(): String = path.value
 
     override fun equals(other: Any?): Boolean = other is Field<*> && other.path == path
 
     override fun hashCode(): Int = path.hashCode()
-
-    internal companion object {
-        val FIELD_PATH =
-            Regex("""[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\[(?:[0-9]+|\*)])*""")
-    }
 }

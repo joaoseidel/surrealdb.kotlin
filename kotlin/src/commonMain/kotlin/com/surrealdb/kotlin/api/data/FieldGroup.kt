@@ -34,7 +34,7 @@ public sealed class FieldGroup(
     protected fun <G : Nested> nested(group: G): G {
         require(group.pathPrefix.startsWith(pathPrefix)) {
             "A nested group names its whole path, because it cannot see the group it is declared in: " +
-                "expected '${group.path}' to start with '$pathPrefix'."
+                "expected '${group.path.value}' to start with '$pathPrefix'."
         }
         declaredFields += group.declaredFields
         return group

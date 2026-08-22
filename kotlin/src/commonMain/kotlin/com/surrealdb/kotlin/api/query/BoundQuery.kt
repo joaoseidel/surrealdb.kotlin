@@ -61,19 +61,9 @@ public class BoundQuery internal constructor(
             parts.add("\$$key")
         }
 
-    /** Bind [value] to [name] (caller-controlled), emit `$<name>`. */
-    public fun bindNamed(
-        name: String,
-        value: JsonElement,
-    ): BoundQuery =
-        apply {
-            binds[name] = value
-            parts.add("\$$name")
-        }
-
     /** Register a binding by name without emitting a placeholder — used when the
      *  caller has already embedded `$<name>` in the literal SurrealQL. */
-    public fun attachBinding(
+    internal fun attachBinding(
         name: String,
         value: JsonElement,
     ): BoundQuery =
@@ -82,7 +72,7 @@ public class BoundQuery internal constructor(
         }
 
     /** Bindings as a [JsonObject] for the `query` RPC's vars parameter. */
-    public fun bindingsAsJsonObject(): JsonObject = JsonObject(binds)
+    internal fun bindingsAsJsonObject(): JsonObject = JsonObject(binds)
 
     private var counter = 0
 

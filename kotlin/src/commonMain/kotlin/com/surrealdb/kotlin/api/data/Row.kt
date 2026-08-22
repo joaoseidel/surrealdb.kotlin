@@ -53,7 +53,7 @@ public class Row internal constructor(
         if (value == null || value is JsonNull) {
             if (serializer.descriptor.isNullable) return json.decodeFromJsonElement(serializer, JsonNull)
             throw NoSuchElementException(
-                "No value for '${projection.path}' in this row, which holds ${content.keys.sorted()}. " +
+                "No value for '${projection.path.value}' in this row, which holds ${content.keys.sorted()}. " +
                     "Declare the field as nullable to read a missing one as null.",
             )
         }
@@ -69,8 +69,14 @@ public class Row internal constructor(
 
     override fun hashCode(): Int = content.hashCode()
 
-    private fun resolve(path: String): JsonElement? =
-        content[path] ?: walk(content, path.replace("[", ".").replace("]", "").split("."))
+    private fun resolve(path: FieldPath): JsonElement? =
+        content[path.value] ?: walk(
+            content,
+            path.value
+                .replace("[", ".")
+                .replace("]", "")
+                .split("."),
+        )
 
     private fun walk(
         value: JsonElement,

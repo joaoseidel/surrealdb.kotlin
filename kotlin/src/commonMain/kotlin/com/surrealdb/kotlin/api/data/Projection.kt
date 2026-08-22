@@ -13,5 +13,5 @@ public sealed interface Projection {
      * The SurrealQL that names it, and where its value arrives, so a row reads
      * back through the same declaration that asked for it.
      */
-    public val path: String
+    public val path: FieldPath
 }
