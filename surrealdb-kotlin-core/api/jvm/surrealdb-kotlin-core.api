@@ -1,0 +1,1164 @@
+public abstract class com/surrealdb/kotlin/core/api/ConnectionEvent {
+}
+
+public final class com/surrealdb/kotlin/core/api/ConnectionEvent$Connected : com/surrealdb/kotlin/core/api/ConnectionEvent {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Connected;
+}
+
+public final class com/surrealdb/kotlin/core/api/ConnectionEvent$Connecting : com/surrealdb/kotlin/core/api/ConnectionEvent {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Connecting;
+}
+
+public final class com/surrealdb/kotlin/core/api/ConnectionEvent$Disconnected : com/surrealdb/kotlin/core/api/ConnectionEvent {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Disconnected;
+}
+
+public final class com/surrealdb/kotlin/core/api/ConnectionEvent$Error : com/surrealdb/kotlin/core/api/ConnectionEvent {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Error;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Error;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/ConnectionEvent$Reconnecting : com/surrealdb/kotlin/core/api/ConnectionEvent {
+	public fun <init> (IJ)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun copy (IJ)Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Reconnecting;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Reconnecting;IJILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/ConnectionEvent$Reconnecting;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempt ()I
+	public final fun getDelayMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/Credentials {
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$DatabaseUser : com/surrealdb/kotlin/core/api/Credentials$ForSignIn {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-CHspF0A ()Ljava/lang/String;
+	public final fun component2-hvVHcUQ ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy-7zYVsf0 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Credentials$DatabaseUser;
+	public static synthetic fun copy-7zYVsf0$default (Lcom/surrealdb/kotlin/core/api/Credentials$DatabaseUser;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$DatabaseUser;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDatabase-hvVHcUQ ()Ljava/lang/String;
+	public final fun getNamespace-CHspF0A ()Ljava/lang/String;
+	public final fun getPass ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/Credentials$ForSignIn : com/surrealdb/kotlin/core/api/Credentials {
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/Credentials$ForSignUp : com/surrealdb/kotlin/core/api/Credentials$ForSignIn {
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$NamespaceUser : com/surrealdb/kotlin/core/api/Credentials$ForSignIn {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-CHspF0A ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy-vDwH504 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Credentials$NamespaceUser;
+	public static synthetic fun copy-vDwH504$default (Lcom/surrealdb/kotlin/core/api/Credentials$NamespaceUser;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$NamespaceUser;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNamespace-CHspF0A ()Ljava/lang/String;
+	public final fun getPass ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$Raw : com/surrealdb/kotlin/core/api/Credentials$ForSignUp {
+	public fun <init> (Lkotlinx/serialization/json/JsonObject;)V
+	public final fun component1 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy (Lkotlinx/serialization/json/JsonObject;)Lcom/surrealdb/kotlin/core/api/Credentials$Raw;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/Credentials$Raw;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$Raw;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParams ()Lkotlinx/serialization/json/JsonObject;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$RecordUser : com/surrealdb/kotlin/core/api/Credentials$ForSignUp {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-CHspF0A ()Ljava/lang/String;
+	public final fun component2-hvVHcUQ ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun copy-7zYVsf0 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;)Lcom/surrealdb/kotlin/core/api/Credentials$RecordUser;
+	public static synthetic fun copy-7zYVsf0$default (Lcom/surrealdb/kotlin/core/api/Credentials$RecordUser;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$RecordUser;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccess ()Ljava/lang/String;
+	public final fun getDatabase-hvVHcUQ ()Ljava/lang/String;
+	public final fun getNamespace-CHspF0A ()Ljava/lang/String;
+	public final fun getVars ()Lkotlinx/serialization/json/JsonObject;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$RootUser : com/surrealdb/kotlin/core/api/Credentials$ForSignIn {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Credentials$RootUser;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/Credentials$RootUser;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$RootUser;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPass ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Credentials$Token : com/surrealdb/kotlin/core/api/Credentials {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Credentials$Token;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/Credentials$Token;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Credentials$Token;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Database {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Database;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Feature : java/lang/Enum {
+	public static final field ExportImport Lcom/surrealdb/kotlin/core/api/Feature;
+	public static final field LiveQueries Lcom/surrealdb/kotlin/core/api/Feature;
+	public static final field RefreshTokens Lcom/surrealdb/kotlin/core/api/Feature;
+	public static final field Sessions Lcom/surrealdb/kotlin/core/api/Feature;
+	public static final field SurrealML Lcom/surrealdb/kotlin/core/api/Feature;
+	public static final field Transactions Lcom/surrealdb/kotlin/core/api/Feature;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Feature;
+	public static fun values ()[Lcom/surrealdb/kotlin/core/api/Feature;
+}
+
+public final class com/surrealdb/kotlin/core/api/Namespace {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/Namespace;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/ReconnectConfig {
+	public fun <init> ()V
+	public fun <init> (ZJJDLjava/lang/Integer;)V
+	public synthetic fun <init> (ZJJDLjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()D
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun copy (ZJJDLjava/lang/Integer;)Lcom/surrealdb/kotlin/core/api/ReconnectConfig;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/ReconnectConfig;ZJJDLjava/lang/Integer;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/ReconnectConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getInitialDelayMillis ()J
+	public final fun getMaxAttempts ()Ljava/lang/Integer;
+	public final fun getMaxDelayMillis ()J
+	public final fun getMultiplier ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Session : com/surrealdb/kotlin/core/api/query/QueryContext {
+	public final fun accessToken (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun authenticate (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun database (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun invalidate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun kill (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun live (Lcom/surrealdb/kotlin/core/api/data/LiveQueryTarget;Lcom/surrealdb/kotlin/core/api/live/LiveMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun live (Lcom/surrealdb/kotlin/core/api/data/LiveQueryTarget;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public final fun live (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/live/LiveMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun live$default (Lcom/surrealdb/kotlin/core/api/Session;Lcom/surrealdb/kotlin/core/api/data/LiveQueryTarget;Lcom/surrealdb/kotlin/core/api/live/LiveMode;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun live$default (Lcom/surrealdb/kotlin/core/api/Session;Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/live/LiveMode;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun liveEvents (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public final fun namespace (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun ping (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reset (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setVariable (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun signin (Lcom/surrealdb/kotlin/core/api/Credentials$ForSignIn;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun signup (Lcom/surrealdb/kotlin/core/api/Credentials$ForSignUp;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun unset (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun use-JW8AlMw (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun version (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun whoami (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/core/api/Surreal : java/lang/AutoCloseable {
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/Surreal$Config;)V
+	public fun close ()V
+	public final fun closeSession (Lcom/surrealdb/kotlin/core/api/Session;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getActiveLiveQueries ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getConfig ()Lcom/surrealdb/kotlin/core/api/Surreal$Config;
+	public final fun getConnectionEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public final fun getFeatures ()Ljava/util/Set;
+	public final fun session (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/core/api/Surreal$Config {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/Json;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;JLcom/surrealdb/kotlin/core/api/ReconnectConfig;JZ)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/Json;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;JLcom/surrealdb/kotlin/core/api/ReconnectConfig;JZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/Json;
+	public final fun component3 ()Z
+	public final fun component4 ()Lkotlin/jvm/functions/Function1;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()J
+	public final fun component7 ()Lcom/surrealdb/kotlin/core/api/ReconnectConfig;
+	public final fun component8 ()J
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/Json;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;JLcom/surrealdb/kotlin/core/api/ReconnectConfig;JZ)Lcom/surrealdb/kotlin/core/api/Surreal$Config;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/Surreal$Config;Ljava/lang/String;Lkotlinx/serialization/json/Json;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;JLcom/surrealdb/kotlin/core/api/ReconnectConfig;JZILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/Surreal$Config;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutoAuthenticate ()Z
+	public final fun getAutoConnect ()Z
+	public final fun getCredentialProvider ()Lkotlin/jvm/functions/Function1;
+	public final fun getHttpClientFactory ()Lkotlin/jvm/functions/Function1;
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun getReconnect ()Lcom/surrealdb/kotlin/core/api/ReconnectConfig;
+	public final fun getRequestTimeoutMillis ()J
+	public final fun getTokenRenewalLeadMillis ()J
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/Transaction : com/surrealdb/kotlin/core/api/query/QueryContext {
+	public final fun cancel (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun commit (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun getTxnId ()Ljava/lang/String;
+	public fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/core/api/TransactionKt {
+	public static final fun beginTransaction (Lcom/surrealdb/kotlin/core/api/Session;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun transaction (Lcom/surrealdb/kotlin/core/api/Session;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/FieldPath {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/data/FieldPath;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/data/LiveQueryFilter {
+	public abstract fun getLiveQueryBindings ()Ljava/util/Map;
+	public abstract fun getLiveQuerySurql ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/data/LiveQueryTarget {
+	public abstract fun getLiveQueryTableName ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/data/Projection {
+	public abstract fun getPath-z7uORzs ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/RecordId : com/surrealdb/kotlin/core/api/data/Target {
+	public static final field Companion Lcom/surrealdb/kotlin/core/api/data/RecordId$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getTable ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/RecordId$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/RecordIdRange : com/surrealdb/kotlin/core/api/data/Target {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lcom/surrealdb/kotlin/core/api/data/RecordIdRange;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/data/RecordIdRange;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/data/RecordIdRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnd ()Ljava/lang/String;
+	public final fun getIncludeEnd ()Z
+	public final fun getStart ()Ljava/lang/String;
+	public final fun getTable ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/Row {
+	public static final field Companion Lcom/surrealdb/kotlin/core/api/data/Row$Companion;
+	public final fun contains (Lcom/surrealdb/kotlin/core/api/data/Projection;)Z
+	public final fun decode (Lcom/surrealdb/kotlin/core/api/data/Projection;Lkotlinx/serialization/KSerializer;)Ljava/lang/Object;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/data/Row$Companion {
+	public final fun fromJson (Lkotlinx/serialization/json/Json;Lkotlinx/serialization/json/JsonObject;)Lcom/surrealdb/kotlin/core/api/data/Row;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/data/Target {
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/data/TypedProjection : com/surrealdb/kotlin/core/api/data/Projection {
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public static final field Companion Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Companion;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Database : com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Database;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Database;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Database;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Namespace : com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Namespace;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Namespace;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Namespace;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Record : com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Record;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Record;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Record;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Session : com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Session;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Session;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Session;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Table : com/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Table;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Table;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail$Table;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Companion {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail;
+	public fun hashCode ()I
+	public final fun isLiveQueryNotSupported ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$BadGraphqlConfig : com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$BadGraphqlConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$BadLiveQueryConfig : com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$BadLiveQueryConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$LiveQueryNotSupported : com/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Configuration$Detail$LiveQueryNotSupported;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Connection : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$AlreadyConnected : com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$AlreadyConnected;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$ConnectionFailed : com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$ConnectionFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$Uninitialised : com/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Connection$Detail$Uninitialised;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Context : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Context;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Internal : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Internal;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail;
+	public fun hashCode ()I
+	public final fun isInvalidAuth ()Z
+	public final fun isScriptingBlocked ()Z
+	public final fun isTokenExpired ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidAuth : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidPass : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidPass;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidRole : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidRole;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidRole;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidRole;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidSignup : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$InvalidSignup;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$MissingUserOrPass : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$MissingUserOrPass;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NoSigninTarget : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NoSigninTarget;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NotPermitted : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NotPermitted;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NotPermitted;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$NotPermitted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getActor ()Ljava/lang/String;
+	public final fun getResource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$SessionExpired : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$SessionExpired;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$TokenExpired : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$TokenExpired;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$TokenMakingFailed : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$TokenMakingFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$UnexpectedAuth : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$UnexpectedAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$Unrecognized : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$Unrecognized;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$Unrecognized;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason$Unrecognized;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRawReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Auth : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Auth;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Auth;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Auth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$AuthReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Function : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Function;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Function;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Function;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Method : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Method;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Method;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Method;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Scripting : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Scripting;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Target : com/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Target;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Target;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed$Detail$Target;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Database : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Database;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Database;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Database;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Method : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Method;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Method;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Method;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Namespace : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Namespace;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Namespace;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Namespace;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Record : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Record;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Record;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Record;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Session : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Session;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Session;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Session;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Table : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Table;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Table;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Table;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Transaction : com/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail$Transaction;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Query : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail;
+	public fun hashCode ()I
+	public final fun isCancelled ()Z
+	public final fun isNotExecuted ()Z
+	public final fun isTimedOut ()Z
+	public final fun isTransactionConflict ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$Cancelled : com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$NotExecuted : com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$NotExecuted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TimedOut : com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail {
+	public fun <init> (JJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun copy (JJ)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TimedOut;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TimedOut;JJILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TimedOut;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNanos ()J
+	public final fun getSeconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TransactionConflict : com/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query$Detail$TransactionConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail;
+	public fun hashCode ()I
+	public final fun isDeserialization ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail$Deserialization : com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail$Deserialization;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail$Serialization : com/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Serialization$Detail$Serialization;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Thrown : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Thrown;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Unknown : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Unknown;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Unknown;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRawKind ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation : com/surrealdb/kotlin/core/api/error/ErrorKind {
+	public fun <init> ()V
+	public fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;)V
+	public synthetic fun <init> (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;
+	public final fun copy (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$DatabaseEmpty : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$DatabaseEmpty;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidContent : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidContent;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidContent;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidMerge : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidMerge;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidMerge;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidMerge;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParameter : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParameter;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParameter;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParameter;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParams : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidRequest : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$InvalidRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$NamespaceEmpty : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$NamespaceEmpty;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$Parse : com/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Validation$Detail$Parse;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealAlreadyExistsException : com/surrealdb/kotlin/core/api/error/SurrealRpcException {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$AlreadyExists$Detail;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealAuthenticationException : com/surrealdb/kotlin/core/api/error/SurrealRpcException {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotAllowed;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun isInvalidAuth ()Z
+	public final fun isTokenExpired ()Z
+}
+
+public abstract class com/surrealdb/kotlin/core/api/error/SurrealException : java/lang/RuntimeException {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealFeatureNotSupportedException : com/surrealdb/kotlin/core/api/error/SurrealException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealLiveQueryException : com/surrealdb/kotlin/core/api/error/SurrealException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealNotFoundException : com/surrealdb/kotlin/core/api/error/SurrealRpcException {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDetail ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind$NotFound$Detail;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealProtocolException : com/surrealdb/kotlin/core/api/error/SurrealException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealQueryException : com/surrealdb/kotlin/core/api/error/SurrealRpcException {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind$Query;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun isCancelled ()Z
+	public final fun isNotExecuted ()Z
+	public final fun isTimedOut ()Z
+	public final fun isTransactionConflict ()Z
+}
+
+public class com/surrealdb/kotlin/core/api/error/SurrealRpcException : com/surrealdb/kotlin/core/api/error/SurrealException {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lcom/surrealdb/kotlin/core/api/error/ErrorKind;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCode ()Ljava/lang/Integer;
+	public final fun getData ()Lkotlinx/serialization/json/JsonElement;
+	public final fun getKind ()Lcom/surrealdb/kotlin/core/api/error/ErrorKind;
+}
+
+public final class com/surrealdb/kotlin/core/api/error/SurrealTransportException : com/surrealdb/kotlin/core/api/error/SurrealException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveMode : java/lang/Enum {
+	public static final field Diffs Lcom/surrealdb/kotlin/core/api/live/LiveMode;
+	public static final field Records Lcom/surrealdb/kotlin/core/api/live/LiveMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/live/LiveMode;
+	public static fun values ()[Lcom/surrealdb/kotlin/core/api/live/LiveMode;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveNotification {
+	public static final field Companion Lcom/surrealdb/kotlin/core/api/live/LiveNotification$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lkotlinx/serialization/json/JsonElement;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/live/LiveNotification;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/live/LiveNotification;Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveNotification;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getLiveQueryId ()Ljava/lang/String;
+	public final fun getRecord ()Ljava/lang/String;
+	public final fun getResult ()Lkotlinx/serialization/json/JsonElement;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/surrealdb/kotlin/core/api/live/LiveNotification$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/core/api/live/LiveNotification$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/surrealdb/kotlin/core/api/live/LiveNotification;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/surrealdb/kotlin/core/api/live/LiveNotification;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveNotification$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/live/LiveQueryEvent {
+	public abstract fun getQueryId ()Ljava/lang/String;
+	public abstract fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQueryEvent$Created : com/surrealdb/kotlin/core/api/live/LiveQueryEvent {
+	public fun <init> (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Created;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Created;Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Created;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getQueryId ()Ljava/lang/String;
+	public fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQueryEvent$Deleted : com/surrealdb/kotlin/core/api/live/LiveQueryEvent {
+	public fun <init> (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Deleted;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Deleted;Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Deleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getQueryId ()Ljava/lang/String;
+	public fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQueryEvent$Other : com/surrealdb/kotlin/core/api/live/LiveQueryEvent {
+	public fun <init> (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Other;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Other;Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/String;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Other;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public fun getQueryId ()Ljava/lang/String;
+	public fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQueryEvent$Updated : com/surrealdb/kotlin/core/api/live/LiveQueryEvent {
+	public fun <init> (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Updated;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Updated;Ljava/lang/String;Lcom/surrealdb/kotlin/core/api/data/RecordId;Ljava/lang/Object;ILjava/lang/Object;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getQueryId ()Ljava/lang/String;
+	public fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQueryEventsKt {
+	public static final fun toEvent (Lcom/surrealdb/kotlin/core/api/live/LiveNotification;Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/core/api/live/LiveQueryEvent;
+}
+
+public final class com/surrealdb/kotlin/core/api/live/LiveQuerySubscription {
+	public final fun cancel (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEvents ()Lkotlinx/coroutines/flow/Flow;
+	public final fun getId ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/core/api/query/BoundQuery {
+	public final fun append (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun appendFragment (Ljava/lang/String;Ljava/util/Map;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun appendLiteral (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun attachBinding (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun bind (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun getBindings ()Ljava/util/Map;
+	public final fun getSurql ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/core/api/query/QueryContext {
+	public abstract fun getJson ()Lkotlinx/serialization/json/Json;
+	public abstract fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

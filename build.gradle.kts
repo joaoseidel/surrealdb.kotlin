@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
@@ -42,6 +43,26 @@ tasks.register<VerifyCoreQueryClasspath>("verifyCoreQueryClasspath") {
     )
 }
 
+tasks.register("apiDump") {
+    group = "verification"
+    description = "Updates the reference ABI dumps for every published module."
+    dependsOn(
+        ":surrealdb-kotlin-core:updateKotlinAbi",
+        ":surrealdb-kotlin-query:updateKotlinAbi",
+        ":surrealdb-kotlin-spectron:updateKotlinAbi",
+    )
+}
+
+tasks.register("apiCheck") {
+    group = "verification"
+    description = "Checks the ABI of every published module against its reference dump."
+    dependsOn(
+        ":surrealdb-kotlin-core:checkKotlinAbi",
+        ":surrealdb-kotlin-query:checkKotlinAbi",
+        ":surrealdb-kotlin-spectron:checkKotlinAbi",
+    )
+}
+
 allprojects {
     group = providers.gradleProperty("GROUP").get()
     version = providers.gradleProperty("VERSION_NAME").get()
@@ -70,6 +91,9 @@ subprojects {
 
         configure<KotlinMultiplatformExtension> {
             explicitApi()
+
+            @OptIn(ExperimentalAbiValidation::class)
+            abiValidation()
 
             jvmToolchain(jdkToolchainVersion)
 
@@ -101,6 +125,10 @@ subprojects {
                 implementation(libs.junit.jupiter)
                 implementation(libs.kotest.runner.junit5)
             }
+        }
+
+        tasks.named("checkKotlinAbi") {
+            mustRunAfter(tasks.named("updateKotlinAbi"))
         }
 
         tasks.withType<Test>().configureEach {

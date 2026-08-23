@@ -1,0 +1,308 @@
+public abstract interface class com/surrealdb/kotlin/query/api/data/Atom : com/surrealdb/kotlin/query/api/data/Conjunctible, com/surrealdb/kotlin/query/api/data/Disjunctible {
+}
+
+public final class com/surrealdb/kotlin/query/api/data/Atom$DefaultImpls {
+	public static fun getLiveQueryBindings (Lcom/surrealdb/kotlin/query/api/data/Atom;)Ljava/util/Map;
+	public static fun getLiveQuerySurql (Lcom/surrealdb/kotlin/query/api/data/Atom;)Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/query/api/data/Condition : com/surrealdb/kotlin/core/api/data/LiveQueryFilter {
+	public fun getLiveQueryBindings ()Ljava/util/Map;
+	public fun getLiveQuerySurql ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/data/Condition$DefaultImpls {
+	public static fun getLiveQueryBindings (Lcom/surrealdb/kotlin/query/api/data/Condition;)Ljava/util/Map;
+	public static fun getLiveQuerySurql (Lcom/surrealdb/kotlin/query/api/data/Condition;)Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/query/api/data/Conjunctible : com/surrealdb/kotlin/query/api/data/Condition {
+}
+
+public final class com/surrealdb/kotlin/query/api/data/Conjunctible$DefaultImpls {
+	public static fun getLiveQueryBindings (Lcom/surrealdb/kotlin/query/api/data/Conjunctible;)Ljava/util/Map;
+	public static fun getLiveQuerySurql (Lcom/surrealdb/kotlin/query/api/data/Conjunctible;)Ljava/lang/String;
+}
+
+public abstract interface class com/surrealdb/kotlin/query/api/data/Disjunctible : com/surrealdb/kotlin/query/api/data/Condition {
+}
+
+public final class com/surrealdb/kotlin/query/api/data/Disjunctible$DefaultImpls {
+	public static fun getLiveQueryBindings (Lcom/surrealdb/kotlin/query/api/data/Disjunctible;)Ljava/util/Map;
+	public static fun getLiveQuerySurql (Lcom/surrealdb/kotlin/query/api/data/Disjunctible;)Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/data/Field : com/surrealdb/kotlin/core/api/data/TypedProjection {
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPath-z7uORzs ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/surrealdb/kotlin/query/api/data/FieldGroup {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public class com/surrealdb/kotlin/query/api/data/Nested : com/surrealdb/kotlin/query/api/data/FieldGroup, com/surrealdb/kotlin/core/api/data/Projection {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getPath-z7uORzs ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class com/surrealdb/kotlin/query/api/data/SurqlDsl : java/lang/annotation/Annotation {
+}
+
+public class com/surrealdb/kotlin/query/api/data/Table : com/surrealdb/kotlin/query/api/data/FieldGroup, com/surrealdb/kotlin/core/api/data/LiveQueryTarget, com/surrealdb/kotlin/core/api/data/Target {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun all ([Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun and (Lcom/surrealdb/kotlin/query/api/data/Conjunctible;Lcom/surrealdb/kotlin/query/api/data/Conjunctible;)Lcom/surrealdb/kotlin/query/api/data/Conjunctible;
+	public final fun any ([Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun contains (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun containsAll (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/util/Collection;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun containsAny (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/util/Collection;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun eq (Lcom/surrealdb/kotlin/query/api/data/Field;Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun eq (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun exists (Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public fun getLiveQueryTableName ()Ljava/lang/String;
+	public final fun getTableName ()Ljava/lang/String;
+	public final fun greater (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun greaterEq (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public fun hashCode ()I
+	public final fun inside (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/util/Collection;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun isNone (Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun isNull (Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun less (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun lessEq (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun matches (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun neq (Lcom/surrealdb/kotlin/query/api/data/Field;Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun neq (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun none ([Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun not (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun or (Lcom/surrealdb/kotlin/query/api/data/Disjunctible;Lcom/surrealdb/kotlin/query/api/data/Disjunctible;)Lcom/surrealdb/kotlin/query/api/data/Disjunctible;
+	protected final fun recordId ()Lcom/surrealdb/kotlin/query/api/data/Field;
+	public final fun startsWith (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/data/TableRecord : com/surrealdb/kotlin/core/api/data/Target {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/data/TableRecordKt {
+	public static final fun get (Lcom/surrealdb/kotlin/query/api/data/Table;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/TableRecord;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ArrayField {
+	public fun <init> (Lcom/surrealdb/kotlin/query/api/query/Assignments;Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlin/jvm/functions/Function1;)V
+	public final fun minusAssign (Ljava/lang/Object;)V
+	public final fun plusAssign (Ljava/lang/Object;)V
+}
+
+public final class com/surrealdb/kotlin/query/api/query/Assignments {
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun record (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ConditionsKt {
+	public static final fun raw (Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public static final fun toSurql (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/CreateQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun content (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+	public final fun set (Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/DeleteQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/InsertQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/InsertRelationQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/MergePayload {
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun record (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlinx/serialization/json/JsonElement;)V
+}
+
+public final class com/surrealdb/kotlin/query/api/query/MergeQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/PatchQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/Patches {
+	public final fun addEncoded (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlinx/serialization/json/JsonElement;)V
+	public final fun appendEncoded (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlinx/serialization/json/JsonElement;)V
+	public final fun copy (Lcom/surrealdb/kotlin/query/api/data/Field;Lcom/surrealdb/kotlin/query/api/data/Field;)V
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun move (Lcom/surrealdb/kotlin/query/api/data/Field;Lcom/surrealdb/kotlin/query/api/data/Field;)V
+	public final fun remove (Lcom/surrealdb/kotlin/query/api/data/Field;)V
+	public final fun replaceEncoded (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlinx/serialization/json/JsonElement;)V
+	public final fun testEncoded (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlinx/serialization/json/JsonElement;)V
+}
+
+public abstract class com/surrealdb/kotlin/query/api/query/Query {
+	public final fun await (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitSingleOrNull (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun getContext ()Lcom/surrealdb/kotlin/core/api/query/QueryContext;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/QueryExtensionsKt {
+	public static final fun create (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+	public static final fun create (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+	public static final fun create (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
+	public static final fun delete (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+	public static final fun delete (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+	public static final fun delete (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;)Lcom/surrealdb/kotlin/query/api/query/DeleteQuery;
+	public static final fun insert (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/InsertQuery;
+	public static final fun insertRelation (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/InsertRelationQuery;
+	public static final fun merge (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public static final fun merge (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public static final fun merge (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public static final fun merge (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public static final fun merge (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
+	public static final fun patch (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public static final fun patch (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public static final fun patch (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public static final fun patch (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public static final fun patch (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
+	public static final fun relate (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;Lcom/surrealdb/kotlin/core/api/data/Target;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/RelateQuery;
+	public static final fun run (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/query/RunQuery;
+	public static final fun select (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public static final fun select (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public static final fun select (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public static final fun update (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public static final fun update (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public static final fun update (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public static final fun upsert (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public static final fun upsert (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public static final fun upsert (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/TableRecord;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/RelateQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun content (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/RelateQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/RelateQuery;
+}
+
+public abstract class com/surrealdb/kotlin/query/api/query/ReturnMode {
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ReturnMode$After : com/surrealdb/kotlin/query/api/query/ReturnMode {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/query/api/query/ReturnMode$After;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ReturnMode$Before : com/surrealdb/kotlin/query/api/query/ReturnMode {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/query/api/query/ReturnMode$Before;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ReturnMode$Diff : com/surrealdb/kotlin/query/api/query/ReturnMode {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/query/api/query/ReturnMode$Diff;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ReturnMode$Fields : com/surrealdb/kotlin/query/api/query/ReturnMode {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/surrealdb/kotlin/query/api/query/ReturnMode$Fields;
+	public static synthetic fun copy$default (Lcom/surrealdb/kotlin/query/api/query/ReturnMode$Fields;Ljava/util/List;ILjava/lang/Object;)Lcom/surrealdb/kotlin/query/api/query/ReturnMode$Fields;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFields ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/ReturnMode$None : com/surrealdb/kotlin/query/api/query/ReturnMode {
+	public static final field INSTANCE Lcom/surrealdb/kotlin/query/api/query/ReturnMode$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/RunQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public final fun args ([Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/query/RunQuery;
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun version (Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/query/RunQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/SchemaCheckKt {
+	public static final fun checkSchema (Lcom/surrealdb/kotlin/core/api/query/QueryContext;[Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/SelectQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun fetch ([Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun fields ([Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun limit (I)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun start (I)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun timeout (D)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun value (Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun version (Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/SurqlTemplate {
+	public final fun bind (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/SurqlTemplateKt {
+	public static final fun surqlTemplate (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/TypedResult {
+	public fun <init> (Lcom/surrealdb/kotlin/query/api/query/Query;Lkotlinx/serialization/KSerializer;)V
+	public final fun await (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitSingleOrNull (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/UpdateQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun content (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public final fun set (Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/UpdateQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/UpsertQuery : com/surrealdb/kotlin/query/api/query/Query {
+	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun content (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public final fun returnMode (Lcom/surrealdb/kotlin/query/api/query/ReturnMode;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public final fun set (Lkotlin/jvm/functions/Function2;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/UpsertQuery;
+}
+
