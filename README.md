@@ -25,6 +25,11 @@ suffixes under the owning module prefix. Spectron remains under `com.surrealdb.k
 The artifact is not published yet. For a local build, run `./gradlew publishToMavenLocal` and add
 `mavenLocal()` to the consuming project. Kotlin Multiplatform module metadata selects the JVM, Android, or matching iOS variant.
 
+Version `1.0.0` is the current prerelease candidate. The upstream repository has a `v1.0.0` prerelease and tag, but these coordinates are not on
+Maven Central yet. The build and examples keep that version so the reviewed API can become the first published `1.0.0` without renumbering it.
+
+The generated API reference is available at <https://joaoseidel.github.io/surrealdb.kotlin/>.
+
 ## Connect and open a session
 
 ```kotlin
