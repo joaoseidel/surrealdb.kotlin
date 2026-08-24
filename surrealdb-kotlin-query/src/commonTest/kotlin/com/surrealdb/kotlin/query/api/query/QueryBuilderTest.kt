@@ -75,6 +75,24 @@ class QueryBuilderTest {
     }
 
     @Test
+    fun `select from table where id eq record id produces correct bindings`() {
+        val q =
+            context
+                .select(People)
+                .where { People.id eq RecordId("user", "abc123") }
+                .compile()
+        val bindings = q.bindings.values.map { it.toString().trim('"') }
+        assertTrue(bindings.contains("person"), "table name 'person' must be bound")
+        assertTrue(bindings.contains("user"), "record table 'user' must be bound")
+        assertTrue(bindings.contains("abc123"), "record id 'abc123' must be bound")
+        assertEquals(3, q.bindings.size, "expected exactly 3 bindings, got ${q.bindings}")
+        val sql = q.surql
+        assertTrue(sql.contains("type::record("), "SQL must contain type::record()")
+        val recordParams = Regex("\\$\\w+").findAll(sql).map { it.value }.toList()
+        assertTrue(recordParams.distinct().size == recordParams.size, "all SQL parameters must be unique")
+    }
+
+    @Test
     fun `select limit and start bind values`() {
         val q =
             context

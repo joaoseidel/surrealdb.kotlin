@@ -140,15 +140,25 @@ private class ConditionCompiler {
         sql: String,
         values: Map<String, JsonElement>,
     ) {
-        var fragment = sql
+        val renames = mutableMapOf<String, String>()
         for ((name, value) in values) {
             val target = if (name in bindings) nextParameter() else name
-            if (target != name) {
-                fragment =
-                    Regex("\\$" + Regex.escape(name) + "(?![A-Za-z0-9_])")
-                        .replace(fragment) { "\$$target" }
-            }
+            if (target != name) renames[name] = target
             bindings[target] = value
+        }
+        var fragment = sql
+        if (renames.isNotEmpty()) {
+            val pattern =
+                Regex(
+                    "\\$(" +
+                        renames.keys.joinToString("|") { Regex.escape(it) } +
+                        ")(?![A-Za-z0-9_])",
+                )
+            fragment =
+                pattern.replace(fragment) { match ->
+                    val paramName = match.value.removePrefix("\$")
+                    "\$" + renames[paramName]!!
+                }
         }
         text.append(fragment)
     }

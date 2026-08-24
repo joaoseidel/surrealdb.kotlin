@@ -42,13 +42,25 @@ public class BoundQuery internal constructor(
         bindings: Map<String, JsonElement>,
     ): BoundQuery =
         apply {
-            var text = sql
+            val renames = mutableMapOf<String, String>()
             for ((name, value) in bindings) {
                 val target = if (name in binds) nextParam() else name
-                if (target != name) {
-                    text = Regex("\\$" + Regex.escape(name) + "(?![A-Za-z0-9_])").replace(text) { "\$$target" }
-                }
+                if (target != name) renames[name] = target
                 binds[target] = value
+            }
+            var text = sql
+            if (renames.isNotEmpty()) {
+                val pattern =
+                    Regex(
+                        "\\$(" +
+                            renames.keys.joinToString("|") { Regex.escape(it) } +
+                            ")(?![A-Za-z0-9_])",
+                    )
+                text =
+                    pattern.replace(text) { match ->
+                        val paramName = match.value.removePrefix("\$")
+                        "\$" + renames[paramName]!!
+                    }
             }
             parts.add(text)
         }
