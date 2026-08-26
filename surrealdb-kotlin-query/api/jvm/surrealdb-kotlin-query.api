@@ -114,6 +114,14 @@ public final class com/surrealdb/kotlin/query/api/data/Walk : com/surrealdb/kotl
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/surrealdb/kotlin/query/api/data/WalkDirection : java/lang/Enum {
+	public static final field Incoming Lcom/surrealdb/kotlin/query/api/data/WalkDirection;
+	public static final field Outgoing Lcom/surrealdb/kotlin/query/api/data/WalkDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/WalkDirection;
+	public static fun values ()[Lcom/surrealdb/kotlin/query/api/data/WalkDirection;
+}
+
 public final class com/surrealdb/kotlin/query/api/data/WalkKt {
 	public static final fun aliasedAs (Lcom/surrealdb/kotlin/query/api/data/Walk;Lcom/surrealdb/kotlin/query/api/data/Field;)Lcom/surrealdb/kotlin/query/api/data/AliasedWalk;
 	public static final fun at (Lcom/surrealdb/kotlin/query/api/data/Walk;I)Lcom/surrealdb/kotlin/query/api/data/Walk;
@@ -126,6 +134,7 @@ public final class com/surrealdb/kotlin/query/api/data/WalkKt {
 	public static final fun outgoing (Lcom/surrealdb/kotlin/query/api/data/Table;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/data/Walk;
 	public static final fun outgoing (Lcom/surrealdb/kotlin/query/api/data/TableRecord;Lcom/surrealdb/kotlin/query/api/data/Table;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/data/Walk;
 	public static final fun outgoing (Lcom/surrealdb/kotlin/query/api/data/Walk;Lcom/surrealdb/kotlin/query/api/data/Table;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/data/Walk;
+	public static final fun walk (Lcom/surrealdb/kotlin/core/api/data/RecordId;Lcom/surrealdb/kotlin/query/api/data/WalkDirection;Lcom/surrealdb/kotlin/query/api/data/Table;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/data/Walk;
 }
 
 public final class com/surrealdb/kotlin/query/api/query/ArrayField {

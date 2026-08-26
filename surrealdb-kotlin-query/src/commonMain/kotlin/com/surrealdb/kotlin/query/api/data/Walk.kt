@@ -115,6 +115,31 @@ public fun TableRecord<*>.incoming(
     from: Table,
 ): Walk<List<RecordId>> = record.incoming(edge, from)
 
+/** Which way along an edge a walk goes. See [RecordId.walk]. */
+public enum class WalkDirection {
+    /** `->edge->to`, the edges leaving the record. */
+    Outgoing,
+
+    /** `<-edge<-from`, the edges arriving at it. */
+    Incoming,
+}
+
+/**
+ * `(this)->edge->far` or `(this)<-edge<-far`, whichever [direction] says.
+ *
+ * For a walk whose direction is decided at runtime, where writing the `when`
+ * at every call site would say less than the parameter does.
+ */
+public fun RecordId.walk(
+    direction: WalkDirection,
+    edge: Table,
+    far: Table,
+): Walk<List<RecordId>> =
+    when (direction) {
+        WalkDirection.Outgoing -> outgoing(edge, far)
+        WalkDirection.Incoming -> incoming(edge, far)
+    }
+
 /** Continue this walk with `->edge->to`. */
 public fun Walk<*>.outgoing(
     edge: Table,

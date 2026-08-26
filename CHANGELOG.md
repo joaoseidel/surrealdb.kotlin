@@ -7,6 +7,8 @@
   issues no token; a refusal is still an error.
 - `EdgeTable` declares the `in` and `out` a relation table carries, so a filter on either end reads
   the same whichever edge it is written against.
+- `RecordId.walk(direction, edge, table)` takes the direction as a value, for a walk decided at
+  runtime.
 - `select` and `count` take a graph traversal as their target, and `where { }` compares against one,
   so reading across an edge no longer means leaving the builder. A traversal names its destination
   table, which is what keeps an edge pointing elsewhere out of the answer, and it starts at a record

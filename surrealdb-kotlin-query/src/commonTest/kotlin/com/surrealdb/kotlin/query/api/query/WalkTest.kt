@@ -3,12 +3,14 @@ package com.surrealdb.kotlin.query.api.query
 import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.query.api.data.EdgeTable
 import com.surrealdb.kotlin.query.api.data.Table
+import com.surrealdb.kotlin.query.api.data.WalkDirection
 import com.surrealdb.kotlin.query.api.data.aliasedAs
 import com.surrealdb.kotlin.query.api.data.at
 import com.surrealdb.kotlin.query.api.data.first
 import com.surrealdb.kotlin.query.api.data.get
 import com.surrealdb.kotlin.query.api.data.incoming
 import com.surrealdb.kotlin.query.api.data.outgoing
+import com.surrealdb.kotlin.query.api.data.walk
 import com.surrealdb.kotlin.query.api.query.delete
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -140,6 +142,17 @@ class WalkTest :
 
                     compiled.surql shouldContain
                         "WHERE ((in = type::record(\$_1, \$_2)) AND (out = type::record(\$_3, \$_4)))"
+                }
+            }
+
+            context("a walk whose direction is decided at runtime") {
+                should("go the way it was told, and no other") {
+                    val record = RecordId("reader", "ada")
+
+                    record.walk(WalkDirection.Outgoing, Wrote, Volumes).toString() shouldBe
+                        "(reader:ada)->wrote->book"
+                    record.walk(WalkDirection.Incoming, Wrote, Volumes).toString() shouldBe
+                        "(reader:ada)<-wrote<-book"
                 }
             }
 
