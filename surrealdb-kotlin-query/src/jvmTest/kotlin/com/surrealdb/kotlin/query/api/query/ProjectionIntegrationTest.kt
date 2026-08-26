@@ -66,91 +66,93 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class ProjectionIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("a projection over a nested field") {
-            should("read back through the field that named it, since the server rebuilds the object") {
-                onServer { db ->
-                    val talk = db.select(Talks["ada"]).fields(Talks.title, Talks.venue.city).theRecord()
+            context("a projection over a nested field") {
+                should("read back through the field that named it, since the server rebuilds the object") {
+                    onServer { db ->
+                        val talk = db.select(Talks["ada"]).fields(Talks.title, Talks.venue.city).theRecord()
 
-                    talk[Talks.title] shouldBe "Ada"
-                    talk[Talks.venue.city] shouldBe "Boston"
-                }
-            }
-        }
-
-        context("a projection over an indexed path") {
-            should("read back at the index it named, which an unaliased projection loses") {
-                onServer { db ->
-                    db.select(Talks["ada"]).fields(Talks.firstTag).theRecord()[Talks.firstTag] shouldBe "cs"
+                        talk[Talks.title] shouldBe "Ada"
+                        talk[Talks.venue.city] shouldBe "Boston"
+                    }
                 }
             }
 
-            should("keep two indexes into one array apart") {
-                onServer { db ->
-                    val talk = db.select(Talks["ada"]).fields(Talks.firstTag, Talks.secondTag).theRecord()
+            context("a projection over an indexed path") {
+                should("read back at the index it named, which an unaliased projection loses") {
+                    onServer { db ->
+                        db.select(Talks["ada"]).fields(Talks.firstTag).theRecord()[Talks.firstTag] shouldBe "cs"
+                    }
+                }
 
-                    talk[Talks.firstTag] shouldBe "cs"
-                    talk[Talks.secondTag] shouldBe "lisp"
+                should("keep two indexes into one array apart") {
+                    onServer { db ->
+                        val talk = db.select(Talks["ada"]).fields(Talks.firstTag, Talks.secondTag).theRecord()
+
+                        talk[Talks.firstTag] shouldBe "cs"
+                        talk[Talks.secondTag] shouldBe "lisp"
+                    }
+                }
+
+                should("read every element back") {
+                    onServer { db ->
+                        db.select(Talks["ada"]).fields(Talks.everyTag).theRecord()[Talks.everyTag] shouldBe
+                            listOf("cs", "lisp")
+                    }
                 }
             }
 
-            should("read every element back") {
-                onServer { db ->
-                    db.select(Talks["ada"]).fields(Talks.everyTag).theRecord()[Talks.everyTag] shouldBe
-                        listOf("cs", "lisp")
-                }
-            }
-        }
+            context("a projected field the record does not carry") {
+                should("arrive as an explicit null, where the whole record leaves it out") {
+                    onServer { db ->
+                        val projected = db.select(Talks["grace"]).fields(Talks.nickname).theRecord()
+                        val whole = db.select(Talks["grace"]).theRecord()
 
-        context("a projected field the record does not carry") {
-            should("arrive as an explicit null, where the whole record leaves it out") {
-                onServer { db ->
-                    val projected = db.select(Talks["grace"]).fields(Talks.nickname).theRecord()
-                    val whole = db.select(Talks["grace"]).theRecord()
-
-                    projected.content shouldBe buildJsonObject { put("nickname", JsonNull) }
-                    projected[Talks.nickname] shouldBe null
-                    whole.content.containsKey("nickname") shouldBe false
-                }
-            }
-        }
-
-        context("a projection over a nested group") {
-            should("answer with the whole object, read leaf by leaf") {
-                onServer { db ->
-                    val talk = db.select(Talks["ada"]).fields(Talks.venue).theRecord()
-
-                    talk[Talks.venue.city] shouldBe "Boston"
-                    talk[Talks.venue.country] shouldBe "US"
-                }
-            }
-        }
-
-        context("a VALUE projection") {
-            should("read as the values themselves, in the order the statement answered") {
-                onServer { db ->
-                    val cities =
-                        db
-                            .select(Talks)
-                            .value(Talks.venue.city)
-                            .decodeAs<String?>()
-                            .await()
-
-                    cities shouldBe listOf("Boston", null)
+                        projected.content shouldBe buildJsonObject { put("nickname", JsonNull) }
+                        projected[Talks.nickname] shouldBe null
+                        whole.content.containsKey("nickname") shouldBe false
+                    }
                 }
             }
 
-            should("refuse await(), which reads records, and name the terminal that reads a value") {
-                onServer { db ->
-                    val failure =
-                        shouldThrow<SurrealProtocolException> {
-                            db.select(Talks["ada"]).value(Talks.venue.city).await()
-                        }
+            context("a projection over a nested group") {
+                should("answer with the whole object, read leaf by leaf") {
+                    onServer { db ->
+                        val talk = db.select(Talks["ada"]).fields(Talks.venue).theRecord()
 
-                    failure.message shouldContain "decodeAs()"
+                        talk[Talks.venue.city] shouldBe "Boston"
+                        talk[Talks.venue.country] shouldBe "US"
+                    }
                 }
             }
-        }
-    })
+
+            context("a VALUE projection") {
+                should("read as the values themselves, in the order the statement answered") {
+                    onServer { db ->
+                        val cities =
+                            db
+                                .select(Talks)
+                                .value(Talks.venue.city)
+                                .decodeAs<String?>()
+                                .await()
+
+                        cities shouldBe listOf("Boston", null)
+                    }
+                }
+
+                should("refuse await(), which reads records, and name the terminal that reads a value") {
+                    onServer { db ->
+                        val failure =
+                            shouldThrow<SurrealProtocolException> {
+                                db.select(Talks["ada"]).value(Talks.venue.city).await()
+                            }
+
+                        failure.message shouldContain "decodeAs()"
+                    }
+                }
+            }
+        },
+    )

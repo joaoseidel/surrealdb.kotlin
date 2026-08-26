@@ -45,54 +45,56 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class RangeTargetIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("a select over a record-id range") {
-            should("return the records inside it, leaving the end key out") {
-                onServer { db ->
-                    val rows = db.select(range("a", "z")).await()
+            context("a select over a record-id range") {
+                should("return the records inside it, leaving the end key out") {
+                    onServer { db ->
+                        val rows = db.select(range("a", "z")).await()
 
-                    keysOf(rows) shouldBe listOf("a", "m")
+                        keysOf(rows) shouldBe listOf("a", "m")
+                    }
+                }
+
+                should("include the end key when the range says so") {
+                    onServer { db ->
+                        val rows = db.select(range("a", "z", includeEnd = true)).await()
+
+                        keysOf(rows) shouldBe listOf("a", "m", "z")
+                    }
+                }
+
+                should("run open at either end, and open at both") {
+                    onServer { db ->
+                        keysOf(db.select(range(start = "m")).await()) shouldBe listOf("m", "z")
+                        keysOf(db.select(range(end = "m")).await()) shouldBe listOf("a")
+                        keysOf(db.select(range()).await()) shouldBe listOf("a", "m", "z")
+                    }
                 }
             }
 
-            should("include the end key when the range says so") {
-                onServer { db ->
-                    val rows = db.select(range("a", "z", includeEnd = true)).await()
+            context("a write over a record-id range") {
+                should("touch the records inside it and no others") {
+                    onServer { db ->
+                        val updated =
+                            db
+                                .update(range("a", "z"))
+                                .content(buildJsonObject { put("n", JsonPrimitive(7)) })
+                                .await()
 
-                    keysOf(rows) shouldBe listOf("a", "m", "z")
+                        keysOf(updated) shouldBe listOf("a", "m")
+                        updated.map { it[Slots.n] } shouldBe listOf(7, 7)
+
+                        db.delete(range("a", "z")).await()
+
+                        keysOf(db.select(Slots).await()) shouldBe listOf("z")
+                    }
                 }
             }
-
-            should("run open at either end, and open at both") {
-                onServer { db ->
-                    keysOf(db.select(range(start = "m")).await()) shouldBe listOf("m", "z")
-                    keysOf(db.select(range(end = "m")).await()) shouldBe listOf("a")
-                    keysOf(db.select(range()).await()) shouldBe listOf("a", "m", "z")
-                }
-            }
-        }
-
-        context("a write over a record-id range") {
-            should("touch the records inside it and no others") {
-                onServer { db ->
-                    val updated =
-                        db
-                            .update(range("a", "z"))
-                            .content(buildJsonObject { put("n", JsonPrimitive(7)) })
-                            .await()
-
-                    keysOf(updated) shouldBe listOf("a", "m")
-                    updated.map { it[Slots.n] } shouldBe listOf(7, 7)
-
-                    db.delete(range("a", "z")).await()
-
-                    keysOf(db.select(Slots).await()) shouldBe listOf("z")
-                }
-            }
-        }
-    })
+        },
+    )
 
 private fun range(
     start: String? = null,

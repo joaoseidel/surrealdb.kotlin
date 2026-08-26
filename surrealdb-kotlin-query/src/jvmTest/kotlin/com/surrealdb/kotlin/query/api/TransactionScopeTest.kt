@@ -44,43 +44,45 @@ private fun JsonObject.txn(): String? = this["txn"]?.jsonPrimitive?.content
  * These cases read the envelope the client actually sent.
  */
 class TransactionScopeTest :
-    ShouldSpec({
-        context("a statement sent inside a transaction") {
-            should("carry the transaction id, so the server applies it inside the transaction") {
-                withServer { server, db ->
-                    val transaction = db.beginTransaction()
+    ShouldSpec(
+        {
+            context("a statement sent inside a transaction") {
+                should("carry the transaction id, so the server applies it inside the transaction") {
+                    withServer { server, db ->
+                        val transaction = db.beginTransaction()
 
-                    transaction
-                        .create(RecordId("person", "alice"))
-                        .content(buildJsonObject { put("name", JsonPrimitive("Alice")) })
-                        .await()
+                        transaction
+                            .create(RecordId("person", "alice"))
+                            .content(buildJsonObject { put("name", JsonPrimitive("Alice")) })
+                            .await()
 
-                    server.lastQuery().txn() shouldBe transaction.txnId
-                    transaction.commit()
+                        server.lastQuery().txn() shouldBe transaction.txnId
+                        transaction.commit()
+                    }
+                }
+
+                should("carry it for a raw SurrealQL string too, because that form is derived from the bound one") {
+                    withServer { server, db ->
+                        val transaction = db.beginTransaction()
+
+                        transaction.query(surql("CREATE person:bob"))
+
+                        server.lastQuery().txn() shouldBe transaction.txnId
+                        transaction.commit()
+                    }
                 }
             }
 
-            should("carry it for a raw SurrealQL string too, because that form is derived from the bound one") {
-                withServer { server, db ->
-                    val transaction = db.beginTransaction()
+            context("a statement sent on the session") {
+                should("carry no transaction id, so work outside a transaction is never swept into an open one") {
+                    withServer { server, db ->
+                        db.beginTransaction()
 
-                    transaction.query(surql("CREATE person:bob"))
+                        db.query(surql("SELECT 1"))
 
-                    server.lastQuery().txn() shouldBe transaction.txnId
-                    transaction.commit()
+                        server.lastQuery().txn().shouldBeNull()
+                    }
                 }
             }
-        }
-
-        context("a statement sent on the session") {
-            should("carry no transaction id, so work outside a transaction is never swept into an open one") {
-                withServer { server, db ->
-                    db.beginTransaction()
-
-                    db.query(surql("SELECT 1"))
-
-                    server.lastQuery().txn().shouldBeNull()
-                }
-            }
-        }
-    })
+        },
+    )

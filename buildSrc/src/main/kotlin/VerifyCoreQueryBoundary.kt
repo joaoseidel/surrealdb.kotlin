@@ -27,7 +27,11 @@ abstract class VerifyCoreQueryBoundary : DefaultTask() {
                 .sorted()
                 .flatMap { source ->
                     source.readLines().mapNotNull { line ->
-                        queryImport.find(line)?.groupValues?.get(1)?.let { "$source -> $it" }
+                        queryImport
+                            .find(line)
+                            ?.groupValues
+                            ?.get(1)
+                            ?.let { "$source -> $it" }
                     }
                 }
 

@@ -42,88 +42,90 @@ private val typedVerbs: List<Pair<String, () -> Query>> =
     )
 
 class TableRecordTest :
-    ShouldSpec({
-        context("Table.get") {
-            should("name a record of that table, taking the table name from the schema") {
-                People["alice"].toString() shouldBe "person:alice"
-            }
+    ShouldSpec(
+        {
+            context("Table.get") {
+                should("name a record of that table, taking the table name from the schema") {
+                    People["alice"].toString() shouldBe "person:alice"
+                }
 
-            should("equal another handle on the same record, so builders stay comparable") {
-                People["alice"] shouldBe People["alice"]
-                People["alice"] shouldNotBe People["zara"]
-            }
-        }
-
-        context("a TableRecord given to a statement") {
-            should("render exactly as the bare RecordId does, because both reach one renderer") {
-                val expected = BoundQuery().appendTarget(RecordId("person", "alice")).surql
-
-                for ((verb, build) in typedVerbs) {
-                    withClue("$verb should name person:alice as `$expected`") {
-                        build().compile().surql shouldContain expected
-                    }
+                should("equal another handle on the same record, so builders stay comparable") {
+                    People["alice"] shouldBe People["alice"]
+                    People["alice"] shouldNotBe People["zara"]
                 }
             }
 
-            should("bind the table and id rather than write them into the SurrealQL") {
-                for ((verb, build) in typedVerbs) {
-                    withClue("$verb should not inline person:alice") {
-                        val compiled = build().compile()
+            context("a TableRecord given to a statement") {
+                should("render exactly as the bare RecordId does, because both reach one renderer") {
+                    val expected = BoundQuery().appendTarget(RecordId("person", "alice")).surql
 
-                        compiled.surql shouldNotContain "person"
-                        compiled.surql shouldNotContain "alice"
-                        compiled.bindings shouldContainValue JsonPrimitive("alice")
+                    for ((verb, build) in typedVerbs) {
+                        withClue("$verb should name person:alice as `$expected`") {
+                            build().compile().surql shouldContain expected
+                        }
                     }
+                }
+
+                should("bind the table and id rather than write them into the SurrealQL") {
+                    for ((verb, build) in typedVerbs) {
+                        withClue("$verb should not inline person:alice") {
+                            val compiled = build().compile()
+
+                            compiled.surql shouldNotContain "person"
+                            compiled.surql shouldNotContain "alice"
+                            compiled.bindings shouldContainValue JsonPrimitive("alice")
+                        }
+                    }
+                }
+
+                should("keep the schema, so a WHERE over one record still names fields") {
+                    compileOnly
+                        .update(People["alice"])
+                        .where { age greater 30 }
+                        .compile()
+                        .surql shouldContain "(age > "
+                }
+
+                should("keep the schema through create, which carried none before") {
+                    compileOnly
+                        .create(People["alice"])
+                        .returnMode(ReturnMode.Fields(listOf(People.name)))
+                        .compile()
+                        .surql shouldContain " RETURN name"
                 }
             }
 
-            should("keep the schema, so a WHERE over one record still names fields") {
-                compileOnly
-                    .update(People["alice"])
-                    .where { age greater 30 }
-                    .compile()
-                    .surql shouldContain "(age > "
+            context("a TableRecord in a value position") {
+                should("write the link, so a record can be handed to a field") {
+                    val fragment = BoundQuery().appendValue(People["alice"])
+
+                    fragment.surql shouldBe "type::record(\$_0, \$_1)"
+                    fragment.bindings shouldBe
+                        mapOf("_0" to JsonPrimitive("person"), "_1" to JsonPrimitive("alice"))
+                }
             }
 
-            should("keep the schema through create, which carried none before") {
-                compileOnly
-                    .create(People["alice"])
-                    .returnMode(ReturnMode.Fields(listOf(People.name)))
-                    .compile()
-                    .surql shouldContain " RETURN name"
+            context("an undeclared table") {
+                should("still yield a record handle, because Table(name) is a Table too") {
+                    BoundQuery().appendTarget(Table("person")["alice"]).surql shouldBe "type::record(\$_0, \$_1)"
+                }
             }
-        }
 
-        context("a TableRecord in a value position") {
-            should("write the link, so a record can be handed to a field") {
-                val fragment = BoundQuery().appendValue(People["alice"])
+            context("a TableRecord in a RELATE position") {
+                should("render as the record it names, because RELATE parenthesises either the same way") {
+                    val viaRecord =
+                        compileOnly
+                            .relate(People["alice"], Table("likes"), People["zara"])
+                            .compile()
 
-                fragment.surql shouldBe "type::record(\$_0, \$_1)"
-                fragment.bindings shouldBe
-                    mapOf("_0" to JsonPrimitive("person"), "_1" to JsonPrimitive("alice"))
+                    val viaRecordId =
+                        compileOnly
+                            .relate(RecordId("person", "alice"), Table("likes"), RecordId("person", "zara"))
+                            .compile()
+
+                    viaRecord.surql shouldBe viaRecordId.surql
+                    viaRecord.bindings shouldBe viaRecordId.bindings
+                }
             }
-        }
-
-        context("an undeclared table") {
-            should("still yield a record handle, because Table(name) is a Table too") {
-                BoundQuery().appendTarget(Table("person")["alice"]).surql shouldBe "type::record(\$_0, \$_1)"
-            }
-        }
-
-        context("a TableRecord in a RELATE position") {
-            should("render as the record it names, because RELATE parenthesises either the same way") {
-                val viaRecord =
-                    compileOnly
-                        .relate(People["alice"], Table("likes"), People["zara"])
-                        .compile()
-
-                val viaRecordId =
-                    compileOnly
-                        .relate(RecordId("person", "alice"), Table("likes"), RecordId("person", "zara"))
-                        .compile()
-
-                viaRecord.surql shouldBe viaRecordId.surql
-                viaRecord.bindings shouldBe viaRecordId.bindings
-            }
-        }
-    })
+        },
+    )

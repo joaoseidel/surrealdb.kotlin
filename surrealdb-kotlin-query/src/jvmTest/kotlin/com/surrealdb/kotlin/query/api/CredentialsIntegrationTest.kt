@@ -68,280 +68,284 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class CredentialsIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("a credential for each level the server defines") {
-            should("authenticate a root user from user and pass alone") {
-                onServer { db ->
-                    db.signin(Credentials.RootUser("root", "root"))
+            context("a credential for each level the server defines") {
+                should("authenticate a root user from user and pass alone") {
+                    onServer { db ->
+                        db.signin(Credentials.RootUser("root", "root"))
 
-                    db.accessToken().shouldNotBeNull()
+                        db.accessToken().shouldNotBeNull()
+                    }
                 }
-            }
 
-            should("authenticate a namespace user from the namespace it was defined in") {
-                onServer { db ->
-                    db.signin(Credentials.NamespaceUser(MAIN, NS_USER, NS_PASS))
+                should("authenticate a namespace user from the namespace it was defined in") {
+                    onServer { db ->
+                        db.signin(Credentials.NamespaceUser(MAIN, NS_USER, NS_PASS))
 
-                    db.accessToken().shouldNotBeNull()
+                        db.accessToken().shouldNotBeNull()
+                    }
                 }
-            }
 
-            should("authenticate a database user from both names") {
-                onServer { db ->
-                    db.signin(Credentials.DatabaseUser(MAIN, MAIN_DB, DB_USER, DB_PASS))
+                should("authenticate a database user from both names") {
+                    onServer { db ->
+                        db.signin(Credentials.DatabaseUser(MAIN, MAIN_DB, DB_USER, DB_PASS))
 
-                    db.accessToken().shouldNotBeNull()
+                        db.accessToken().shouldNotBeNull()
+                    }
                 }
-            }
 
-            should("register a record through an access method and then sign it back in") {
-                onServer { db ->
-                    val vars =
-                        buildJsonObject {
-                            put("email", EMAIL)
-                            put("pass", RECORD_PASS)
-                        }
+                should("register a record through an access method and then sign it back in") {
+                    onServer { db ->
+                        val vars =
+                            buildJsonObject {
+                                put("email", EMAIL)
+                                put("pass", RECORD_PASS)
+                            }
 
-                    db.signup(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars)).shouldNotBeNull()
-                    db.signin(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars))
+                        db.signup(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars)).shouldNotBeNull()
+                        db.signin(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars))
 
-                    db.accessToken().shouldNotBeNull()
-                }
-            }
-        }
-
-        context("the mistakes the ladder removes, sent through the raw escape so the server can answer them") {
-            should("answer a misspelled ns key with the message a wrong password gets") {
-                onServer { db ->
-                    val misspelled =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("user", NS_USER)
-                                        put("pass", NS_PASS)
-                                        put("namespace", MAIN.value)
-                                    },
-                                ),
-                            )
-                        }
-
-                    val wrongPassword =
-                        shouldThrow<SurrealException> {
-                            db.signin(Credentials.NamespaceUser(MAIN, NS_USER, "not the password"))
-                        }
-
-                    misspelled.message shouldContain "There was a problem with authentication"
-                    misspelled.message shouldBe wrongPassword.message
-                }
-            }
-
-            should(
-                "answer a namespace user who also sends db with that same message, because the key set picks the level",
-            ) {
-                onServer { db ->
-                    val oneKeyTooMany =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("user", NS_USER)
-                                        put("pass", NS_PASS)
-                                        put("ns", MAIN.value)
-                                        put("db", MAIN_DB.value)
-                                    },
-                                ),
-                            )
-                        }
-
-                    oneKeyTooMany.message shouldContain "There was a problem with authentication"
-                }
-            }
-
-            should("answer a namespace that does not exist with that same message, on the system-user path") {
-                onServer { db ->
-                    val absent =
-                        shouldThrow<SurrealException> {
-                            db.signin(Credentials.NamespaceUser(Namespace("cr_absent"), NS_USER, NS_PASS))
-                        }
-
-                    absent.message shouldContain "There was a problem with authentication"
-                }
-            }
-
-            should("answer a root user who sends ns with that same message, for the same reason") {
-                onServer { db ->
-                    val oneKeyTooMany =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("user", "root")
-                                        put("pass", "root")
-                                        put("ns", MAIN.value)
-                                    },
-                                ),
-                            )
-                        }
-
-                    oneKeyTooMany.message shouldContain "There was a problem with authentication"
-                }
-            }
-
-            should("answer record variables nested under a vars key with the message a wrong password gets") {
-                onServer { db ->
-                    val vars =
-                        buildJsonObject {
-                            put("email", EMAIL)
-                            put("pass", RECORD_PASS)
-                        }
-                    db.signup(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars))
-
-                    val nested =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("ns", MAIN.value)
-                                        put("db", MAIN_DB.value)
-                                        put("ac", ACCESS)
-                                        put("vars", vars)
-                                    },
-                                ),
-                            )
-                        }
-
-                    val wrongPassword =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.RecordUser(
-                                    MAIN,
-                                    MAIN_DB,
-                                    ACCESS,
-                                    buildJsonObject {
-                                        put("email", EMAIL)
-                                        put("pass", "not the password")
-                                    },
-                                ),
-                            )
-                        }
-
-                    nested.message shouldContain "No record was returned"
-                    nested.message shouldBe wrongPassword.message
-                }
-            }
-
-            should("answer a sign-up that is not a record access with one message whatever was wrong with it") {
-                onServer { db ->
-                    val asRoot =
-                        shouldThrow<SurrealException> {
-                            db.signup(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("user", "root")
-                                        put("pass", "root")
-                                    },
-                                ),
-                            )
-                        }
-
-                    val accessKeyMissing =
-                        shouldThrow<SurrealException> {
-                            db.signup(
-                                Credentials.Raw(
-                                    buildJsonObject {
-                                        put("ns", MAIN.value)
-                                        put("db", MAIN_DB.value)
-                                        put("email", EMAIL)
-                                        put("pass", RECORD_PASS)
-                                    },
-                                ),
-                            )
-                        }
-
-                    asRoot.message shouldContain "There was a problem with signing up"
-                    asRoot.message shouldBe accessKeyMissing.message
-                }
-            }
-        }
-
-        context("the errors that are already loud, which the ladder leaves alone") {
-            should("name an access method that does not exist") {
-                onServer { db ->
-                    val thrown =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.RecordUser(
-                                    MAIN,
-                                    MAIN_DB,
-                                    "no_such_access",
-                                    buildJsonObject { put("email", EMAIL) },
-                                ),
-                            )
-                        }
-
-                    thrown.message shouldContain "The access method does not exist"
-                }
-            }
-
-            should("reject a token that is not a JWT") {
-                onServer { db ->
-                    val thrown = shouldThrow<SurrealException> { db.authenticate("not-a-jwt") }
-
-                    thrown.message shouldContain "InvalidToken"
-                }
-            }
-
-            should("name a namespace that does not exist on the record path, unlike use, which defines one") {
-                onServer { db ->
-                    val thrown =
-                        shouldThrow<SurrealException> {
-                            db.signin(
-                                Credentials.RecordUser(
-                                    Namespace("cr_absent"),
-                                    MAIN_DB,
-                                    ACCESS,
-                                    buildJsonObject { put("email", EMAIL) },
-                                ),
-                            )
-                        }
-
-                    thrown.message shouldContain "The namespace 'cr_absent' does not exist"
-                }
-            }
-        }
-
-        context("a password the RPC parses as a record id") {
-            should("fail rather than sign in, because a bound string becomes a record before anything type-checks it") {
-                onServer { db ->
-                    val thrown =
-                        shouldThrow<SurrealException> {
-                            db.signin(Credentials.RootUser("root", "note: remember the milk"))
-                        }
-
-                    thrown.message shouldContain "Expected string, got record"
-                }
-            }
-        }
-
-        context("Session.use") {
-            should("define a namespace and database that were not there, so a typo points at an empty database") {
-                onServer { db ->
-                    db.signin(Credentials.RootUser("root", "root"))
-
-                    db.use(Namespace("cr_typo"), Database("cr_typo"))
-
-                    try {
-                        db.namespace() shouldBe "cr_typo"
-                        statementResults(db.query(surql("INFO FOR ROOT")))
-                            .first()
-                            .toString() shouldContain "cr_typo"
-                    } finally {
-                        db.query(surql("REMOVE NAMESPACE IF EXISTS cr_typo"))
+                        db.accessToken().shouldNotBeNull()
                     }
                 }
             }
-        }
-    })
+
+            context("the mistakes the ladder removes, sent through the raw escape so the server can answer them") {
+                should("answer a misspelled ns key with the message a wrong password gets") {
+                    onServer { db ->
+                        val misspelled =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("user", NS_USER)
+                                            put("pass", NS_PASS)
+                                            put("namespace", MAIN.value)
+                                        },
+                                    ),
+                                )
+                            }
+
+                        val wrongPassword =
+                            shouldThrow<SurrealException> {
+                                db.signin(Credentials.NamespaceUser(MAIN, NS_USER, "not the password"))
+                            }
+
+                        misspelled.message shouldContain "There was a problem with authentication"
+                        misspelled.message shouldBe wrongPassword.message
+                    }
+                }
+
+                should(
+                    "answer a namespace user who also sends db with that same message, because the key set picks the level",
+                ) {
+                    onServer { db ->
+                        val oneKeyTooMany =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("user", NS_USER)
+                                            put("pass", NS_PASS)
+                                            put("ns", MAIN.value)
+                                            put("db", MAIN_DB.value)
+                                        },
+                                    ),
+                                )
+                            }
+
+                        oneKeyTooMany.message shouldContain "There was a problem with authentication"
+                    }
+                }
+
+                should("answer a namespace that does not exist with that same message, on the system-user path") {
+                    onServer { db ->
+                        val absent =
+                            shouldThrow<SurrealException> {
+                                db.signin(Credentials.NamespaceUser(Namespace("cr_absent"), NS_USER, NS_PASS))
+                            }
+
+                        absent.message shouldContain "There was a problem with authentication"
+                    }
+                }
+
+                should("answer a root user who sends ns with that same message, for the same reason") {
+                    onServer { db ->
+                        val oneKeyTooMany =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("user", "root")
+                                            put("pass", "root")
+                                            put("ns", MAIN.value)
+                                        },
+                                    ),
+                                )
+                            }
+
+                        oneKeyTooMany.message shouldContain "There was a problem with authentication"
+                    }
+                }
+
+                should("answer record variables nested under a vars key with the message a wrong password gets") {
+                    onServer { db ->
+                        val vars =
+                            buildJsonObject {
+                                put("email", EMAIL)
+                                put("pass", RECORD_PASS)
+                            }
+                        db.signup(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars))
+
+                        val nested =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("ns", MAIN.value)
+                                            put("db", MAIN_DB.value)
+                                            put("ac", ACCESS)
+                                            put("vars", vars)
+                                        },
+                                    ),
+                                )
+                            }
+
+                        val wrongPassword =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.RecordUser(
+                                        MAIN,
+                                        MAIN_DB,
+                                        ACCESS,
+                                        buildJsonObject {
+                                            put("email", EMAIL)
+                                            put("pass", "not the password")
+                                        },
+                                    ),
+                                )
+                            }
+
+                        nested.message shouldContain "No record was returned"
+                        nested.message shouldBe wrongPassword.message
+                    }
+                }
+
+                should("answer a sign-up that is not a record access with one message whatever was wrong with it") {
+                    onServer { db ->
+                        val asRoot =
+                            shouldThrow<SurrealException> {
+                                db.signup(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("user", "root")
+                                            put("pass", "root")
+                                        },
+                                    ),
+                                )
+                            }
+
+                        val accessKeyMissing =
+                            shouldThrow<SurrealException> {
+                                db.signup(
+                                    Credentials.Raw(
+                                        buildJsonObject {
+                                            put("ns", MAIN.value)
+                                            put("db", MAIN_DB.value)
+                                            put("email", EMAIL)
+                                            put("pass", RECORD_PASS)
+                                        },
+                                    ),
+                                )
+                            }
+
+                        asRoot.message shouldContain "There was a problem with signing up"
+                        asRoot.message shouldBe accessKeyMissing.message
+                    }
+                }
+            }
+
+            context("the errors that are already loud, which the ladder leaves alone") {
+                should("name an access method that does not exist") {
+                    onServer { db ->
+                        val thrown =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.RecordUser(
+                                        MAIN,
+                                        MAIN_DB,
+                                        "no_such_access",
+                                        buildJsonObject { put("email", EMAIL) },
+                                    ),
+                                )
+                            }
+
+                        thrown.message shouldContain "The access method does not exist"
+                    }
+                }
+
+                should("reject a token that is not a JWT") {
+                    onServer { db ->
+                        val thrown = shouldThrow<SurrealException> { db.authenticate("not-a-jwt") }
+
+                        thrown.message shouldContain "InvalidToken"
+                    }
+                }
+
+                should("name a namespace that does not exist on the record path, unlike use, which defines one") {
+                    onServer { db ->
+                        val thrown =
+                            shouldThrow<SurrealException> {
+                                db.signin(
+                                    Credentials.RecordUser(
+                                        Namespace("cr_absent"),
+                                        MAIN_DB,
+                                        ACCESS,
+                                        buildJsonObject { put("email", EMAIL) },
+                                    ),
+                                )
+                            }
+
+                        thrown.message shouldContain "The namespace 'cr_absent' does not exist"
+                    }
+                }
+            }
+
+            context("a password the RPC parses as a record id") {
+                should(
+                    "fail rather than sign in, because a bound string becomes a record before anything type-checks it",
+                ) {
+                    onServer { db ->
+                        val thrown =
+                            shouldThrow<SurrealException> {
+                                db.signin(Credentials.RootUser("root", "note: remember the milk"))
+                            }
+
+                        thrown.message shouldContain "Expected string, got record"
+                    }
+                }
+            }
+
+            context("Session.use") {
+                should("define a namespace and database that were not there, so a typo points at an empty database") {
+                    onServer { db ->
+                        db.signin(Credentials.RootUser("root", "root"))
+
+                        db.use(Namespace("cr_typo"), Database("cr_typo"))
+
+                        try {
+                            db.namespace() shouldBe "cr_typo"
+                            statementResults(db.query(surql("INFO FOR ROOT")))
+                                .first()
+                                .toString() shouldContain "cr_typo"
+                        } finally {
+                            db.query(surql("REMOVE NAMESPACE IF EXISTS cr_typo"))
+                        }
+                    }
+                }
+            }
+        },
+    )

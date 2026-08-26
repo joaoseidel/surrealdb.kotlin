@@ -28,7 +28,8 @@ internal class HttpEngine(
             Feature.SurrealML,
         )
 
-    @Volatile private var started = false
+    @Volatile
+    private var started = false
 
     override suspend fun start() {
         if (started) return

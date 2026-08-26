@@ -69,49 +69,51 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class SchemaCheckIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("checkSchema on a SCHEMAFULL table") {
-            should("report nothing when the server defines every declared field") {
-                onServer { db ->
-                    db.checkSchema(InSync) shouldBe emptyList()
+            context("checkSchema on a SCHEMAFULL table") {
+                should("report nothing when the server defines every declared field") {
+                    onServer { db ->
+                        db.checkSchema(InSync) shouldBe emptyList()
+                    }
+                }
+
+                should("name the field the server does not have, and list the ones it does") {
+                    onServer { db ->
+                        val drift = db.checkSchema(Stale)
+
+                        drift shouldHaveSize 1
+                        drift.single() shouldContain "${Stale.tableName}.pagse is not defined on the server"
+                        drift.single() shouldContain "age"
+                        drift.single() shouldContain "name"
+                    }
                 }
             }
 
-            should("name the field the server does not have, and list the ones it does") {
-                onServer { db ->
-                    val drift = db.checkSchema(Stale)
-
-                    drift shouldHaveSize 1
-                    drift.single() shouldContain "${Stale.tableName}.pagse is not defined on the server"
-                    drift.single() shouldContain "age"
-                    drift.single() shouldContain "name"
+            context("checkSchema on a table the server cannot describe") {
+                should("say a SCHEMALESS table has no field list, rather than passing quietly") {
+                    onServer { db ->
+                        db.checkSchema(Loose).single() shouldBe
+                            "${Loose.tableName} is not SCHEMAFULL, so the server does not know which fields it has."
+                    }
                 }
-            }
-        }
 
-        context("checkSchema on a table the server cannot describe") {
-            should("say a SCHEMALESS table has no field list, rather than passing quietly") {
-                onServer { db ->
-                    db.checkSchema(Loose).single() shouldBe
-                        "${Loose.tableName} is not SCHEMAFULL, so the server does not know which fields it has."
+                should("say an undefined table cannot be checked, rather than passing quietly") {
+                    onServer { db ->
+                        db.checkSchema(Absent).single() shouldBe
+                            "${Absent.tableName} is not defined on the server, so its fields cannot be checked."
+                    }
                 }
             }
 
-            should("say an undefined table cannot be checked, rather than passing quietly") {
-                onServer { db ->
-                    db.checkSchema(Absent).single() shouldBe
-                        "${Absent.tableName} is not defined on the server, so its fields cannot be checked."
+            context("checkSchema over several tables") {
+                should("answer for each of them in one round trip") {
+                    onServer { db ->
+                        db.checkSchema(InSync, Stale, Loose) shouldHaveSize 2
+                    }
                 }
             }
-        }
-
-        context("checkSchema over several tables") {
-            should("answer for each of them in one round trip") {
-                onServer { db ->
-                    db.checkSchema(InSync, Stale, Loose) shouldHaveSize 2
-                }
-            }
-        }
-    })
+        },
+    )

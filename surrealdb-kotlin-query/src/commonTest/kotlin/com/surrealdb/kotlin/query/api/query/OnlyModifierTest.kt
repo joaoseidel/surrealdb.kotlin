@@ -51,72 +51,74 @@ private val forced: List<Pair<String, (Target) -> Query>> =
     )
 
 class OnlyModifierTest :
-    ShouldSpec({
-        context("a target that names one record") {
-            should("carry ONLY in every verb, because no second record can match") {
-                for (target in oneRecord) {
-                    for ((verb, build) in inferring) {
-                        withClue("$verb $target") {
-                            build(target).compile().surql shouldContain " ONLY type::record("
-                        }
-                    }
-                }
-            }
-        }
-
-        context("a target that names a set of records") {
-            should("carry no ONLY, because the server rejects the statement on the second match") {
-                for (target in manyRecords) {
-                    for ((verb, build) in inferring) {
-                        withClue("$verb $target") {
-                            build(target).compile().surql shouldNotContain "ONLY"
+    ShouldSpec(
+        {
+            context("a target that names one record") {
+                should("carry ONLY in every verb, because no second record can match") {
+                    for (target in oneRecord) {
+                        for ((verb, build) in inferring) {
+                            withClue("$verb $target") {
+                                build(target).compile().surql shouldContain " ONLY type::record("
+                            }
                         }
                     }
                 }
             }
 
-            should("still render the target itself unchanged") {
-                db.select(People).compile().surql shouldBe "SELECT * FROM type::table(\$_0)"
-                db.delete(Table("person")).compile().surql shouldBe "DELETE type::table(\$_0)"
-            }
-        }
-
-        context("CREATE") {
-            should("carry ONLY whatever the target, because it writes exactly one record") {
-                for (target in oneRecord + manyRecords) {
-                    withClue("create $target") {
-                        db.create(target).compile().surql shouldStartWith "CREATE ONLY "
+            context("a target that names a set of records") {
+                should("carry no ONLY, because the server rejects the statement on the second match") {
+                    for (target in manyRecords) {
+                        for ((verb, build) in inferring) {
+                            withClue("$verb $target") {
+                                build(target).compile().surql shouldNotContain "ONLY"
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        context("only()") {
-            should("put ONLY back on a target that names a set, in every verb that takes it") {
-                for (target in manyRecords) {
-                    for ((verb, build) in forced) {
-                        withClue("$verb $target") {
-                            build(target).compile().surql shouldContain " ONLY "
+                should("still render the target itself unchanged") {
+                    db.select(People).compile().surql shouldBe "SELECT * FROM type::table(\$_0)"
+                    db.delete(Table("person")).compile().surql shouldBe "DELETE type::table(\$_0)"
+                }
+            }
+
+            context("CREATE") {
+                should("carry ONLY whatever the target, because it writes exactly one record") {
+                    for (target in oneRecord + manyRecords) {
+                        withClue("create $target") {
+                            db.create(target).compile().surql shouldStartWith "CREATE ONLY "
                         }
                     }
                 }
             }
 
-            should("add ONLY and nothing else, so a table target still needs a limit of its own") {
-                val plain = db.select(People).compile()
-                val single = db.select(People).only().compile()
+            context("only()") {
+                should("put ONLY back on a target that names a set, in every verb that takes it") {
+                    for (target in manyRecords) {
+                        for ((verb, build) in forced) {
+                            withClue("$verb $target") {
+                                build(target).compile().surql shouldContain " ONLY "
+                            }
+                        }
+                    }
+                }
 
-                single.surql shouldBe plain.surql.replaceFirst("FROM ", "FROM ONLY ")
-                single.bindings shouldBe plain.bindings
-                single.surql shouldNotContain "LIMIT"
+                should("add ONLY and nothing else, so a table target still needs a limit of its own") {
+                    val plain = db.select(People).compile()
+                    val single = db.select(People).only().compile()
+
+                    single.surql shouldBe plain.surql.replaceFirst("FROM ", "FROM ONLY ")
+                    single.bindings shouldBe plain.bindings
+                    single.surql shouldNotContain "LIMIT"
+                }
+
+                should("leave a record target rendering exactly as it already did") {
+                    val inferred = db.update(People["alice"]).compile()
+                    val asked = db.update(People["alice"]).only().compile()
+
+                    asked.surql shouldBe inferred.surql
+                    asked.bindings shouldBe inferred.bindings
+                }
             }
-
-            should("leave a record target rendering exactly as it already did") {
-                val inferred = db.update(People["alice"]).compile()
-                val asked = db.update(People["alice"]).only().compile()
-
-                asked.surql shouldBe inferred.surql
-                asked.bindings shouldBe inferred.bindings
-            }
-        }
-    })
+        },
+    )

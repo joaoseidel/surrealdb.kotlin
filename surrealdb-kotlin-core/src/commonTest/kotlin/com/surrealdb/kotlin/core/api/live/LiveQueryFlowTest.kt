@@ -80,183 +80,187 @@ private fun TestScope.collectOutcome(flow: Flow<*>): CompletableDeferred<Throwab
 }
 
 class LiveQueryFlowTest :
-    ShouldSpec({
-        context("liveEventFlow") {
+    ShouldSpec(
+        {
+            context("liveEventFlow") {
 
-            context("the subscription's lifetime") {
-                should("start nothing until something collects, so an unused flow costs the server no live query") {
-                    runTest {
-                        val engine = FakeEngine()
+                context("the subscription's lifetime") {
+                    should("start nothing until something collects, so an unused flow costs the server no live query") {
+                        runTest {
+                            val engine = FakeEngine()
 
-                        engine.flow(content)
+                            engine.flow(content)
 
-                        engine.started.shouldBeEmpty()
+                            engine.started.shouldBeEmpty()
+                        }
+                    }
+
+                    should("start the query when collection begins") {
+                        runTest {
+                            val engine = FakeEngine()
+
+                            collectInBackground(engine.flow(content), mutableListOf())
+
+                            engine.started shouldContainExactly listOf("lq-1")
+                        }
+                    }
+
+                    should(
+                        "kill the query when the collector is cancelled, which is the ordinary way a collection ends",
+                    ) {
+                        runTest {
+                            val engine = FakeEngine()
+                            val job = collectInBackground(engine.flow(content), mutableListOf())
+
+                            job.cancelAndJoin()
+
+                            engine.stopped shouldContainExactly listOf("lq-1")
+                        }
+                    }
+
+                    should("kill the query when the collector finishes on its own terms") {
+                        runTest {
+                            val engine = FakeEngine()
+                            engine.onStarted = { engine.notifications.tryEmit(notification(it)) }
+
+                            engine.flow(content).take(1).toList()
+
+                            engine.stopped shouldContainExactly listOf("lq-1")
+                        }
+                    }
+
+                    should("kill nothing when the LIVE SELECT itself failed, there being no query to kill") {
+                        runTest {
+                            val engine = FakeEngine(startFails = IllegalStateException("LIVE SELECT rejected"))
+
+                            shouldThrow<IllegalStateException> { engine.flow(content).toList() }
+
+                            engine.stopped.shouldBeEmpty()
+                        }
                     }
                 }
 
-                should("start the query when collection begins") {
-                    runTest {
-                        val engine = FakeEngine()
+                context("a subscription that can no longer deliver") {
+                    should("throw the failure into the collector, so a dead query is not mistaken for a quiet one") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val outcome = collectOutcome(engine.flow(content))
 
-                        collectInBackground(engine.flow(content), mutableListOf())
+                            engine.failures.emit(
+                                LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
+                            )
 
-                        engine.started shouldContainExactly listOf("lq-1")
+                            outcome
+                                .await()
+                                .shouldBeInstanceOf<SurrealLiveQueryException>()
+                                .message shouldBe "could not be re-established"
+                        }
+                    }
+
+                    should("ignore a failure belonging to another query, which says nothing about this one") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val events = mutableListOf<LiveQueryEvent<String>>()
+                            collectInBackground(engine.flow(content), events)
+
+                            engine.failures.emit(
+                                LiveQueryFailure("lq-2", SurrealLiveQueryException("someone else's query")),
+                            )
+                            engine.notifications.emit(notification("lq-1", payload = "mine"))
+
+                            events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "mine"
+                        }
+                    }
+
+                    should("kill nothing, the query it would name having already stopped existing") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val outcome = collectOutcome(engine.flow(content))
+
+                            engine.failures.emit(
+                                LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
+                            )
+
+                            outcome.await()
+                            engine.stopped.shouldBeEmpty()
+                        }
                     }
                 }
 
-                should("kill the query when the collector is cancelled, which is the ordinary way a collection ends") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val job = collectInBackground(engine.flow(content), mutableListOf())
+                context("each collection") {
+                    should(
+                        "get a query of its own, so two collectors share no id and cancelling one cannot end the other",
+                    ) {
+                        runTest {
+                            val engine = FakeEngine()
+                            val flow = engine.flow(content)
 
-                        job.cancelAndJoin()
+                            val first = collectInBackground(flow, mutableListOf())
+                            collectInBackground(flow, mutableListOf())
 
-                        engine.stopped shouldContainExactly listOf("lq-1")
+                            engine.started shouldContainExactly listOf("lq-1", "lq-2")
+
+                            first.cancelAndJoin()
+                            engine.stopped shouldContainExactly listOf("lq-1")
+                        }
                     }
                 }
 
-                should("kill the query when the collector finishes on its own terms") {
-                    runTest {
-                        val engine = FakeEngine()
-                        engine.onStarted = { engine.notifications.tryEmit(notification(it)) }
+                context("the window between LIVE SELECT and collection") {
+                    should(
+                        "deliver a notification published before the statement's reply came back, because the collector is subscribed before the statement runs",
+                    ) {
+                        runTest {
+                            val engine = FakeEngine()
+                            val events = mutableListOf<LiveQueryEvent<String>>()
 
-                        engine.flow(content).take(1).toList()
+                            engine.onStarted = { engine.notifications.tryEmit(notification(it, payload = "early")) }
 
-                        engine.stopped shouldContainExactly listOf("lq-1")
+                            collectInBackground(engine.flow(content), events)
+
+                            events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "early"
+                        }
                     }
                 }
 
-                should("kill nothing when the LIVE SELECT itself failed, there being no query to kill") {
-                    runTest {
-                        val engine = FakeEngine(startFails = IllegalStateException("LIVE SELECT rejected"))
+                context("the events") {
+                    should("carry only the notifications belonging to this collection's query") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val events = mutableListOf<LiveQueryEvent<String>>()
+                            collectInBackground(engine.flow(content), events)
 
-                        shouldThrow<IllegalStateException> { engine.flow(content).toList() }
+                            engine.notifications.emit(notification("lq-2", payload = "someone else's"))
+                            engine.notifications.emit(notification("lq-1", payload = "mine"))
 
-                        engine.stopped.shouldBeEmpty()
+                            events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "mine"
+                        }
+                    }
+
+                    should("decode each payload with the decoder they were asked for") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val events = mutableListOf<LiveQueryEvent<Int>>()
+                            collectInBackground(engine.flow { it.jsonPrimitive.content.length }, events)
+
+                            engine.notifications.emit(notification("lq-1", payload = "four"))
+
+                            events.single().shouldBeInstanceOf<LiveQueryEvent.Created<Int>>().value shouldBe 4
+                        }
+                    }
+
+                    should("keep the action's meaning, so a collector branches on a type rather than a string") {
+                        runTest {
+                            val engine = FakeEngine()
+                            val events = mutableListOf<LiveQueryEvent<String>>()
+                            collectInBackground(engine.flow(content), events)
+
+                            engine.notifications.emit(notification("lq-1", action = "DELETE"))
+
+                            events.single().shouldBeInstanceOf<LiveQueryEvent.Deleted<String>>()
+                        }
                     }
                 }
             }
-
-            context("a subscription that can no longer deliver") {
-                should("throw the failure into the collector, so a dead query is not mistaken for a quiet one") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val outcome = collectOutcome(engine.flow(content))
-
-                        engine.failures.emit(
-                            LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
-                        )
-
-                        outcome
-                            .await()
-                            .shouldBeInstanceOf<SurrealLiveQueryException>()
-                            .message shouldBe "could not be re-established"
-                    }
-                }
-
-                should("ignore a failure belonging to another query, which says nothing about this one") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val events = mutableListOf<LiveQueryEvent<String>>()
-                        collectInBackground(engine.flow(content), events)
-
-                        engine.failures.emit(
-                            LiveQueryFailure("lq-2", SurrealLiveQueryException("someone else's query")),
-                        )
-                        engine.notifications.emit(notification("lq-1", payload = "mine"))
-
-                        events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "mine"
-                    }
-                }
-
-                should("kill nothing, the query it would name having already stopped existing") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val outcome = collectOutcome(engine.flow(content))
-
-                        engine.failures.emit(
-                            LiveQueryFailure("lq-1", SurrealLiveQueryException("could not be re-established")),
-                        )
-
-                        outcome.await()
-                        engine.stopped.shouldBeEmpty()
-                    }
-                }
-            }
-
-            context("each collection") {
-                should(
-                    "get a query of its own, so two collectors share no id and cancelling one cannot end the other",
-                ) {
-                    runTest {
-                        val engine = FakeEngine()
-                        val flow = engine.flow(content)
-
-                        val first = collectInBackground(flow, mutableListOf())
-                        collectInBackground(flow, mutableListOf())
-
-                        engine.started shouldContainExactly listOf("lq-1", "lq-2")
-
-                        first.cancelAndJoin()
-                        engine.stopped shouldContainExactly listOf("lq-1")
-                    }
-                }
-            }
-
-            context("the window between LIVE SELECT and collection") {
-                should(
-                    "deliver a notification published before the statement's reply came back, because the collector is subscribed before the statement runs",
-                ) {
-                    runTest {
-                        val engine = FakeEngine()
-                        val events = mutableListOf<LiveQueryEvent<String>>()
-
-                        engine.onStarted = { engine.notifications.tryEmit(notification(it, payload = "early")) }
-
-                        collectInBackground(engine.flow(content), events)
-
-                        events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "early"
-                    }
-                }
-            }
-
-            context("the events") {
-                should("carry only the notifications belonging to this collection's query") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val events = mutableListOf<LiveQueryEvent<String>>()
-                        collectInBackground(engine.flow(content), events)
-
-                        engine.notifications.emit(notification("lq-2", payload = "someone else's"))
-                        engine.notifications.emit(notification("lq-1", payload = "mine"))
-
-                        events.single().shouldBeInstanceOf<LiveQueryEvent.Created<String>>().value shouldBe "mine"
-                    }
-                }
-
-                should("decode each payload with the decoder they were asked for") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val events = mutableListOf<LiveQueryEvent<Int>>()
-                        collectInBackground(engine.flow { it.jsonPrimitive.content.length }, events)
-
-                        engine.notifications.emit(notification("lq-1", payload = "four"))
-
-                        events.single().shouldBeInstanceOf<LiveQueryEvent.Created<Int>>().value shouldBe 4
-                    }
-                }
-
-                should("keep the action's meaning, so a collector branches on a type rather than a string") {
-                    runTest {
-                        val engine = FakeEngine()
-                        val events = mutableListOf<LiveQueryEvent<String>>()
-                        collectInBackground(engine.flow(content), events)
-
-                        engine.notifications.emit(notification("lq-1", action = "DELETE"))
-
-                        events.single().shouldBeInstanceOf<LiveQueryEvent.Deleted<String>>()
-                    }
-                }
-            }
-        }
-    })
+        },
+    )

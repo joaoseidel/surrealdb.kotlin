@@ -45,26 +45,28 @@ private fun onLiveServer(block: suspend (Surreal, Session) -> Unit) {
 }
 
 class FilteredLiveIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("Session.live(table, filter)") {
-            should("bind the filter and receive only records that match it") {
-                onLiveServer { client, db ->
-                    val received = Channel<LiveQueryEvent<Row>>(Channel.UNLIMITED)
-                    val collector = launch { db.live(LiveUsers) { age greaterEq 18 }.collect { received.send(it) } }
-                    withTimeout(5_000) { client.activeLiveQueries.first { it.isNotEmpty() } }
+            context("Session.live(table, filter)") {
+                should("bind the filter and receive only records that match it") {
+                    onLiveServer { client, db ->
+                        val received = Channel<LiveQueryEvent<Row>>(Channel.UNLIMITED)
+                        val collector = launch { db.live(LiveUsers) { age greaterEq 18 }.collect { received.send(it) } }
+                        withTimeout(5_000) { client.activeLiveQueries.first { it.isNotEmpty() } }
 
-                    db.create(LiveUsers["minor"]).set { it[age] = 17 }.await()
-                    db.create(LiveUsers["adult"]).set { it[age] = 18 }.await()
+                        db.create(LiveUsers["minor"]).set { it[age] = 17 }.await()
+                        db.create(LiveUsers["adult"]).set { it[age] = 18 }.await()
 
-                    val event = withTimeout(10_000) { received.receive() }
-                    event.shouldBeInstanceOf<LiveQueryEvent.Created<Row>>().value[LiveUsers.age] shouldBe 18
-                    received.tryReceive().isSuccess shouldBe false
+                        val event = withTimeout(10_000) { received.receive() }
+                        event.shouldBeInstanceOf<LiveQueryEvent.Created<Row>>().value[LiveUsers.age] shouldBe 18
+                        received.tryReceive().isSuccess shouldBe false
 
-                    collector.cancelAndJoin()
-                    db.delete(LiveUsers).await()
+                        collector.cancelAndJoin()
+                        db.delete(LiveUsers).await()
+                    }
                 }
             }
-        }
-    })
+        },
+    )

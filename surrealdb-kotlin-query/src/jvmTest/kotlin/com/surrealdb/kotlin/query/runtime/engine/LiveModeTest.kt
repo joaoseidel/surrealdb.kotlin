@@ -18,39 +18,43 @@ private fun FakeSurrealServer.paramsOfLastLive(): JsonArray =
         .jsonArray
 
 class LiveModeTest :
-    ShouldSpec({
-        context("Session.live") {
-            should("send diff = false by default, so the mode is never left to the server to decide") {
-                withServer { server, _, db ->
-                    db.live(Table("book"))
-                    awaiting { server.issued.size == 1 }
+    ShouldSpec(
+        {
+            context("Session.live") {
+                should("send diff = false by default, so the mode is never left to the server to decide") {
+                    withServer { server, _, db ->
+                        db.live(Table("book"))
+                        awaiting { server.issued.size == 1 }
 
-                    server.paramsOfLastLive() shouldBe
-                        JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(false)))
+                        server.paramsOfLastLive() shouldBe
+                            JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(false)))
+                    }
+                }
+
+                should("send diff = true for LiveMode.Diffs, which is what makes notifications carry patches") {
+                    withServer { server, _, db ->
+                        db.live(Table("book"), LiveMode.Diffs)
+                        awaiting { server.issued.size == 1 }
+
+                        server.paramsOfLastLive() shouldBe
+                            JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(true)))
+                    }
+                }
+
+                should(
+                    "keep the mode across a reconnect, because the server forgets the subscription with the session",
+                ) {
+                    withServer { server, _, db ->
+                        db.live(Table("book"), LiveMode.Diffs)
+                        awaiting { server.issued.size == 1 }
+
+                        server.dropConnection()
+
+                        awaiting { server.issued.size == 2 }
+                        server.paramsOfLastLive() shouldBe
+                            JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(true)))
+                    }
                 }
             }
-
-            should("send diff = true for LiveMode.Diffs, which is what makes notifications carry patches") {
-                withServer { server, _, db ->
-                    db.live(Table("book"), LiveMode.Diffs)
-                    awaiting { server.issued.size == 1 }
-
-                    server.paramsOfLastLive() shouldBe
-                        JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(true)))
-                }
-            }
-
-            should("keep the mode across a reconnect, because the server forgets the subscription with the session") {
-                withServer { server, _, db ->
-                    db.live(Table("book"), LiveMode.Diffs)
-                    awaiting { server.issued.size == 1 }
-
-                    server.dropConnection()
-
-                    awaiting { server.issued.size == 2 }
-                    server.paramsOfLastLive() shouldBe
-                        JsonArray(listOf(JsonPrimitive("book"), JsonPrimitive(true)))
-                }
-            }
-        }
-    })
+        },
+    )

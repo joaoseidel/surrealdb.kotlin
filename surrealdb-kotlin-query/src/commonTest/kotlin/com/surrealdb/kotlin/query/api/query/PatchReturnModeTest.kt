@@ -28,32 +28,34 @@ private val modes: List<Pair<ReturnMode, String>> =
     )
 
 class PatchReturnModeTest :
-    ShouldSpec({
-        context("PatchQuery.returnMode") {
-            modes.forEach { (mode, expected) ->
-                should("render$expected") {
-                    patchOnPeople().returnMode(mode).compile().surql shouldEndWith expected
+    ShouldSpec(
+        {
+            context("PatchQuery.returnMode") {
+                modes.forEach { (mode, expected) ->
+                    should("render$expected") {
+                        patchOnPeople().returnMode(mode).compile().surql shouldEndWith expected
+                    }
+                }
+
+                should("come after WHERE, because SurrealQL takes the clauses in that order") {
+                    val surql =
+                        patchOnPeople()
+                            .where { age greater 30 }
+                            .returnMode(ReturnMode.Diff)
+                            .compile()
+                            .surql
+
+                    surql shouldEndWith " RETURN DIFF"
+                    surql.indexOf(" WHERE ") shouldBeLessThan surql.indexOf(" RETURN ")
+                }
+
+                should("survive a where applied afterwards, so the two are order-independent to the caller") {
+                    patchOnPeople()
+                        .returnMode(ReturnMode.Diff)
+                        .where { age greater 30 }
+                        .compile()
+                        .surql shouldEndWith " RETURN DIFF"
                 }
             }
-
-            should("come after WHERE, because SurrealQL takes the clauses in that order") {
-                val surql =
-                    patchOnPeople()
-                        .where { age greater 30 }
-                        .returnMode(ReturnMode.Diff)
-                        .compile()
-                        .surql
-
-                surql shouldEndWith " RETURN DIFF"
-                surql.indexOf(" WHERE ") shouldBeLessThan surql.indexOf(" RETURN ")
-            }
-
-            should("survive a where applied afterwards, so the two are order-independent to the caller") {
-                patchOnPeople()
-                    .returnMode(ReturnMode.Diff)
-                    .where { age greater 30 }
-                    .compile()
-                    .surql shouldEndWith " RETURN DIFF"
-            }
-        }
-    })
+        },
+    )

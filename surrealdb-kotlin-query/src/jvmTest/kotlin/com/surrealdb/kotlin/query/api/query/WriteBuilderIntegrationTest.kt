@@ -62,108 +62,111 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class WriteBuilderIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("create with SET") {
-            should("write every assigned field") {
-                onServer { db ->
-                    val created =
+            context("create with SET") {
+                should("write every assigned field") {
+                    onServer { db ->
+                        val created =
+                            db
+                                .create(Books["sicp"])
+                                .set {
+                                    it[title] = "SICP"
+                                    it[pages] = 657
+                                }.theRecord()
+
+                        created[Books.title] shouldBe "SICP"
+                        created[Books.pages] shouldBe 657
+                    }
+                }
+            }
+
+            context("a dotted path") {
+                should("build the missing parent object rather than failing") {
+                    onServer { db ->
+                        db.create(Books["htdp"]).set { it[title] = "HtDP" }.await()
+
+                        val updated =
+                            db
+                                .update(Books["htdp"])
+                                .set {
+                                    it[shelfCity] = "Boston"
+                                    it[shelfZip] = "02110"
+                                }.theRecord()
+
+                        updated[Books.shelfCity] shouldBe "Boston"
+                        updated[Books.shelfZip] shouldBe "02110"
+                    }
+                }
+            }
+
+            context("the array operators") {
+                should("create the array on first append, then append and remove") {
+                    onServer { db ->
+                        db.create(Books["array"]).set { it[title] = "Arrays" }.await()
+
+                        db.update(Books["array"]).set { it[tags] += "cs" }.theRecord()[Books.tags] shouldBe listOf("cs")
+
+                        db.update(Books["array"]).set { it[tags] += "lisp" }.theRecord()[Books.tags] shouldBe
+                            listOf("cs", "lisp")
+
+                        db.update(Books["array"]).set { it[tags] -= "cs" }.theRecord()[Books.tags] shouldBe
+                            listOf("lisp")
+                    }
+                }
+            }
+
+            context("a composite assignment") {
+                should("replace the whole object rather than merging into it") {
+                    onServer { db ->
                         db
-                            .create(Books["sicp"])
+                            .create(Books["composite"])
                             .set {
-                                it[title] = "SICP"
-                                it[pages] = 657
-                            }.theRecord()
+                                it[title] = "Composites"
+                                it[shelf] = Shelf("Boston", "02110")
+                            }.await()
 
-                    created[Books.title] shouldBe "SICP"
-                    created[Books.pages] shouldBe 657
+                        val replaced =
+                            db
+                                .update(Books["composite"])
+                                .set { it[shelf] = Shelf("Cambridge", "02139") }
+                                .theRecord()
+
+                        replaced[Books.shelf] shouldBe Shelf("Cambridge", "02139")
+                    }
                 }
             }
-        }
 
-        context("a dotted path") {
-            should("build the missing parent object rather than failing") {
-                onServer { db ->
-                    db.create(Books["htdp"]).set { it[title] = "HtDP" }.await()
-
-                    val updated =
+            context("an empty set block") {
+                should("leave the record untouched instead of failing to parse") {
+                    onServer { db ->
                         db
-                            .update(Books["htdp"])
+                            .create(Books["empty"])
                             .set {
-                                it[shelfCity] = "Boston"
-                                it[shelfZip] = "02110"
-                            }.theRecord()
+                                it[title] = "Untouched"
+                                it[pages] = 100
+                            }.await()
 
-                    updated[Books.shelfCity] shouldBe "Boston"
-                    updated[Books.shelfZip] shouldBe "02110"
+                        val unchanged = db.update(Books["empty"]).set { }.theRecord()
+
+                        unchanged[Books.title] shouldBe "Untouched"
+                        unchanged[Books.pages] shouldBe 100
+                    }
                 }
-            }
-        }
 
-        context("the array operators") {
-            should("create the array on first append, then append and remove") {
-                onServer { db ->
-                    db.create(Books["array"]).set { it[title] = "Arrays" }.await()
-
-                    db.update(Books["array"]).set { it[tags] += "cs" }.theRecord()[Books.tags] shouldBe listOf("cs")
-
-                    db.update(Books["array"]).set { it[tags] += "lisp" }.theRecord()[Books.tags] shouldBe
-                        listOf("cs", "lisp")
-
-                    db.update(Books["array"]).set { it[tags] -= "cs" }.theRecord()[Books.tags] shouldBe listOf("lisp")
-                }
-            }
-        }
-
-        context("a composite assignment") {
-            should("replace the whole object rather than merging into it") {
-                onServer { db ->
-                    db
-                        .create(Books["composite"])
-                        .set {
-                            it[title] = "Composites"
-                            it[shelf] = Shelf("Boston", "02110")
-                        }.await()
-
-                    val replaced =
+                should("create nothing when the record does not exist") {
+                    onServer { db ->
                         db
-                            .update(Books["composite"])
-                            .set { it[shelf] = Shelf("Cambridge", "02139") }
-                            .theRecord()
+                            .update(Books["absent"])
+                            .set { }
+                            .await()
+                            .shouldBeEmpty()
 
-                    replaced[Books.shelf] shouldBe Shelf("Cambridge", "02139")
+                        db.select(Books["absent"]).awaitSingleOrNull() shouldBe null
+                    }
                 }
             }
-        }
-
-        context("an empty set block") {
-            should("leave the record untouched instead of failing to parse") {
-                onServer { db ->
-                    db
-                        .create(Books["empty"])
-                        .set {
-                            it[title] = "Untouched"
-                            it[pages] = 100
-                        }.await()
-
-                    val unchanged = db.update(Books["empty"]).set { }.theRecord()
-
-                    unchanged[Books.title] shouldBe "Untouched"
-                    unchanged[Books.pages] shouldBe 100
-                }
-            }
-
-            should("create nothing when the record does not exist") {
-                onServer { db ->
-                    db
-                        .update(Books["absent"])
-                        .set { }
-                        .await()
-                        .shouldBeEmpty()
-
-                    db.select(Books["absent"]).awaitSingleOrNull() shouldBe null
-                }
-            }
-        }
-    })
+        },
+    )

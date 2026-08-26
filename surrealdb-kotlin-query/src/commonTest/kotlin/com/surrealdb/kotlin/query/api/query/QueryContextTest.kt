@@ -17,45 +17,47 @@ import kotlinx.serialization.json.put
  * else is written once, so these cases hold for both.
  */
 class QueryContextTest :
-    ShouldSpec({
-        context("QueryContext.query") {
-            context("a SurrealQL template") {
-                should("carry the caller's bindings into the request") {
-                    runTest {
-                        val context = RecordingContext()
+    ShouldSpec(
+        {
+            context("QueryContext.query") {
+                context("a SurrealQL template") {
+                    should("carry the caller's bindings into the request") {
+                        runTest {
+                            val context = RecordingContext()
 
-                        context.query(surqlTemplate { "SELECT * FROM type::table(${bind("person")})" })
+                            context.query(surqlTemplate { "SELECT * FROM type::table(${bind("person")})" })
 
-                        context.sent.single().surql shouldBe "SELECT * FROM type::table(\$_0)"
-                        context.sent
-                            .single()
-                            .bindings["_0"] shouldBe JsonPrimitive("person")
+                            context.sent.single().surql shouldBe "SELECT * FROM type::table(\$_0)"
+                            context.sent
+                                .single()
+                                .bindings["_0"] shouldBe JsonPrimitive("person")
+                        }
                     }
-                }
 
-                should("send no bindings when the template binds no values") {
-                    runTest {
-                        val context = RecordingContext()
+                    should("send no bindings when the template binds no values") {
+                        runTest {
+                            val context = RecordingContext()
 
-                        context.query(surqlTemplate { "SELECT 1" })
+                            context.query(surqlTemplate { "SELECT 1" })
 
-                        context.sent.single().bindings shouldBe emptyMap()
+                            context.sent.single().bindings shouldBe emptyMap()
+                        }
                     }
                 }
             }
-        }
 
-        context("the CRUD API") {
-            should("dispatch through the context that built the query, so a builder cannot reach a different one") {
-                runTest {
-                    val session = RecordingContext()
-                    val transaction = RecordingContext()
+            context("the CRUD API") {
+                should("dispatch through the context that built the query, so a builder cannot reach a different one") {
+                    runTest {
+                        val session = RecordingContext()
+                        val transaction = RecordingContext()
 
-                    transaction.select(Table("person")).await()
+                        transaction.select(Table("person")).await()
 
-                    session.sent.shouldBeEmpty()
-                    transaction.sent.single().surql shouldStartWith "SELECT * FROM type::table("
+                        session.sent.shouldBeEmpty()
+                        transaction.sent.single().surql shouldStartWith "SELECT * FROM type::table("
+                    }
                 }
             }
-        }
-    })
+        },
+    )

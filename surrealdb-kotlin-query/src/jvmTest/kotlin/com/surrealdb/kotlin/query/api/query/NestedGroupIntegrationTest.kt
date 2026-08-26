@@ -90,54 +90,56 @@ private fun onServer(block: suspend (Session) -> Unit) {
 }
 
 class NestedGroupIntegrationTest :
-    ShouldSpec({
-        defaultTestConfig = integrationTestConfig
+    ShouldSpec(
+        {
+            defaultTestConfig = integrationTestConfig
 
-        context("a nested field in a SET") {
-            should("write two levels down, building both objects above it") {
-                onServer { db ->
-                    val written =
-                        db
-                            .create(Profiles["ada"])
-                            .set {
-                                it[name] = "Ada"
-                                it[address.city] = "Boston"
-                                it[address.zip] = "02110"
-                                it[address.geo.lat] = 42.36
-                            }.theRecord()
+            context("a nested field in a SET") {
+                should("write two levels down, building both objects above it") {
+                    onServer { db ->
+                        val written =
+                            db
+                                .create(Profiles["ada"])
+                                .set {
+                                    it[name] = "Ada"
+                                    it[address.city] = "Boston"
+                                    it[address.zip] = "02110"
+                                    it[address.geo.lat] = 42.36
+                                }.theRecord()
 
-                    written[Profiles.address.city] shouldBe "Boston"
-                    written[Profiles.address.zip] shouldBe "02110"
-                    written[Profiles.address.geo.lat] shouldBe 42.36
-                }
-            }
-        }
-
-        context("a nested field in a WHERE") {
-            should("match on the path, at either level") {
-                onServer { db ->
-                    db.create(Profiles["grace"]).set { it[address.city] = "Boston" }.await()
-                    db.create(Profiles["alan"]).set { it[address.geo.lat] = 51.5 }.await()
-
-                    db.select(Profiles).where { address.city eq "Boston" }.await() shouldHaveSize 1
-                    db.select(Profiles).where { address.geo.lat greater 50.0 }.await() shouldHaveSize 1
-                }
-            }
-        }
-
-        context("checkSchema over a table with groups") {
-            should("report nothing when the server defines every nested path") {
-                onServer { db ->
-                    db.checkSchema(Profiles).shouldBeEmpty()
+                        written[Profiles.address.city] shouldBe "Boston"
+                        written[Profiles.address.zip] shouldBe "02110"
+                        written[Profiles.address.geo.lat] shouldBe 42.36
+                    }
                 }
             }
 
-            should("report nothing for a leaf the server defines alone, because a group declares leaves") {
-                onServer { db ->
-                    db.create(LeafOnly["one"]).set { it[address.geo.lat] = 1.5 }.await()
+            context("a nested field in a WHERE") {
+                should("match on the path, at either level") {
+                    onServer { db ->
+                        db.create(Profiles["grace"]).set { it[address.city] = "Boston" }.await()
+                        db.create(Profiles["alan"]).set { it[address.geo.lat] = 51.5 }.await()
 
-                    db.checkSchema(LeafOnly).shouldBeEmpty()
+                        db.select(Profiles).where { address.city eq "Boston" }.await() shouldHaveSize 1
+                        db.select(Profiles).where { address.geo.lat greater 50.0 }.await() shouldHaveSize 1
+                    }
                 }
             }
-        }
-    })
+
+            context("checkSchema over a table with groups") {
+                should("report nothing when the server defines every nested path") {
+                    onServer { db ->
+                        db.checkSchema(Profiles).shouldBeEmpty()
+                    }
+                }
+
+                should("report nothing for a leaf the server defines alone, because a group declares leaves") {
+                    onServer { db ->
+                        db.create(LeafOnly["one"]).set { it[address.geo.lat] = 1.5 }.await()
+
+                        db.checkSchema(LeafOnly).shouldBeEmpty()
+                    }
+                }
+            }
+        },
+    )

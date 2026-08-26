@@ -43,64 +43,66 @@ private val verbs: List<Pair<String, (Target) -> Query>> =
 private val rangeVerbs: List<Pair<String, (Target) -> Query>> = verbs.filterNot { it.first == "relate" }
 
 class TargetTest :
-    ShouldSpec({
-        context("a RecordIdRange in a RELATE position") {
-            should("be rejected while building, because the server cannot parse a range there") {
-                val range = RecordIdRange("person", "a", "z")
+    ShouldSpec(
+        {
+            context("a RecordIdRange in a RELATE position") {
+                should("be rejected while building, because the server cannot parse a range there") {
+                    val range = RecordIdRange("person", "a", "z")
 
-                val failure =
+                    val failure =
+                        shouldThrow<IllegalArgumentException> {
+                            compileOnly.relate(range, Table("likes"), RecordId("person", "b")).compile()
+                        }
+
                     shouldThrow<IllegalArgumentException> {
-                        compileOnly.relate(range, Table("likes"), RecordId("person", "b")).compile()
+                        compileOnly.relate(RecordId("person", "a"), range, RecordId("person", "b")).compile()
                     }
 
-                shouldThrow<IllegalArgumentException> {
-                    compileOnly.relate(RecordId("person", "a"), range, RecordId("person", "b")).compile()
+                    failure.message shouldContain range.toString()
+                }
+            }
+
+            context("a relation table name") {
+                should("escape punctuation, so every valid table name remains reachable") {
+                    val query =
+                        compileOnly
+                            .relate(RecordId("person", "a"), Table("best-friends"), RecordId("person", "b"))
+                            .compile()
+
+                    query.surql shouldContain "->`best-friends`->"
+                }
+            }
+
+            context("a Target given to a statement") {
+                should("render the same in every verb, because one renderer serves them all") {
+                    val targets =
+                        listOf(
+                            Table("person"),
+                            RecordId("person", "alice"),
+                            RecordIdRange("person", start = "alice", end = "zara"),
+                        )
+
+                    for (target in targets) {
+                        val rendered = BoundQuery().appendTarget(target).surql
+                        val applicable = if (target is RecordIdRange) rangeVerbs else verbs
+
+                        for ((verb, build) in applicable) {
+                            withClue("$verb should name $target as `$rendered`") {
+                                build(target).compile().surql shouldContain rendered
+                            }
+                        }
+                    }
                 }
 
-                failure.message shouldContain range.toString()
-            }
-        }
-
-        context("a relation table name") {
-            should("escape punctuation, so every valid table name remains reachable") {
-                val query =
-                    compileOnly
-                        .relate(RecordId("person", "a"), Table("best-friends"), RecordId("person", "b"))
-                        .compile()
-
-                query.surql shouldContain "->`best-friends`->"
-            }
-        }
-
-        context("a Target given to a statement") {
-            should("render the same in every verb, because one renderer serves them all") {
-                val targets =
-                    listOf(
-                        Table("person"),
-                        RecordId("person", "alice"),
-                        RecordIdRange("person", start = "alice", end = "zara"),
-                    )
-
-                for (target in targets) {
-                    val rendered = BoundQuery().appendTarget(target).surql
-                    val applicable = if (target is RecordIdRange) rangeVerbs else verbs
-
-                    for ((verb, build) in applicable) {
-                        withClue("$verb should name $target as `$rendered`") {
-                            build(target).compile().surql shouldContain rendered
+                should("bind a table or record name rather than write it into the SurrealQL") {
+                    for (target in listOf(Table("person"), RecordId("person", "alice"))) {
+                        for ((verb, build) in verbs) {
+                            withClue("$verb should not inline $target") {
+                                build(target).compile().surql shouldNotContain "person"
+                            }
                         }
                     }
                 }
             }
-
-            should("bind a table or record name rather than write it into the SurrealQL") {
-                for (target in listOf(Table("person"), RecordId("person", "alice"))) {
-                    for ((verb, build) in verbs) {
-                        withClue("$verb should not inline $target") {
-                            build(target).compile().surql shouldNotContain "person"
-                        }
-                    }
-                }
-            }
-        }
-    })
+        },
+    )
