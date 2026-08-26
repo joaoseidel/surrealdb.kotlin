@@ -24,7 +24,7 @@ public class SelectQuery<S : Table> internal constructor(
     private val versionAt: String? = null,
     private val forceOnly: Boolean = false,
 ) : Query(context) {
-    internal enum class Selection { All, Fields, Value }
+    internal enum class Selection { All, AllAnd, Fields, Value }
 
     /**
      * Select only what is named here. A [com.surrealdb.kotlin.query.api.data.Nested]
@@ -33,6 +33,17 @@ public class SelectQuery<S : Table> internal constructor(
      */
     public fun fields(vararg projections: Projection): SelectQuery<S> =
         copy(selection = Selection.Fields, fields = projections.toList())
+
+    /**
+     * Select the whole record and these beside it: `SELECT *, <-wrote<-author[0]
+     * AS author FROM book`.
+     *
+     * This is how a [com.surrealdb.kotlin.query.api.data.Walk] joins a record it
+     * is not part of. It is separate from [fields] because `*` names no path of
+     * its own, so it cannot be passed as one more projection.
+     */
+    public fun allFieldsAnd(vararg projections: Projection): SelectQuery<S> =
+        copy(selection = Selection.AllAnd, fields = projections.toList())
 
     /**
      * Project a single field as `SELECT VALUE`, so the statement answers with
@@ -93,6 +104,11 @@ public class SelectQuery<S : Table> internal constructor(
         when (selection) {
             Selection.All -> {
                 q.appendLiteral(" *")
+            }
+
+            Selection.AllAnd -> {
+                q.appendLiteral(" *, ")
+                q.appendProjections(fields)
             }
 
             Selection.Fields -> {

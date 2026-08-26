@@ -96,6 +96,17 @@ class OrderByTest :
                             .compile()
                     }
                 }
+
+                should("take any field when the whole record was selected beside the projections") {
+                    val compiled =
+                        RecordingContext()
+                            .select(People)
+                            .allFieldsAnd(People.name)
+                            .orderBy(People.age.descending())
+                            .compile()
+
+                    compiled.surql shouldContain "SELECT *, name FROM type::table(\$_0) ORDER BY age DESC"
+                }
             }
         },
     )

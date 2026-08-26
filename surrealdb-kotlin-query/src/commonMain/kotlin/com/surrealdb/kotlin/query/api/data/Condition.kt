@@ -40,19 +40,19 @@ public sealed interface Atom :
     Disjunctible
 
 internal class Comparison(
-    val field: Field<*>,
+    val subject: Expression<*>,
     val op: String,
     val operand: Any?,
 ) : Atom
 
 internal class FieldTest(
-    val field: Field<*>,
+    val subject: Expression<*>,
     val op: String,
 ) : Atom
 
 internal class FunctionCall(
     val function: String,
-    val field: Field<*>,
+    val subject: Expression<*>,
     val operand: Any?,
 ) : Atom
 

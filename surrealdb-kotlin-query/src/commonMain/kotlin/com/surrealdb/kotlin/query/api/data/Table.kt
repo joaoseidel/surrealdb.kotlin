@@ -25,6 +25,10 @@ import com.surrealdb.kotlin.core.api.data.Target
  * `Table("book")` on its own is a target for every verb with no fields to name,
  * so a `where { }` over one is written with `raw { }`.
  *
+ * The comparison operators take an [Expression], which is a declared [Field] or
+ * a [Walk] out of the record being read, so a condition over the graph is
+ * written the same way as one over a column.
+ *
  * The fields of an object field are declared as a [Nested] group.
  */
 @SurqlDsl
@@ -42,42 +46,42 @@ public open class Table(
      */
     protected fun recordId(): Field<RecordId> = Field("id")
 
-    public infix fun <V> Field<V>.eq(value: V): Atom = Comparison(this, "=", value)
+    public infix fun <V> Expression<V>.eq(value: V): Atom = Comparison(this, "=", value)
 
-    public infix fun <V> Field<V>.eq(other: Field<V>): Atom = Comparison(this, "=", other)
+    public infix fun <V> Expression<V>.eq(other: Expression<V>): Atom = Comparison(this, "=", other)
 
-    public infix fun <V> Field<V>.neq(value: V): Atom = Comparison(this, "!=", value)
+    public infix fun <V> Expression<V>.neq(value: V): Atom = Comparison(this, "!=", value)
 
-    public infix fun <V> Field<V>.neq(other: Field<V>): Atom = Comparison(this, "!=", other)
+    public infix fun <V> Expression<V>.neq(other: Expression<V>): Atom = Comparison(this, "!=", other)
 
-    public infix fun <V : Comparable<V>> Field<V>.greater(value: V): Atom = Comparison(this, ">", value)
+    public infix fun <V : Comparable<V>> Expression<V>.greater(value: V): Atom = Comparison(this, ">", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.greaterEq(value: V): Atom = Comparison(this, ">=", value)
+    public infix fun <V : Comparable<V>> Expression<V>.greaterEq(value: V): Atom = Comparison(this, ">=", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.less(value: V): Atom = Comparison(this, "<", value)
+    public infix fun <V : Comparable<V>> Expression<V>.less(value: V): Atom = Comparison(this, "<", value)
 
-    public infix fun <V : Comparable<V>> Field<V>.lessEq(value: V): Atom = Comparison(this, "<=", value)
+    public infix fun <V : Comparable<V>> Expression<V>.lessEq(value: V): Atom = Comparison(this, "<=", value)
 
-    public infix fun <V> Field<V>.inside(values: Collection<V>): Atom = Comparison(this, "IN", values)
+    public infix fun <V> Expression<V>.inside(values: Collection<V>): Atom = Comparison(this, "IN", values)
 
-    public infix fun <E> Field<List<E>>.contains(value: E): Atom = Comparison(this, "CONTAINS", value)
+    public infix fun <E> Expression<List<E>>.contains(value: E): Atom = Comparison(this, "CONTAINS", value)
 
-    public infix fun <E> Field<List<E>>.containsAll(values: Collection<E>): Atom =
+    public infix fun <E> Expression<List<E>>.containsAll(values: Collection<E>): Atom =
         Comparison(this, "CONTAINSALL", values)
 
-    public infix fun <E> Field<List<E>>.containsAny(values: Collection<E>): Atom =
+    public infix fun <E> Expression<List<E>>.containsAny(values: Collection<E>): Atom =
         Comparison(this, "CONTAINSANY", values)
 
-    public infix fun Field<String>.startsWith(prefix: String): Atom = FunctionCall(STARTS_WITH, this, prefix)
+    public infix fun Expression<String>.startsWith(prefix: String): Atom = FunctionCall(STARTS_WITH, this, prefix)
 
-    public infix fun Field<String>.matches(pattern: String): Atom = FunctionCall(MATCHES, this, pattern)
+    public infix fun Expression<String>.matches(pattern: String): Atom = FunctionCall(MATCHES, this, pattern)
 
     /** SurrealDB distinguishes NONE, NULL and absent, so the DSL does too. */
-    public fun Field<*>.isNone(): Atom = FieldTest(this, "IS NONE")
+    public fun Expression<*>.isNone(): Atom = FieldTest(this, "IS NONE")
 
-    public fun Field<*>.isNull(): Atom = FieldTest(this, "IS NULL")
+    public fun Expression<*>.isNull(): Atom = FieldTest(this, "IS NULL")
 
-    public fun Field<*>.exists(): Atom = FieldTest(this, "IS NOT NONE")
+    public fun Expression<*>.exists(): Atom = FieldTest(this, "IS NOT NONE")
 
     /** `AND`. Mixing with [or] without an explicit group does not compile; see [Conjunctible]. */
     public infix fun Conjunctible.and(other: Conjunctible): Conjunctible =

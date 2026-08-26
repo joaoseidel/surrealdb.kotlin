@@ -2,11 +2,16 @@ package com.surrealdb.kotlin.query.api.query
 
 import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.query.api.data.Table
+import com.surrealdb.kotlin.query.api.data.outgoing
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import kotlinx.serialization.json.Json
+
+private object Bookmarked : Table("bookmarked")
+
+private object Shelved : Table("book")
 
 class CountTest :
     ShouldSpec(
@@ -44,6 +49,14 @@ class CountTest :
             }
 
             context("a count over something other than a table") {
+                should("count what a walk reached") {
+                    val compiled =
+                        RecordingContext().count(RecordId("reader", "ada").outgoing(Bookmarked, Shelved)).compile()
+
+                    compiled.surql shouldContain
+                        "FROM (type::record(\$_0, \$_1))->bookmarked->book GROUP ALL"
+                }
+
                 should("never read one record, because a count is a question about a set") {
                     val compiled = RecordingContext().count(RecordId("person", "ada")).compile()
 

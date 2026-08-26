@@ -6,6 +6,7 @@ import com.surrealdb.kotlin.core.api.data.Target
 import com.surrealdb.kotlin.core.api.query.QueryContext
 import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.query.api.data.TableRecord
+import com.surrealdb.kotlin.query.api.data.Walk
 import kotlinx.serialization.json.JsonElement
 
 public fun <S : Table> QueryContext.select(table: S): SelectQuery<S> = SelectQuery(this, table, table)
@@ -114,8 +115,16 @@ public fun QueryContext.run(function: String): RunQuery = RunQuery(this, functio
 internal fun schemaOf(what: Target): Table =
     when (what) {
         is Table -> what
+
         is RecordId -> Table(what.table)
+
         is TableRecord<*> -> what.schema
+
         is RecordIdRange -> Table(what.table)
+
+        // The records a walk reaches are the ones in the table its last step
+        // named, so that declaration is the one a `where { }` resolves against.
+        is Walk<*> -> what.destination
+
         else -> throw IllegalArgumentException("Unsupported query target: ${what::class.simpleName}")
     }

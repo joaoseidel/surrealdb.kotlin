@@ -5,9 +5,12 @@ import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.core.api.data.RecordIdRange
 import com.surrealdb.kotlin.core.api.data.Target
 import com.surrealdb.kotlin.core.api.query.BoundQuery
+import com.surrealdb.kotlin.query.api.data.AliasedWalk
 import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.query.api.data.TableRecord
+import com.surrealdb.kotlin.query.api.data.Walk
 import com.surrealdb.kotlin.query.api.data.escapeIdent
+import com.surrealdb.kotlin.query.api.data.render
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
@@ -80,6 +83,10 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
                 appendTarget(target.record)
             }
 
+            is Walk<*> -> {
+                target.render(::appendLiteral) { appendTarget(it) }
+            }
+
             is RecordIdRange -> {
                 appendLiteral("type::record(")
                 bind(JsonPrimitive(target.table))
@@ -99,7 +106,11 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
 internal fun Target.matchesAtMostOneRecord(): Boolean =
     when (this) {
         is RecordId, is TableRecord<*> -> true
-        is Table, is RecordIdRange -> false
+
+        // A walk reaches as many records as it has edges, an index on the last
+        // step included: `…->author[0]` is one record of a list, not `ONLY`.
+        is Table, is RecordIdRange, is Walk<*> -> false
+
         else -> false
     }
 
@@ -118,10 +129,25 @@ internal fun BoundQuery.appendStatementTarget(
  * and a second index into the same array overwrites the first.
  */
 internal fun BoundQuery.appendProjections(projections: List<Projection>): BoundQuery =
-    apply { appendLiteral(projections.joinToString(", ") { it.keptAtItsOwnPath() }) }
+    apply {
+        projections.forEachIndexed { index, projection ->
+            if (index > 0) appendLiteral(", ")
+            appendProjection(projection)
+        }
+    }
 
-private fun Projection.keptAtItsOwnPath(): String =
-    if (holdsAnIndex) "$path AS ${escapeIdent(path.value)}" else path.value
+private fun BoundQuery.appendProjection(projection: Projection) {
+    // A walk is written out rather than joined as text, because one that starts
+    // at a named record carries a value to bind.
+    if (projection is AliasedWalk<*>) {
+        projection.walk.render(::appendLiteral) { appendTarget(it) }
+        appendLiteral(" AS ${escapeIdent(projection.path.value)}")
+        return
+    }
+
+    val path = projection.path.value
+    appendLiteral(if (projection.holdsAnIndex) "$path AS ${escapeIdent(path)}" else path)
+}
 
 /**
  * Append [value] to the query, choosing the right SurrealQL expression based

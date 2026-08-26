@@ -7,6 +7,13 @@
   issues no token; a refusal is still an error.
 - `EdgeTable` declares the `in` and `out` a relation table carries, so a filter on either end reads
   the same whichever edge it is written against.
+- `select` and `count` take a graph traversal as their target, and `where { }` compares against one,
+  so reading across an edge no longer means leaving the builder. A traversal names its destination
+  table, which is what keeps an edge pointing elsewhere out of the answer, and it starts at a record
+  rather than a table, because SurrealDB answers a walk from a whole table with nothing at all.
+- A traversal projected beside the record arrives under a declared field, `aliasedAs`, so the row
+  reads it back through the same declaration that asked for it. Its type has to agree with the
+  traversal's, which makes an unindexed walk assigned to a single-record field a compile error.
 - `orderBy` sorts a select, with `COLLATE` and `NUMERIC` where the comparison is not the default one.
   A key that the projection left out is refused where the query is written, because SurrealDB sorts
   only what it selected and refuses the statement outright.

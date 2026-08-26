@@ -26,31 +26,23 @@ private class ConditionCompiler {
     fun appendCondition(condition: Condition) {
         when (condition) {
             is Comparison -> {
-                text
-                    .append('(')
-                    .append(condition.field.path.value)
-                    .append(' ')
-                    .append(condition.op)
-                    .append(' ')
+                text.append('(')
+                appendExpression(condition.subject)
+                text.append(' ').append(condition.op).append(' ')
                 appendOperand(condition.operand)
                 text.append(')')
             }
 
             is FieldTest -> {
-                text
-                    .append('(')
-                    .append(condition.field.path.value)
-                    .append(' ')
-                    .append(condition.op)
-                    .append(')')
+                text.append('(')
+                appendExpression(condition.subject)
+                text.append(' ').append(condition.op).append(')')
             }
 
             is FunctionCall -> {
-                text
-                    .append(condition.function)
-                    .append('(')
-                    .append(condition.field.path.value)
-                    .append(", ")
+                text.append(condition.function).append('(')
+                appendExpression(condition.subject)
+                text.append(", ")
                 appendOperand(condition.operand)
                 text.append(')')
             }
@@ -92,9 +84,16 @@ private class ConditionCompiler {
         text.append(')')
     }
 
+    private fun appendExpression(expression: Expression<*>) {
+        when (expression) {
+            is Field<*> -> text.append(expression.path.value)
+            is Walk<*> -> expression.render({ text.append(it) }, ::appendTarget)
+        }
+    }
+
     private fun appendOperand(operand: Any?) {
         when (operand) {
-            is Field<*> -> text.append(operand.path.value)
+            is Expression<*> -> appendExpression(operand)
             is Target -> appendTarget(operand)
             else -> bind(toJsonElement(operand))
         }
@@ -118,6 +117,10 @@ private class ConditionCompiler {
 
             is TableRecord<*> -> {
                 appendTarget(target.record)
+            }
+
+            is Walk<*> -> {
+                target.render({ text.append(it) }, ::appendTarget)
             }
 
             is RecordIdRange -> {

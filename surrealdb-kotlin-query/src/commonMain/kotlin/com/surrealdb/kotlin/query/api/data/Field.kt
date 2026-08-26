@@ -16,7 +16,8 @@ import com.surrealdb.kotlin.core.api.data.TypedProjection
  */
 public class Field<V> internal constructor(
     path: String,
-) : TypedProjection<V> {
+) : TypedProjection<V>,
+    Expression<V> {
     override val path: FieldPath = FieldPath(path)
 
     override fun toString(): String = path.value
