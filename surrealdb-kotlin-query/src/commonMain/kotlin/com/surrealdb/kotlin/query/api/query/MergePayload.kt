@@ -88,10 +88,10 @@ private fun List<Field<*>>.requireNoneInsideAnother() {
     }
 }
 
-private fun Field<*>.encloses(other: Field<*>): Boolean =
+internal fun Field<*>.encloses(other: Field<*>): Boolean =
     other.path == path || other.path.value.startsWith("${path.value}.")
 
-private fun foldSegments(entries: List<Pair<List<String>, JsonElement>>): JsonObject =
+internal fun foldSegments(entries: List<Pair<List<String>, JsonElement>>): JsonObject =
     JsonObject(
         entries
             .groupBy({ it.first.first() }, { it.first.drop(1) to it.second })

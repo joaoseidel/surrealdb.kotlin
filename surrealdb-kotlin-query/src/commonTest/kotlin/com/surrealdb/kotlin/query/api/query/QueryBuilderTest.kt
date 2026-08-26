@@ -180,12 +180,9 @@ class QueryBuilderTest {
     @Test
     fun `relate compiles to arrow chain`() {
         val q =
-            RelateQuery(
-                context,
-                RecordId("person", "a"),
-                Table("likes"),
-                RecordId("person", "b"),
-            ).compile()
+            context
+                .relate(RecordId("person", "a"), Table("likes"), RecordId("person", "b"))
+                .compile()
         assertTrue(q.surql.contains("->"))
         assertTrue(q.surql.startsWith("RELATE "))
     }

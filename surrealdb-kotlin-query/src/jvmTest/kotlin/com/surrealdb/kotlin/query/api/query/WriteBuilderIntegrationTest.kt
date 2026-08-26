@@ -16,8 +16,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 @Serializable
 private data class Shelf(
@@ -79,6 +77,40 @@ class WriteBuilderIntegrationTest :
 
                         created[Books.title] shouldBe "SICP"
                         created[Books.pages] shouldBe 657
+                    }
+                }
+            }
+
+            context("create with CONTENT") {
+                should("write assigned fields via content block") {
+                    onServer { db ->
+                        val created =
+                            db
+                                .create(Books["content_sicp"])
+                                .content {
+                                    it[title] = "SICP Content"
+                                    it[pages] = 657
+                                }.theRecord()
+
+                        created[Books.title] shouldBe "SICP Content"
+                        created[Books.pages] shouldBe 657
+                    }
+                }
+            }
+
+            context("insert with CONTENT") {
+                should("insert a record via insert content block") {
+                    onServer { db ->
+                        val inserted =
+                            db
+                                .insert(Books)
+                                .content {
+                                    it[title] = "Inserted Book"
+                                    it[pages] = 200
+                                }.theRecord()
+
+                        inserted[Books.title] shouldBe "Inserted Book"
+                        inserted[Books.pages] shouldBe 200
                     }
                 }
             }

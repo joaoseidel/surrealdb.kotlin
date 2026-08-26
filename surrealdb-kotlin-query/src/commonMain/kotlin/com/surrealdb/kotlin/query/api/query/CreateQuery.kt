@@ -24,6 +24,10 @@ public class CreateQuery<S : Table> internal constructor(
      */
     public fun content(data: JsonElement): CreateQuery<S> = copy(data = ContentData(data))
 
+    /** Create the record with exactly the fields the block names. Replaces any [set]. */
+    public fun content(block: S.(ContentPayload) -> Unit): CreateQuery<S> =
+        copy(data = buildContentPayload(context.json, schema, block)?.let { ContentData(it) })
+
     /** Assign fields by name: `set { it[title] = "SICP" }`. Replaces any [content]. */
     public fun set(block: S.(Assignments) -> Unit): CreateQuery<S> =
         copy(data = buildAssignments(context.json, schema, block))

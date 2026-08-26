@@ -7,6 +7,8 @@
   issues no token; a refusal is still an error.
 - `EdgeTable` declares the `in` and `out` a relation table carries, so a filter on either end reads
   the same whichever edge it is written against.
+- `relate(...).content { }` names the edge's fields through the relation's own declaration, as the
+  other write builders already did.
 - `containsIgnoringCase` folds case on both sides and reads an absent field as empty, which is what
   a search box wants and what `matches` and `matchesFullText` each do not do.
 - `SurqlTemplate.record` writes a record id inside a raw fragment with both halves bound.

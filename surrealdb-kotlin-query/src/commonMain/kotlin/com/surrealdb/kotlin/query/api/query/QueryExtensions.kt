@@ -94,21 +94,41 @@ public fun <S : Table> QueryContext.delete(record: TableRecord<S>): DeleteQuery<
 
 public fun QueryContext.delete(what: Target): DeleteQuery<Table> = DeleteQuery(this, schemaOf(what), what)
 
+public fun <S : Table> QueryContext.relate(
+    `in`: Target,
+    relation: S,
+    out: Target,
+): RelateQuery<S> = RelateQuery(this, relation, `in`, relation, out)
+
 public fun QueryContext.relate(
     `in`: Target,
     relation: Target,
     out: Target,
-): RelateQuery = RelateQuery(this, `in`, relation, out)
+): RelateQuery<Table> = RelateQuery(this, schemaOf(relation), `in`, relation, out)
 
-public fun QueryContext.insert(
-    into: Table,
-    data: JsonElement,
-): InsertQuery = InsertQuery(this, into, data)
+public fun <S : Table> QueryContext.insert(into: S): InsertQuery<S> = InsertQuery(this, into)
 
-public fun QueryContext.insertRelation(
-    into: Table,
+public fun <S : Table> QueryContext.insert(
+    into: S,
     data: JsonElement,
-): InsertRelationQuery = InsertRelationQuery(this, into, data)
+): InsertQuery<S> = InsertQuery(this, into, data)
+
+public fun <S : Table> QueryContext.insert(
+    into: S,
+    build: S.(ContentPayload) -> Unit,
+): InsertQuery<S> = InsertQuery(this, into).content(build)
+
+public fun <S : Table> QueryContext.insertRelation(into: S): InsertRelationQuery<S> = InsertRelationQuery(this, into)
+
+public fun <S : Table> QueryContext.insertRelation(
+    into: S,
+    data: JsonElement,
+): InsertRelationQuery<S> = InsertRelationQuery(this, into, data)
+
+public fun <S : Table> QueryContext.insertRelation(
+    into: S,
+    build: S.(ContentPayload) -> Unit,
+): InsertRelationQuery<S> = InsertRelationQuery(this, into).content(build)
 
 public fun QueryContext.run(function: String): RunQuery = RunQuery(this, function)
 

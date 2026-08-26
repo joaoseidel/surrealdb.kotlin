@@ -28,6 +28,10 @@ public class UpsertQuery<S : Table> internal constructor(
      */
     public fun content(data: JsonElement): UpsertQuery<S> = copy(data = ContentData(data))
 
+    /** Write fields the block names as the whole record. Replaces any [set]. */
+    public fun content(block: S.(ContentPayload) -> Unit): UpsertQuery<S> =
+        copy(data = buildContentPayload(context.json, schema, block)?.let { ContentData(it) })
+
     /** Assign fields by name: `set { it[pages] = 0 }`. Replaces any [content]. */
     public fun set(block: S.(Assignments) -> Unit): UpsertQuery<S> =
         copy(data = buildAssignments(context.json, schema, block))

@@ -13,8 +13,9 @@ import kotlinx.serialization.json.JsonElement
 /**
  * Builder for `RELATE` queries.
  */
-public class RelateQuery internal constructor(
+public class RelateQuery<S : Table> internal constructor(
     context: QueryContext,
+    private val schema: S,
     private val `in`: Target,
     private val relation: Target,
     private val out: Target,
@@ -22,13 +23,20 @@ public class RelateQuery internal constructor(
     private val returnMode: ReturnMode? = null,
 ) : Query(context) {
     /**
-     * Give the edge record exactly the fields [data] names. It arrives as a
-     * [JsonElement] because a relation carries no declaration to name them
-     * against.
+     * Give the edge record exactly the fields [build] names, resolved against
+     * the relation's own declaration:
+     *
+     * ```
+     * db.relate(ada, Participates, chat).content { it[role] = "owner" }
+     * ```
      */
-    public fun content(data: JsonElement): RelateQuery = copy(data = data)
+    public fun content(build: S.(ContentPayload) -> Unit): RelateQuery<S> =
+        copy(data = buildContentPayload(context.json, schema, build))
 
-    public fun returnMode(mode: ReturnMode): RelateQuery = copy(returnMode = mode)
+    /** The same, for a payload assembled elsewhere. */
+    public fun content(data: JsonElement): RelateQuery<S> = copy(data = data)
+
+    public fun returnMode(mode: ReturnMode): RelateQuery<S> = copy(returnMode = mode)
 
     override fun compile(): BoundQuery {
         // RELATE positions don't accept bare `type::record(...)` function
@@ -113,5 +121,5 @@ public class RelateQuery internal constructor(
     private fun copy(
         data: JsonElement? = this.data,
         returnMode: ReturnMode? = this.returnMode,
-    ): RelateQuery = RelateQuery(context, `in`, relation, out, data, returnMode)
+    ): RelateQuery<S> = RelateQuery(context, schema, `in`, relation, out, data, returnMode)
 }
