@@ -25,8 +25,8 @@ suffixes under the owning module prefix. Spectron remains under `com.surrealdb.k
 The artifact is not published yet. For a local build, run `./gradlew publishToMavenLocal` and add
 `mavenLocal()` to the consuming project. Kotlin Multiplatform module metadata selects the JVM, Android, or matching iOS variant.
 
-Version `1.0.0` is the current prerelease candidate. The upstream repository has a `v1.0.0` prerelease and tag, but these coordinates are not on
-Maven Central yet. The build and examples keep that version so the reviewed API can become the first published `1.0.0` without renumbering it.
+Version `1.0.0` is the current prerelease candidate. The upstream repository has a `v1.0.0` prerelease and tag, but these coordinates are not on Maven
+Central yet. The build and examples keep that version so the reviewed API can become the first published `1.0.0` without renumbering it.
 
 The generated API reference is available at <https://joaoseidel.github.io/surrealdb.kotlin/>.
 
@@ -148,6 +148,81 @@ val names =
 Indexed fields are aliased back to their declared path so separate projections do not overwrite one another. A wildcard field such as
 `field<List<String?>>("authors[*].name")` reads every matching element.
 
+## Sort, page, and count
+
+`orderBy` sorts a read, and `count` asks how many records a target holds under the same conditions:
+
+```kotlin
+val page =
+    db.select(People)
+        .orderBy(People.name.ascending().collate(), People.age.descending())
+        .limit(20)
+        .start(40)
+        .await()
+
+val adults = db.count(People).where { age greaterEq 18 }.await()
+```
+
+`collate()` compares text without regard to case, and `numeric()` reads text as a number. SurrealDB
+sorts only what it selected, so an `orderBy` key that `fields(...)` left out is refused where the
+query is written rather than by the server. `SELECT *` carries the whole record and is not checked.
+
+`count` compiles to `SELECT count() FROM ... GROUP ALL` and answers zero for a target that matched
+nothing.
+
+## Walk the graph
+
+A traversal reads across an edge. It stands as a statement target, as a condition operand, and —
+once it is given the name of a declared field — as a projection beside the record:
+
+```kotlin
+object Authored : Table("authored")
+object Chapters : Table("chapter") { val title by field<String>() }
+
+object Books : Table("book") {
+    val title by field<String>()
+
+    // Not columns: the names the traversals are projected under.
+    val author by field<RecordId>()
+    val coAuthors = field<List<RecordId>>("co_authors")
+}
+
+// (book:hobbit)->has_chapter->chapter
+val chapters = db.select(Books["hobbit"].outgoing(HasChapter, Chapters)).await()
+
+// SELECT *, <-authored<-user[0] AS author, <-co_authored<-user AS co_authors FROM book
+val books =
+    db.select(Books)
+        .allFieldsAnd(
+            incoming(Authored, People).first() aliasedAs Books.author,
+            incoming(CoAuthored, People) aliasedAs Books.coAuthors,
+        )
+        .where { incoming(Authored, People) contains RecordId("person", "ada") }
+        .await()
+
+books.first()[Books.author]
+```
+
+A relation table declares the two fields SurrealDB fixes the names of, and an edge given fields of
+its own writes them through the same declaration:
+
+```kotlin
+object Participates : EdgeTable("participates") {
+    val role by field<String>()
+}
+
+db.relate(ada, Participates, chat).content { it[role] = "owner" }.await()
+db.delete(Participates).where { (`in` eq ada) and (out eq chat) }.await()
+```
+
+A traversal names the table it arrives at, and SurrealDB keeps only the edges whose far end is in
+it, so a `follows` edge pointing at a book stays out of a listing of people. It starts at a record,
+not a table: SurrealDB answers a walk from a whole table with nothing at all rather than refusing,
+so the receiver is a `RecordId` or a `TableRecord`.
+
+`first()` (or `at(n)`) narrows the walk to one record, and the Kotlin type narrows with it, so an
+unindexed walk aliased to a single-record field does not compile.
+
 ## Write records
 
 Use the same fields for typed assignments:
@@ -163,17 +238,26 @@ db.update(People["ada"])
     .await()
 ```
 
-`create`, `upsert`, and `update` support `set` and JSON `content`. `merge` changes only the fields in its payload, and `patch` builds JSON Patch
-operations:
+An array field takes `+=` and `-=`, which append and remove whatever they are handed, and
+`include` / `exclude`, which hold a value once however often it is added:
 
 ```kotlin
+db.update(Chats["general"]).set { it[online].include(RecordId("person", "ada")) }.await()
+```
+
+`create`, `insert`, `upsert`, and `update` support `set` and typed or JSON `content`. `merge` changes only the fields in its payload, and `patch`
+builds JSON Patch operations:
+
+```kotlin
+db.create(People["ada"]).content { it[name] = "Ada Lovelace"; it[age] = 36 }.await()
+db.insert(People) { it[name] = "Grace Hopper"; it[age] = 85 }.await()
 db.merge(People["ada"]) { it[displayName] = "Ada" }.only().await()
 db.patch(People["ada"]) { it.replace(age, 37) }.only().await()
 db.delete(People["ada"]).only().await()
 ```
 
-The typed merge and patch blocks protect field paths. Their `JsonElement` overloads remain available for payloads assembled elsewhere and for
-operations the typed DSL does not model.
+The typed content, merge, and patch blocks protect field paths. Their `JsonElement` overloads remain available for payloads assembled elsewhere and
+for operations the typed DSL does not model.
 
 Every write builder accepts a `ReturnMode`. `ReturnMode.Diff` returns JSON Patch operations rather than rows, so decode that response instead of
 calling the row terminal.
@@ -203,6 +287,16 @@ db.signin(
 )
 ```
 
+`signin` and `signup` answer with `AuthTokens`, holding the access token and the refresh token
+where the access method issues one. SurrealDB spells the response differently across versions and
+access methods — a bare JWT, or an object keyed `access`, `token` or `jwt` — and all of those read
+back the same way here. A method that issues no token answers null; a refusal is an error.
+
+```kotlin
+val tokens = db.signin(Credentials.RecordUser(MAIN, MAIN_DB, "account", vars))
+tokens?.accessToken
+```
+
 `Credentials.RecordUser` supports record access methods and is valid for both `signup` and `signin`.
 `Credentials.Raw` is the unchecked escape for access methods this version does not model.
 `authenticate(token)` accepts an existing JWT. `whoami()` returns the current authentication record, and `invalidate()` clears it.
@@ -220,7 +314,7 @@ val query = surqlTemplate {
     "SELECT * FROM person WHERE age >= ${bind(minimumAge)}"
 }
 
-val envelope: JsonElement = db.query(query)
+val rows: List<Row> = db.query(query)
 ```
 
 Never quote a `bind(...)` result. It is already a generated SurrealQL parameter, and SurrealDB does not substitute parameters inside string literals.
