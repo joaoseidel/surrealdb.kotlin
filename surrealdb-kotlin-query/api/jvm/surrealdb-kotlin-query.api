@@ -74,6 +74,7 @@ public class com/surrealdb/kotlin/query/api/data/Table : com/surrealdb/kotlin/qu
 	public final fun contains (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun containsAll (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/util/Collection;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun containsAny (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/util/Collection;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun containsIgnoringCase (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun eq (Lcom/surrealdb/kotlin/query/api/data/Expression;Lcom/surrealdb/kotlin/query/api/data/Expression;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun eq (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public fun equals (Ljava/lang/Object;)Z
@@ -89,6 +90,7 @@ public class com/surrealdb/kotlin/query/api/data/Table : com/surrealdb/kotlin/qu
 	public final fun less (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun lessEq (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/Comparable;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun matches (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/Atom;
+	public final fun matchesFullText (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun neq (Lcom/surrealdb/kotlin/query/api/data/Expression;Lcom/surrealdb/kotlin/query/api/data/Expression;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun neq (Lcom/surrealdb/kotlin/query/api/data/Expression;Ljava/lang/Object;)Lcom/surrealdb/kotlin/query/api/data/Atom;
 	public final fun none ([Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/data/Atom;

@@ -56,6 +56,15 @@ internal class FunctionCall(
     val operand: Any?,
 ) : Atom
 
+/**
+ * `string::lowercase(field ?? '') CONTAINS string::lowercase($x)`, which needs
+ * both sides folded and so does not fit [FunctionCall]'s one-argument shape.
+ */
+internal class FoldedContains(
+    val subject: Expression<*>,
+    val text: String,
+) : Atom
+
 internal class RawCondition(
     val sql: String,
     val bindings: Map<String, JsonElement>,

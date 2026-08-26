@@ -7,6 +7,8 @@
   issues no token; a refusal is still an error.
 - `EdgeTable` declares the `in` and `out` a relation table carries, so a filter on either end reads
   the same whichever edge it is written against.
+- `containsIgnoringCase` folds case on both sides and reads an absent field as empty, which is what
+  a search box wants and what `matches` and `matchesFullText` each do not do.
 - `RecordId.walk(direction, edge, table)` takes the direction as a value, for a walk decided at
   runtime.
 - `select` and `count` take a graph traversal as their target, and `where { }` compares against one,
@@ -21,6 +23,9 @@
   only what it selected and refuses the statement outright.
 - `count` answers how many records a target holds, under the same conditions a select takes, and
   answers zero for a target that matched nothing.
+- `matchesFullText` writes SurrealDB's `@@`, which reads the `FULLTEXT` index defined on the field.
+  `matches` is `string::matches`, a regular expression over every record, and reaching for it on an
+  indexed field is a table scan that looks like a search.
 - Core and query packages now include their module prefix while retaining the existing `api` and `runtime` hierarchy.
 - Conditions now accept fields from the table declaration instead of a serializable record type, so
   field validity is checked where the query is written.

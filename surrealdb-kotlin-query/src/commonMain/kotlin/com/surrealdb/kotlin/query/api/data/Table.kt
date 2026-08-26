@@ -74,7 +74,31 @@ public open class Table(
 
     public infix fun Expression<String>.startsWith(prefix: String): Atom = FunctionCall(STARTS_WITH, this, prefix)
 
+    /**
+     * `string::matches`, which compares against a regular expression and reads
+     * every record to do it. For a field carrying a `FULLTEXT` index, the
+     * operator that uses the index is [matchesFullText].
+     */
     public infix fun Expression<String>.matches(pattern: String): Atom = FunctionCall(MATCHES, this, pattern)
+
+    /**
+     * Whether the field holds [text] anywhere in it, comparing without regard
+     * to case: `string::lowercase(field ?? '') CONTAINS string::lowercase($x)`.
+     *
+     * The `?? ''` is what makes a field the record does not carry read as
+     * empty rather than dropping the record from the answer, which is the
+     * behaviour a search box wants. This reads every record; a field carrying
+     * a `FULLTEXT` index is better served by [matchesFullText].
+     */
+    public infix fun <V : String?> Expression<V>.containsIgnoringCase(text: String): Atom = FoldedContains(this, text)
+
+    /**
+     * `@@`, SurrealDB's full-text match, which reads the analyzer and the
+     * `FULLTEXT` index defined on the field. Without such an index the server
+     * refuses the query, which is the answer worth having: the alternative is
+     * [matches] quietly scanning the table instead.
+     */
+    public infix fun Expression<String>.matchesFullText(query: String): Atom = Comparison(this, "@@", query)
 
     /** SurrealDB distinguishes NONE, NULL and absent, so the DSL does too. */
     public fun Expression<*>.isNone(): Atom = FieldTest(this, "IS NONE")

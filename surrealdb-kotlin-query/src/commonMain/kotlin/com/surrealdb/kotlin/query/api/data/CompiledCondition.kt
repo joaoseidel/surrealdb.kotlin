@@ -47,6 +47,14 @@ private class ConditionCompiler {
                 text.append(')')
             }
 
+            is FoldedContains -> {
+                text.append("(string::lowercase(")
+                appendExpression(condition.subject)
+                text.append(" ?? '') CONTAINS string::lowercase(")
+                appendOperand(condition.text)
+                text.append("))")
+            }
+
             is RawCondition -> {
                 text.append('(')
                 appendFragment(condition.sql, condition.bindings)
