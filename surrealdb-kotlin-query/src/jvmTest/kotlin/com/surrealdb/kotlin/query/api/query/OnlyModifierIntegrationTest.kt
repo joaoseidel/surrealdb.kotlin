@@ -29,7 +29,7 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            db.query(surql("DEFINE TABLE ${Lines.tableName} SCHEMALESS"))
+            db.query(surql("DEFINE TABLE OVERWRITE ${Lines.tableName} SCHEMALESS"))
             db.query(surql("DELETE ${Lines.tableName}"))
             db
                 .create(Lines["a"])

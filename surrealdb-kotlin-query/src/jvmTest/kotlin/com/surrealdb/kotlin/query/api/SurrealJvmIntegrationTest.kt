@@ -63,8 +63,8 @@ class SurrealJvmIntegrationTest {
                 db.version()
                 assertNotNull(db.whoami())
 
-                db.query(surql("DEFINE TABLE person SCHEMALESS"))
-                db.query(surql("DEFINE TABLE likes SCHEMALESS"))
+                db.query(surql("DEFINE TABLE OVERWRITE person SCHEMALESS"))
+                db.query(surql("DEFINE TABLE OVERWRITE likes SCHEMALESS"))
                 // Start from an empty table rather than trusting the cleanup at the end of
                 // this test, which does not run when an assertion above it fails.
                 db.query(surql("DELETE person"))
@@ -194,7 +194,7 @@ class SurrealJvmIntegrationTest {
 
                 db.signin(Credentials.RootUser("root", "root"))
                 db.use(Namespace("main"), Database("main"))
-                db.query(surql("DEFINE TABLE tx_person SCHEMALESS"))
+                db.query(surql("DEFINE TABLE OVERWRITE tx_person SCHEMALESS"))
                 db.query(surql("DELETE tx_person"))
 
                 db.transaction {
@@ -251,7 +251,7 @@ class SurrealJvmIntegrationTest {
 
                 db.signin(Credentials.RootUser("root", "root"))
                 db.use(Namespace("main"), Database("main"))
-                db.query(surql("DEFINE TABLE live_person SCHEMALESS"))
+                db.query(surql("DEFINE TABLE OVERWRITE live_person SCHEMALESS"))
                 db.query(surql("DELETE live_person"))
 
                 val subscription = db.live(Table("live_person"))
@@ -307,7 +307,7 @@ class SurrealJvmIntegrationTest {
             try {
                 db.signin(Credentials.RootUser("root", "root"))
                 db.use(Namespace("main"), Database("main"))
-                db.query(surql("DEFINE TABLE live_book SCHEMALESS"))
+                db.query(surql("DEFINE TABLE OVERWRITE live_book SCHEMALESS"))
                 db.query(surql("DELETE live_book"))
 
                 val received = Channel<LiveQueryEvent<JsonElement>>(Channel.UNLIMITED)
