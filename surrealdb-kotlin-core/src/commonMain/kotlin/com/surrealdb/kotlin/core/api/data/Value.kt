@@ -68,6 +68,10 @@ internal fun parseRecordId(text: String): RecordId {
         throw SerializationException("Trailing text after the key of record id '$text'")
     }
 
+    if (table.text.isEmpty() || key.text.isEmpty()) {
+        throw SerializationException("Expected a record id of the form 'table:key', got '$text'")
+    }
+
     return RecordId(table.text, UUID_KEY.matchEntire(key.text)?.groupValues?.get(1) ?: key.text)
 }
 

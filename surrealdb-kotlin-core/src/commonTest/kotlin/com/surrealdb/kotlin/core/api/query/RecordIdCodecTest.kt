@@ -52,6 +52,11 @@ class RecordIdCodecTest :
                 should("reject an unterminated quote") {
                     shouldThrow<SerializationException> { parseRecordId("person:`alice") }
                 }
+
+                should("reject a string missing either half, since half an id names no record") {
+                    shouldThrow<SerializationException> { parseRecordId(":alice") }
+                    shouldThrow<SerializationException> { parseRecordId("person:") }
+                }
             }
 
             context("the string a record id is written as") {
