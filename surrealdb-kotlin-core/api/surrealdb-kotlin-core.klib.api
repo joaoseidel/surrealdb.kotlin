@@ -428,6 +428,22 @@ final class com.surrealdb.kotlin.core.api.query/BoundQuery { // com.surrealdb.ko
     final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.query/BoundQuery.toString|toString(){}[0]
 }
 
+final class com.surrealdb.kotlin.core.api/AuthTokens { // com.surrealdb.kotlin.core.api/AuthTokens|null[0]
+    constructor <init>(kotlin/String, kotlin/String?) // com.surrealdb.kotlin.core.api/AuthTokens.<init>|<init>(kotlin.String;kotlin.String?){}[0]
+
+    final val accessToken // com.surrealdb.kotlin.core.api/AuthTokens.accessToken|{}accessToken[0]
+        final fun <get-accessToken>(): kotlin/String // com.surrealdb.kotlin.core.api/AuthTokens.accessToken.<get-accessToken>|<get-accessToken>(){}[0]
+    final val refreshToken // com.surrealdb.kotlin.core.api/AuthTokens.refreshToken|{}refreshToken[0]
+        final fun <get-refreshToken>(): kotlin/String? // com.surrealdb.kotlin.core.api/AuthTokens.refreshToken.<get-refreshToken>|<get-refreshToken>(){}[0]
+
+    final fun component1(): kotlin/String // com.surrealdb.kotlin.core.api/AuthTokens.component1|component1(){}[0]
+    final fun component2(): kotlin/String? // com.surrealdb.kotlin.core.api/AuthTokens.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String? = ...): com.surrealdb.kotlin.core.api/AuthTokens // com.surrealdb.kotlin.core.api/AuthTokens.copy|copy(kotlin.String;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api/AuthTokens.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api/AuthTokens.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api/AuthTokens.toString|toString(){}[0]
+}
+
 final class com.surrealdb.kotlin.core.api/ReconnectConfig { // com.surrealdb.kotlin.core.api/ReconnectConfig|null[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Double = ..., kotlin/Int? = ...) // com.surrealdb.kotlin.core.api/ReconnectConfig.<init>|<init>(kotlin.Boolean;kotlin.Long;kotlin.Long;kotlin.Double;kotlin.Int?){}[0]
 
@@ -473,8 +489,8 @@ final class com.surrealdb.kotlin.core.api/Session : com.surrealdb.kotlin.core.ap
     final suspend fun query(com.surrealdb.kotlin.core.api.query/BoundQuery): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.query|query(com.surrealdb.kotlin.core.api.query.BoundQuery){}[0]
     final suspend fun reset(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.reset|reset(){}[0]
     final suspend fun setVariable(kotlin/String, kotlinx.serialization.json/JsonElement): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.setVariable|setVariable(kotlin.String;kotlinx.serialization.json.JsonElement){}[0]
-    final suspend fun signin(com.surrealdb.kotlin.core.api/Credentials.ForSignIn): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.signin|signin(com.surrealdb.kotlin.core.api.Credentials.ForSignIn){}[0]
-    final suspend fun signup(com.surrealdb.kotlin.core.api/Credentials.ForSignUp): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.signup|signup(com.surrealdb.kotlin.core.api.Credentials.ForSignUp){}[0]
+    final suspend fun signin(com.surrealdb.kotlin.core.api/Credentials.ForSignIn): com.surrealdb.kotlin.core.api/AuthTokens? // com.surrealdb.kotlin.core.api/Session.signin|signin(com.surrealdb.kotlin.core.api.Credentials.ForSignIn){}[0]
+    final suspend fun signup(com.surrealdb.kotlin.core.api/Credentials.ForSignUp): com.surrealdb.kotlin.core.api/AuthTokens? // com.surrealdb.kotlin.core.api/Session.signup|signup(com.surrealdb.kotlin.core.api.Credentials.ForSignUp){}[0]
     final suspend fun unset(kotlin/String): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.unset|unset(kotlin.String){}[0]
     final suspend fun use(com.surrealdb.kotlin.core.api/Namespace, com.surrealdb.kotlin.core.api/Database): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.use|use(com.surrealdb.kotlin.core.api.Namespace;com.surrealdb.kotlin.core.api.Database){}[0]
     final suspend fun version(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.version|version(){}[0]

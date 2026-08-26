@@ -74,25 +74,33 @@ public class Session internal constructor(
             }
         }
 
-    /** Register a record through its access method and hold the token it returns. */
-    public suspend fun signup(credentials: Credentials.ForSignUp): JsonElement {
+    /**
+     * Register a record through its access method and hold the token it
+     * returns, or null where the method issues none. A refusal is an error
+     * rather than a null.
+     */
+    public suspend fun signup(credentials: Credentials.ForSignUp): AuthTokens? {
         val result = withAutoAuthRetry { controller.signup(sessionId, credentials.toParams()) }
         applyTokenResult(result)
-        return result
+        return result.asAuthTokensOrNull()
     }
 
     /**
      * Authenticate this session and hold the token it returns.
+     *
+     * Answers with the token the session now holds, or null where the access
+     * method issues none — a system user on some versions. A refusal is an
+     * error rather than a null.
      *
      * A password containing something the parser reads as a record id, such as
      * `note: remember the milk`, cannot be used at all. The RPC turns a bound
      * string into a record before anything type-checks it, so the call fails
      * with `Expected string, got record`.
      */
-    public suspend fun signin(credentials: Credentials.ForSignIn): JsonElement {
+    public suspend fun signin(credentials: Credentials.ForSignIn): AuthTokens? {
         val result = withAutoAuthRetry { controller.signin(sessionId, credentials.toParams()) }
         applyTokenResult(result)
-        return result
+        return result.asAuthTokensOrNull()
     }
 
     public suspend fun authenticate(token: String): JsonElement {
@@ -240,10 +248,10 @@ public class Session internal constructor(
     public inline fun <reified T> decode(element: JsonElement): T = json.decodeFromJsonElement(element)
 
     private suspend fun applyTokenResult(result: JsonElement) {
-        val tokens = extractTokens(result) ?: return
+        val tokens = result.asAuthTokensOrNull() ?: return
         controller.update(sessionId) {
-            accessToken = tokens.access
-            tokens.refresh?.let { refreshToken = it }
+            accessToken = tokens.accessToken
+            tokens.refreshToken?.let { refreshToken = it }
         }
         scheduleRenewalIfPossible()
     }
@@ -270,35 +278,13 @@ public class Session internal constructor(
                 put("rt", kotlinx.serialization.json.JsonPrimitive(rt))
             }
         val result = runCatching { controller.signin(sessionId, params) }.getOrNull() ?: return
-        val tokens = extractTokens(result) ?: return
+        val tokens = result.asAuthTokensOrNull() ?: return
         controller.update(sessionId) {
-            accessToken = tokens.access
-            tokens.refresh?.let { refreshToken = it }
+            accessToken = tokens.accessToken
+            tokens.refreshToken?.let { refreshToken = it }
         }
         scheduleRenewalIfPossible()
     }
-
-    private data class TokenPair(
-        val access: String,
-        val refresh: String?,
-    )
-
-    private fun extractTokens(result: JsonElement): TokenPair? =
-        when {
-            result is kotlinx.serialization.json.JsonPrimitive && result.isString -> {
-                TokenPair(result.content, null)
-            }
-
-            result is JsonObject -> {
-                val access = (result["access"] ?: result["token"] ?: result["jwt"])?.jsonPrimitive?.content
-                val refresh = result["refresh"]?.jsonPrimitive?.content
-                access?.let { TokenPair(it, refresh) }
-            }
-
-            else -> {
-                null
-            }
-        }
 
     private suspend fun <T> withAutoAuthRetry(
         allowRetry: Boolean = true,
