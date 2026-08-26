@@ -8,6 +8,8 @@
 - `orderBy` sorts a select, with `COLLATE` and `NUMERIC` where the comparison is not the default one.
   A key that the projection left out is refused where the query is written, because SurrealDB sorts
   only what it selected and refuses the statement outright.
+- `count` answers how many records a target holds, under the same conditions a select takes, and
+  answers zero for a target that matched nothing.
 - Core and query packages now include their module prefix while retaining the existing `api` and `runtime` hierarchy.
 - Conditions now accept fields from the table declaration instead of a serializable record type, so
   field validity is checked where the query is written.

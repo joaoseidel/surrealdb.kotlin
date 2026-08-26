@@ -112,6 +112,18 @@ public final class com/surrealdb/kotlin/query/api/query/ConditionsKt {
 	public static final fun toSurql (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
 }
 
+public final class com/surrealdb/kotlin/query/api/query/CountQuery {
+	public final fun await (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public final fun where (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/query/CountQuery;
+	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/CountQuery;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/CountQueryKt {
+	public static final fun count (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/data/Target;)Lcom/surrealdb/kotlin/query/api/query/CountQuery;
+	public static final fun count (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/query/api/data/Table;)Lcom/surrealdb/kotlin/query/api/query/CountQuery;
+}
+
 public final class com/surrealdb/kotlin/query/api/query/CreateQuery : com/surrealdb/kotlin/query/api/query/Query {
 	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
 	public final fun content (Lkotlinx/serialization/json/JsonElement;)Lcom/surrealdb/kotlin/query/api/query/CreateQuery;
