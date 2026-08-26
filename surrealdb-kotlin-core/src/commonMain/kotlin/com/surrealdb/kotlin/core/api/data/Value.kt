@@ -100,14 +100,13 @@ private fun readQuotable(
     val read = StringBuilder()
     var at = from + 1
     while (at < text.length) {
-        val char = text[at]
-        when {
-            char == '\\' && at + 1 < text.length -> {
+        when (val char = text[at]) {
+            '\\' if at + 1 < text.length -> {
                 read.append(text[at + 1])
                 at += 2
             }
 
-            char == '`' -> {
+            '`' -> {
                 return RecordIdHalf(read.toString(), at + 1)
             }
 

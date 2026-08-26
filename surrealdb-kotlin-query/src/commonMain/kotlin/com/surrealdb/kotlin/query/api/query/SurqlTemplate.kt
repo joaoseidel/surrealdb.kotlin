@@ -107,30 +107,30 @@ private fun String.regionAt(position: Int): SurqlRegion {
         val next = getOrNull(index + 1)
         when (region) {
             SurqlRegion.CODE -> {
-                when {
-                    current == '\'' -> {
+                when (current) {
+                    '\'' -> {
                         region = SurqlRegion.SINGLE_QUOTE
                     }
 
-                    current == '"' -> {
+                    '"' -> {
                         region = SurqlRegion.DOUBLE_QUOTE
                     }
 
-                    current == '`' -> {
+                    '`' -> {
                         region = SurqlRegion.BACKTICK
                     }
 
-                    current == '-' && next == '-' -> {
+                    '-' if next == '-' -> {
                         region = SurqlRegion.LINE_COMMENT
                         index++
                     }
 
-                    current == '/' && next == '/' -> {
+                    '/' if next == '/' -> {
                         region = SurqlRegion.LINE_COMMENT
                         index++
                     }
 
-                    current == '/' && next == '*' -> {
+                    '/' if next == '*' -> {
                         region = SurqlRegion.BLOCK_COMMENT
                         index++
                     }
@@ -138,26 +138,26 @@ private fun String.regionAt(position: Int): SurqlRegion {
             }
 
             SurqlRegion.SINGLE_QUOTE -> {
-                when {
-                    current == '\\' -> index++
-                    current == '\'' && next == '\'' -> index++
-                    current == '\'' -> region = SurqlRegion.CODE
+                when (current) {
+                    '\\' -> index++
+                    '\'' if next == '\'' -> index++
+                    '\'' -> region = SurqlRegion.CODE
                 }
             }
 
             SurqlRegion.DOUBLE_QUOTE -> {
-                when {
-                    current == '\\' -> index++
-                    current == '"' && next == '"' -> index++
-                    current == '"' -> region = SurqlRegion.CODE
+                when (current) {
+                    '\\' -> index++
+                    '"' if next == '"' -> index++
+                    '"' -> region = SurqlRegion.CODE
                 }
             }
 
             SurqlRegion.BACKTICK -> {
-                when {
-                    current == '\\' -> index++
-                    current == '`' && next == '`' -> index++
-                    current == '`' -> region = SurqlRegion.CODE
+                when (current) {
+                    '\\' -> index++
+                    '`' if next == '`' -> index++
+                    '`' -> region = SurqlRegion.CODE
                 }
             }
 
