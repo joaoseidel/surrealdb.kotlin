@@ -58,7 +58,7 @@ private suspend fun readBody(request: HttpRequestData): String =
 private class RpcHarness {
     var lastMethod: String? = null
     var lastParams: JsonArray? = null
-    var stubResult: String = """{"id":"1","result":null}"""
+    var stubResult: String = queryEnvelope("null")
 
     val engine =
         MockEngine { request ->

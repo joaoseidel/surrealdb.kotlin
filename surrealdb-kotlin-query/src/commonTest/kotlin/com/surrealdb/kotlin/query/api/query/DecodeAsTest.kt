@@ -12,7 +12,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 
 @Serializable
 private data class Person(
@@ -100,36 +99,9 @@ class DecodeAsTest :
                         failure.message shouldContain "got 2"
                     }
                 }
-
-                should("decode a scalar, so a function call reads back as the value it returned") {
-                    runTest {
-                        answering(""""2026-08-20T00:00:00Z"""")
-                            .run("time::now")
-                            .decodeAs<String>()
-                            .awaitSingleOrNull() shouldBe "2026-08-20T00:00:00Z"
-                    }
-                }
             }
 
             context("a result that is not made of records") {
-                should("decode through decodeAs, which is how RETURN DIFF answers with patches per record") {
-                    runTest {
-                        val diff =
-                            answering("""[[{"op":"replace","path":"/name","value":"Ada"}]]""")
-                                .patch(People, JsonArray(emptyList()))
-                                .returnMode(ReturnMode.Diff)
-                                .decodeAs<List<JsonObject>>()
-                                .await()
-
-                        diff shouldBe
-                            listOf(
-                                listOf(
-                                    Json.parseToJsonElement("""{"op":"replace","path":"/name","value":"Ada"}"""),
-                                ),
-                            )
-                    }
-                }
-
                 should("say so when read as rows, rather than handing back something that is not a record") {
                     runTest {
                         val failure =
@@ -141,6 +113,22 @@ class DecodeAsTest :
                             }
 
                         failure.message shouldContain "Expected a record"
+                    }
+                }
+
+                should("decode as the values themselves, which is what a VALUE projection answers with") {
+                    runTest {
+                        answering("""["Boston",null]""")
+                            .select(People)
+                            .value(People.name)
+                            .decodeAs<String?>()
+                            .await() shouldBe listOf("Boston", null)
+                    }
+                }
+
+                should("decode the one value a scalar result answers with") {
+                    runTest {
+                        answering("42").select(People).decodeAs<Int>().awaitSingleOrNull() shouldBe 42
                     }
                 }
             }
