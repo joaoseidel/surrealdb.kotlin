@@ -14,6 +14,7 @@ import com.surrealdb.kotlin.query.api.data.render
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.time.Instant
 
 /**
  * Convert an arbitrary value into a [JsonElement] for binding. Accepts the
@@ -45,6 +46,20 @@ internal fun toJson(value: Any?): JsonElement =
 
         is Collection<*> -> {
             JsonArray(value.map { toJson(it) })
+        }
+
+        is Target -> {
+            throw IllegalArgumentException(
+                "Cannot bind '$value' as JSON: a ${value::class.simpleName} is SurrealQL, not a value. " +
+                    "Name it through a typed builder, or write type::record(…) and bind each half.",
+            )
+        }
+
+        is Instant -> {
+            throw IllegalArgumentException(
+                "Cannot bind '$value' as JSON: a datetime is SurrealQL, not a value. " +
+                    "Write type::datetime(…) and bind the text.",
+            )
         }
 
         else -> {
@@ -161,8 +176,22 @@ private fun BoundQuery.appendProjection(projection: Projection) {
 internal fun BoundQuery.appendValue(value: Any?): BoundQuery =
     apply {
         when (value) {
-            is Target -> appendTarget(value)
-            else -> bind(toJson(value))
+            is Target -> {
+                appendTarget(value)
+            }
+
+            // A datetime has to be named rather than bound: SurrealDB reads a bound
+            // string as text, and a `datetime` field refuses text. This is the same
+            // spelling a condition compares one through.
+            is Instant -> {
+                appendLiteral("type::datetime(")
+                bind(JsonPrimitive(value.toString()))
+                appendLiteral(")")
+            }
+
+            else -> {
+                bind(toJson(value))
+            }
         }
     }
 

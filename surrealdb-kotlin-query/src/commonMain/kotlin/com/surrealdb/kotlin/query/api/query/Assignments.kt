@@ -7,6 +7,7 @@ import com.surrealdb.kotlin.query.api.data.Table
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
+import kotlin.time.Instant
 
 internal class Assignment(
     val field: Field<*>,
@@ -55,13 +56,18 @@ public class Assignments internal constructor(
 
     /**
      * A value the renderer already understands is kept as it is, so a link
-     * still renders as `type::record(…)` rather than an object. Everything else
+     * still renders as `type::record(…)` and a datetime as `type::datetime(…)`
+     * rather than as an object or a string that the field's type refuses.
+     * Everything else
      * is encoded with the context's [Json], which is what lets a composite be
      * assigned without the field carrying a serializer.
      */
     @PublishedApi
     internal inline fun <reified V> encode(value: V): Any? =
-        if (value is Target) value else json.encodeToJsonElement(serializer<V>(), value)
+        when (value) {
+            is Target, is Instant -> value
+            else -> json.encodeToJsonElement(serializer<V>(), value)
+        }
 
     @PublishedApi
     internal fun record(

@@ -29,6 +29,11 @@
 - `matchesFullText` writes SurrealDB's `@@`, which reads the `FULLTEXT` index defined on the field.
   `matches` is `string::matches`, a regular expression over every record, and reaching for it on an
   indexed field is a table scan that looks like a search.
+- A datetime assigned in a `set { }` block now renders as `type::datetime(...)`, the same spelling a
+  condition already compared one through. Bound as a value it reached the server as text, which a
+  `datetime` field refuses.
+- A condition comparing against a collection of records now writes each of them out rather than
+  refusing to bind the collection as JSON.
 - Core and query packages now include their module prefix while retaining the existing `api` and `runtime` hierarchy.
 - Conditions now accept fields from the table declaration instead of a serializable record type, so
   field validity is checked where the query is written.

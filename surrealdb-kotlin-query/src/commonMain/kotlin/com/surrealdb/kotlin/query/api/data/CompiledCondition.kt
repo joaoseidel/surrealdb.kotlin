@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.time.Instant
 
 internal data class CompiledCondition(
     val surql: String,
@@ -101,9 +102,34 @@ private class ConditionCompiler {
 
     private fun appendOperand(operand: Any?) {
         when (operand) {
-            is Expression<*> -> appendExpression(operand)
-            is Target -> appendTarget(operand)
-            else -> bind(toJsonElement(operand))
+            is Expression<*> -> {
+                appendExpression(operand)
+            }
+
+            // A collection holding one of those is SurrealQL too, so it is written
+            // out element by element rather than bound whole as one JSON array.
+            is Collection<*> if operand.any { it is Target || it is Instant } -> {
+                text.append('[')
+                operand.forEachIndexed { index, element ->
+                    if (index > 0) text.append(", ")
+                    appendOperand(element)
+                }
+                text.append(']')
+            }
+
+            is Target -> {
+                appendTarget(operand)
+            }
+
+            is Instant -> {
+                text.append("type::datetime(")
+                bind(JsonPrimitive(operand.toString()))
+                text.append(')')
+            }
+
+            else -> {
+                bind(toJsonElement(operand))
+            }
         }
     }
 
@@ -212,6 +238,20 @@ private fun toJsonElement(value: Any?): JsonElement =
 
         is Collection<*> -> {
             JsonArray(value.map(::toJsonElement))
+        }
+
+        is Target -> {
+            throw IllegalArgumentException(
+                "Cannot bind '$value' as JSON: a ${value::class.simpleName} is SurrealQL, not a value. " +
+                    "Compare against it directly rather than inside a collection.",
+            )
+        }
+
+        is Instant -> {
+            throw IllegalArgumentException(
+                "Cannot bind '$value' as JSON: a datetime is SurrealQL, not a value. " +
+                    "Compare against it directly rather than inside a collection.",
+            )
         }
 
         else -> {

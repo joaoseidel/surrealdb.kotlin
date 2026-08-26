@@ -120,6 +120,12 @@ class SurqlTest :
 
                     failure.message shouldContain target.toString()
                 }
+
+                should("reject a target inside a collection too, which is the one place a value path still meets one") {
+                    val failure = shouldThrow<IllegalArgumentException> { toJson(listOf(RecordId("person", "alice"))) }
+
+                    failure.message shouldContain "person:alice"
+                }
             }
 
             context("Condition.toSurql") {
