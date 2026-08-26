@@ -69,6 +69,24 @@ public class Assignments internal constructor(
             else -> json.encodeToJsonElement(serializer<V>(), value)
         }
 
+    /**
+     * Assign what SurrealDB computes rather than a value:
+     *
+     * ```
+     * set { it.raw(password) { "crypto::argon2::generate(${bind(secret)})" } }
+     * ```
+     *
+     * A server-side function is the one thing a typed assignment cannot carry,
+     * because its result does not exist until the statement runs. Values inside
+     * it still bind, so the caller's input never reaches the statement as text.
+     */
+    public fun raw(
+        field: Field<*>,
+        build: SurqlTemplate.() -> String,
+    ) {
+        record(field, "=", RawExpression(surqlTemplate(build)))
+    }
+
     @PublishedApi
     internal fun record(
         field: Field<*>,
@@ -105,6 +123,11 @@ public class ArrayField<E>
         }
     }
 
+/** An expression SurrealDB evaluates, with the values inside it already bound. */
+internal class RawExpression(
+    val fragment: BoundQuery,
+)
+
 /**
  * The one data slot a write statement carries.
  *
@@ -133,8 +156,17 @@ internal class SetData(
         entries.forEachIndexed { index, entry ->
             if (index > 0) into.appendLiteral(", ")
             into.appendLiteral(entry.field.path.value)
-            into.appendLiteral(" ${entry.op} ")
-            into.appendValue(entry.value)
+            when (val value = entry.value) {
+                is RawExpression -> {
+                    into.appendLiteral(" ${entry.op} ")
+                    into.append(value.fragment)
+                }
+
+                else -> {
+                    into.appendLiteral(" ${entry.op} ")
+                    into.appendValue(value)
+                }
+            }
         }
     }
 }

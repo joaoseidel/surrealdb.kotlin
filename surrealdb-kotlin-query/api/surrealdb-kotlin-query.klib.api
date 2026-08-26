@@ -184,6 +184,7 @@ final class com.surrealdb.kotlin.query.api.query/Assignments { // com.surrealdb.
     final val json // com.surrealdb.kotlin.query.api.query/Assignments.json|{}json[0]
         final fun <get-json>(): kotlinx.serialization.json/Json // com.surrealdb.kotlin.query.api.query/Assignments.json.<get-json>|<get-json>(){}[0]
 
+    final fun raw(com.surrealdb.kotlin.query.api.data/Field<*>, kotlin/Function1<com.surrealdb.kotlin.query.api.query/SurqlTemplate, kotlin/String>) // com.surrealdb.kotlin.query.api.query/Assignments.raw|raw(com.surrealdb.kotlin.query.api.data.Field<*>;kotlin.Function1<com.surrealdb.kotlin.query.api.query.SurqlTemplate,kotlin.String>){}[0]
     final fun record(com.surrealdb.kotlin.query.api.data/Field<*>, kotlin/String, kotlin/Any?) // com.surrealdb.kotlin.query.api.query/Assignments.record|record(com.surrealdb.kotlin.query.api.data.Field<*>;kotlin.String;kotlin.Any?){}[0]
     final inline fun <#A1: reified kotlin/Any?> encode(#A1): kotlin/Any? // com.surrealdb.kotlin.query.api.query/Assignments.encode|encode(0:0){0§<kotlin.Any?>}[0]
     final inline fun <#A1: reified kotlin/Any?> get(com.surrealdb.kotlin.query.api.data/Field<kotlin.collections/List<#A1>>): com.surrealdb.kotlin.query.api.query/ArrayField<#A1> // com.surrealdb.kotlin.query.api.query/Assignments.get|get(com.surrealdb.kotlin.query.api.data.Field<kotlin.collections.List<0:0>>){0§<kotlin.Any?>}[0]

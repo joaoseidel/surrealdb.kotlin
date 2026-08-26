@@ -238,5 +238,31 @@ class AssignmentTest :
                     compiled.bindings["_1"].toString() shouldBe "[\"cs\",\"lisp\"]"
                 }
             }
+
+            context("an assignment of what the server computes") {
+                should("write the call rather than a value, renumbering its bindings past the statement's") {
+                    val compiled =
+                        RecordingContext()
+                            .update(People["ada"])
+                            .set { it.raw(name) { "string::uppercase(${bind("ada")})" } }
+                            .compile()
+
+                    compiled.surql shouldContain "SET name = string::uppercase(\$_2)"
+                    compiled.bindings.values
+                        .map { it.toString() }
+                        .contains("\"ada\"") shouldBe true
+                }
+
+                should("keep its bindings apart from the statement's own") {
+                    val compiled =
+                        RecordingContext()
+                            .update(People)
+                            .set { it.raw(name) { "string::uppercase(${bind("ada")})" } }
+                            .where { age greaterEq 18 }
+                            .compile()
+
+                    compiled.bindings.size shouldBe 3
+                }
+            }
         },
     )

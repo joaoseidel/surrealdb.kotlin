@@ -147,6 +147,7 @@ public final class com/surrealdb/kotlin/query/api/query/ArrayField {
 
 public final class com/surrealdb/kotlin/query/api/query/Assignments {
 	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun raw (Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlin/jvm/functions/Function1;)V
 	public final fun record (Lcom/surrealdb/kotlin/query/api/data/Field;Ljava/lang/String;Ljava/lang/Object;)V
 }
 
