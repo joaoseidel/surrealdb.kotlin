@@ -40,14 +40,14 @@ public suspend fun QueryContext.checkSchema(vararg tables: Table): List<String> 
         request.bind(JsonPrimitive(table.tableName))
     }
 
-    val statements = statementResults(query(request))
-    if (statements.size != tables.size + 1) {
+    val info = query(request)
+    if (info.size != tables.size + 1) {
         throw SurrealProtocolException(
-            "Expected ${tables.size + 1} statement results from INFO, got ${statements.size}",
+            "Expected ${tables.size + 1} records from INFO, one per statement, got ${info.size}",
         )
     }
 
-    val definitions = statements.first().objectAt("tables")
+    val definitions = info.first().content.objectAt("tables")
     return tables.withIndex().flatMap { (index, table) ->
         val definition = definitions[table.tableName]?.jsonPrimitive?.content
         when {
@@ -60,7 +60,7 @@ public suspend fun QueryContext.checkSchema(vararg tables: Table): List<String> 
             }
 
             else -> {
-                table.driftAgainst(statements[index + 1].objectAt("fields").keys)
+                table.driftAgainst(info[index + 1].content.objectAt("fields").keys)
             }
         }
     }

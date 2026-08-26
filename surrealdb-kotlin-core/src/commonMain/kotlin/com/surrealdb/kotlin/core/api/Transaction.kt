@@ -1,9 +1,10 @@
 package com.surrealdb.kotlin.core.api
 
+import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
+import com.surrealdb.kotlin.core.api.query.queryRows
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 
 /**
  * A client-side SurrealDB transaction.
@@ -24,12 +25,15 @@ public class Transaction internal constructor(
 ) : QueryContext {
     override val json: Json get() = session.json
 
-    override suspend fun query(bound: BoundQuery): JsonElement =
-        session.controller.query(
-            sessionId = session.sessionId,
-            sql = bound.surql,
-            vars = bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() },
-            txn = txnId,
+    override suspend fun queryValues(bound: BoundQuery): List<Row> =
+        queryRows(
+            json,
+            session.controller.query(
+                sessionId = session.sessionId,
+                sql = bound.surql,
+                vars = bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() },
+                txn = txnId,
+            ),
         )
 
     /** Commit the transaction. */

@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.query.api.query
 
 import com.surrealdb.kotlin.core.api.data.RecordId
+import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
 import com.surrealdb.kotlin.query.api.data.Table
@@ -26,7 +27,7 @@ class QueryBuilderTest {
         object : QueryContext {
             override val json: Json = Json
 
-            override suspend fun query(bound: BoundQuery): JsonElement = error("not used in compile-only tests")
+            override suspend fun queryValues(bound: BoundQuery): List<Row> = error("not used in compile-only tests")
         }
 
     private fun bindings(q: BoundQuery): Map<String, JsonElement> = q.bindings

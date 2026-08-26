@@ -57,10 +57,8 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            statementResults(
-                db.query(
-                    surql("REMOVE TABLE IF EXISTS ${Cards.tableName}; REMOVE TABLE IF EXISTS ${Writers.tableName}"),
-                ),
+            db.query(
+                surql("REMOVE TABLE IF EXISTS ${Cards.tableName}; REMOVE TABLE IF EXISTS ${Writers.tableName}"),
             )
 
             db.create(Writers["ada"]).set { it[name] = "Ada" }.await()

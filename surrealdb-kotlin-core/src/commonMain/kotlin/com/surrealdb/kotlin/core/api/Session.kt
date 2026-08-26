@@ -12,6 +12,7 @@ import com.surrealdb.kotlin.core.api.live.toLiveStatement
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
 import com.surrealdb.kotlin.core.api.query.firstQueryResult
+import com.surrealdb.kotlin.core.api.query.queryRows
 import com.surrealdb.kotlin.core.runtime.ConnectionController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
@@ -61,14 +62,14 @@ public class Session internal constructor(
         return result
     }
 
-    public suspend fun whoami(): JsonElement =
+    public suspend fun whoami(): Row? =
         try {
-            firstQueryResult(query(BoundQuery().appendLiteral("SELECT * FROM ONLY \$auth")))
+            query(BoundQuery().appendLiteral("SELECT * FROM ONLY \$auth")).firstOrNull()
         } catch (cause: com.surrealdb.kotlin.core.api.error.SurrealRpcException) {
             // v3.0.5 emits this when `$auth` resolves to zero rows; the
             // semantically-correct return is "no auth record bound".
             if (cause.message?.contains("single result output", ignoreCase = true) == true) {
-                kotlinx.serialization.json.JsonNull
+                null
             } else {
                 throw cause
             }
@@ -170,9 +171,15 @@ public class Session internal constructor(
     }
 
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
-    override suspend fun query(bound: BoundQuery): JsonElement =
+    override suspend fun queryValues(bound: BoundQuery): List<Row> = queryRows(json, queryJson(bound))
+
+    private suspend fun queryJson(bound: BoundQuery): JsonElement =
         withAutoAuthRetry {
-            controller.query(sessionId, bound.surql, bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() })
+            controller.query(
+                sessionId = sessionId,
+                sql = bound.surql,
+                vars = bound.bindingsAsJsonObject().takeIf { it.isNotEmpty() },
+            )
         }
 
     public suspend fun live(
@@ -221,7 +228,7 @@ public class Session internal constructor(
             notifications = controller.liveNotifications,
             failures = controller.liveFailures,
             start = {
-                val id = firstQueryResult(query(statement)).jsonPrimitive.content
+                val id = firstQueryResult(queryJson(statement)).jsonPrimitive.content
                 controller.trackLive(sessionId, id, statement)
                 id
             },

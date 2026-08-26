@@ -6,7 +6,6 @@ import com.surrealdb.kotlin.core.api.Namespace
 import com.surrealdb.kotlin.core.api.Session
 import com.surrealdb.kotlin.core.api.Surreal
 import com.surrealdb.kotlin.core.api.error.SurrealException
-import com.surrealdb.kotlin.query.api.query.statementResults
 import com.surrealdb.kotlin.query.api.query.surql
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -57,11 +56,11 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             root.signin(Credentials.RootUser("root", "root"))
             root.use(MAIN, MAIN_DB)
-            statementResults(root.query(surql(FIXTURES)))
+            root.query(surql(FIXTURES))
 
             block(client.session())
         } finally {
-            runCatching { statementResults(root.query(surql(TEARDOWN))) }
+            runCatching { root.query(surql(TEARDOWN)) }
             client.close()
         }
     }
@@ -338,7 +337,8 @@ class CredentialsIntegrationTest :
 
                         try {
                             db.namespace() shouldBe "cr_typo"
-                            statementResults(db.query(surql("INFO FOR ROOT")))
+                            db
+                                .query(surql("INFO FOR ROOT"))
                                 .first()
                                 .toString() shouldContain "cr_typo"
                         } finally {

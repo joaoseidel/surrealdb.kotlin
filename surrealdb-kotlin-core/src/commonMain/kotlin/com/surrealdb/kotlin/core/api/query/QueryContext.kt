@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.core.api.query
 
+import com.surrealdb.kotlin.core.api.data.Row
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 
 /**
  * The context a query runs in: somewhere to send a [BoundQuery], and the
@@ -19,6 +19,16 @@ public interface QueryContext {
     /** Serializer used to decode query results. */
     public val json: Json
 
-    /** Send a compiled [BoundQuery] via the `query` RPC. */
-    public suspend fun query(bound: BoundQuery): JsonElement
+    /**
+     * Send a compiled [BoundQuery] and read back everything every statement
+     * answered with, in the order the statements were written. A statement that
+     * failed throws rather than answering.
+     *
+     * A `VALUE` projection and `RETURN` answer with values that are not
+     * records, so a [Row] here reads only through [Row.decode].
+     */
+    public suspend fun queryValues(bound: BoundQuery): List<Row>
+
+    /** As [queryValues], refusing a result that is not a record. */
+    public suspend fun query(bound: BoundQuery): List<Row> = queryValues(bound).onEach { it.requireRecord() }
 }

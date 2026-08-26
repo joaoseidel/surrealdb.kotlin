@@ -16,8 +16,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
@@ -55,18 +53,13 @@ class SurrealAndroidIntegrationTest {
                     .content(buildJsonObject { put("name", JsonPrimitive("Ada")) })
                     .await()
 
-                val rows =
-                    db
-                        .query(surql("SELECT * FROM android_person"))
-                        .jsonArray[0]
-                        .jsonObject["result"]!!
-                        .jsonArray
+                val rows = db.query(surql("SELECT * FROM android_person"))
 
                 assertEquals(1, rows.size)
                 assertEquals(
                     "Ada",
                     rows[0]
-                        .jsonObject["name"]!!
+                        .content["name"]!!
                         .jsonPrimitive.content,
                 )
 

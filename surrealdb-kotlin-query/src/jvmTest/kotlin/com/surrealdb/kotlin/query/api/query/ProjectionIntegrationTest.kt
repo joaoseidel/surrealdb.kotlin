@@ -18,7 +18,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 private object Talks : Table("pj_talk") {
@@ -46,7 +45,7 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            statementResults(db.query(surql("REMOVE TABLE IF EXISTS ${Talks.tableName}")))
+            db.query(surql("REMOVE TABLE IF EXISTS ${Talks.tableName}"))
 
             db
                 .create(Talks["ada"])

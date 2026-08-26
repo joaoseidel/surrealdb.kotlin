@@ -3,7 +3,6 @@ package com.surrealdb.kotlin.query.api.query
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
 
 /**
@@ -26,7 +25,7 @@ public abstract class Query internal constructor(
      * order the server gave them. A statement that matched nothing answers with
      * an empty list.
      */
-    public suspend fun await(): List<Row> = resultRows(context.json, result())
+    public suspend fun await(): List<Row> = context.query(compile())
 
     /**
      * Send the statement and read back the one record it answered with, or null
@@ -52,5 +51,5 @@ public abstract class Query internal constructor(
      */
     public inline fun <reified T> decodeAs(): TypedResult<T> = TypedResult(this, serializer())
 
-    internal suspend fun result(): JsonElement = firstQueryResult(context.query(compile()))
+    internal suspend fun values(): List<Row> = context.queryValues(compile())
 }

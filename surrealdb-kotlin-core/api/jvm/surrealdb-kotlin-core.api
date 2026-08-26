@@ -220,6 +220,7 @@ public final class com/surrealdb/kotlin/core/api/Session : com/surrealdb/kotlin/
 	public final fun namespace (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun ping (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryValues (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun reset (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setVariable (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun signin (Lcom/surrealdb/kotlin/core/api/Credentials$ForSignIn;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -276,6 +277,7 @@ public final class com/surrealdb/kotlin/core/api/Transaction : com/surrealdb/kot
 	public fun getJson ()Lkotlinx/serialization/json/Json;
 	public final fun getTxnId ()Ljava/lang/String;
 	public fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun queryValues (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/surrealdb/kotlin/core/api/TransactionKt {
@@ -352,6 +354,7 @@ public final class com/surrealdb/kotlin/core/api/data/Row {
 	public static final field Companion Lcom/surrealdb/kotlin/core/api/data/Row$Companion;
 	public final fun contains (Lcom/surrealdb/kotlin/core/api/data/Projection;)Z
 	public final fun decode (Lcom/surrealdb/kotlin/core/api/data/Projection;Lkotlinx/serialization/KSerializer;)Ljava/lang/Object;
+	public final fun decode (Lkotlinx/serialization/KSerializer;)Ljava/lang/Object;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getContent ()Lkotlinx/serialization/json/JsonObject;
 	public final fun getJson ()Lkotlinx/serialization/json/Json;
@@ -361,6 +364,7 @@ public final class com/surrealdb/kotlin/core/api/data/Row {
 
 public final class com/surrealdb/kotlin/core/api/data/Row$Companion {
 	public final fun fromJson (Lkotlinx/serialization/json/Json;Lkotlinx/serialization/json/JsonObject;)Lcom/surrealdb/kotlin/core/api/data/Row;
+	public final fun fromResult (Lkotlinx/serialization/json/Json;Lkotlinx/serialization/json/JsonElement;)Ljava/util/List;
 }
 
 public abstract interface class com/surrealdb/kotlin/core/api/data/Target {
@@ -1174,6 +1178,11 @@ public final class com/surrealdb/kotlin/core/api/query/BoundQuery {
 
 public abstract interface class com/surrealdb/kotlin/core/api/query/QueryContext {
 	public abstract fun getJson ()Lkotlinx/serialization/json/Json;
-	public abstract fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun query (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun queryValues (Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/surrealdb/kotlin/core/api/query/QueryContext$DefaultImpls {
+	public static fun query (Lcom/surrealdb/kotlin/core/api/query/QueryContext;Lcom/surrealdb/kotlin/core/api/query/BoundQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

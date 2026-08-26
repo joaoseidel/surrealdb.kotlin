@@ -17,8 +17,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +29,7 @@ class CoreOnlyConsumerTest {
             val engine =
                 MockEngine {
                     respond(
-                        content = """{"id":"1","result":[{"status":"OK","result":"core"}]}""",
+                        content = """{"id":"1","result":[{"status":"OK","result":[{"value":"core"}]}]}""",
                         status = HttpStatusCode.OK,
                         headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                     )
@@ -48,13 +46,13 @@ class CoreOnlyConsumerTest {
             val result =
                 client
                     .session()
-                    .query(BoundQuery().appendLiteral("RETURN ").bind(JsonPrimitive("core")))
+                    .query(BoundQuery().appendLiteral("SELECT * FROM person"))
 
             assertEquals(
                 "core",
-                result.jsonArray
+                result
                     .single()
-                    .jsonObject["result"]
+                    .content["value"]
                     ?.jsonPrimitive
                     ?.content,
             )

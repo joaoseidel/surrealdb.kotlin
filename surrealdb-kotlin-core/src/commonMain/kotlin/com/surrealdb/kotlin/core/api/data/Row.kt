@@ -1,5 +1,7 @@
 package com.surrealdb.kotlin.core.api.data
 
+import com.surrealdb.kotlin.core.api.error.SurrealProtocolException
+import com.surrealdb.kotlin.core.api.query.resultRecords
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -9,21 +11,52 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 
 /**
- * One JSON record returned by the server. Typed projections read values by
- * path, including nested objects, array indexes, and `[*]` array traversal.
+ * One thing a statement answered with. Typed projections read values by path,
+ * including nested objects, array indexes, and `[*]` array traversal.
  *
- * [content] is the record as it arrived, for anything this does not cover.
+ * Usually that is a record, and [content] is the record as it arrived, for
+ * anything the projections do not cover. A `VALUE` projection and `RETURN`
+ * answer with values that are not records, and one of those reads only through
+ * [decode].
  */
 public class Row internal constructor(
     @PublishedApi internal val json: Json,
-    public val content: JsonObject,
+    private val value: JsonElement,
 ) {
+    /** The record as it arrived. A value that is not a record throws. */
+    public val content: JsonObject
+        get() =
+            value as? JsonObject
+                ?: throw SurrealProtocolException(
+                    "Expected a record in the result, got $value. Read a value that is not a record with decodeAs().",
+                )
+
     public companion object {
         public fun fromJson(
             json: Json,
             content: JsonObject,
         ): Row = Row(json, content)
+
+        /**
+         * The rows of one statement's result, which SurrealDB shapes
+         * differently depending on what the statement pointed at: an array for
+         * a table target, the record itself under `ONLY` or a record-id target,
+         * and null for a statement that matched nothing.
+         *
+         * A value that is neither, which is what `RETURN` and a `VALUE`
+         * projection answer with, is one row too, so a scalar reads back as a
+         * scalar through [decode].
+         */
+        public fun fromResult(
+            json: Json,
+            result: JsonElement,
+        ): List<Row> = resultRecords(result).map { Row(json, it) }
     }
+
+    /** Decode the whole of what this holds, record or value alike. */
+    public fun <V> decode(serializer: KSerializer<V>): V = json.decodeFromJsonElement(serializer, value)
+
+    internal fun requireRecord(): JsonObject = content
 
     /**
      * The value of [field]. A field the record does not carry, or carries as
@@ -52,11 +85,11 @@ public class Row internal constructor(
     /** True if the record carries [projection] at all, NULL included. */
     public operator fun contains(projection: Projection): Boolean = resolve(projection.path) != null
 
-    override fun toString(): String = content.toString()
+    override fun toString(): String = value.toString()
 
-    override fun equals(other: Any?): Boolean = other is Row && other.content == content
+    override fun equals(other: Any?): Boolean = other is Row && other.value == value
 
-    override fun hashCode(): Int = content.hashCode()
+    override fun hashCode(): Int = value.hashCode()
 
     private fun resolve(path: FieldPath): JsonElement? =
         content[path.value] ?: walk(

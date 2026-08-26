@@ -13,9 +13,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 private object InSync : Table("sc_reader") {
     val id by field<String>()
@@ -44,20 +41,18 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            statementResults(
-                db.query(
-                    surql(
-                        """
-                        REMOVE TABLE IF EXISTS ${InSync.tableName};
-                        REMOVE TABLE IF EXISTS ${Loose.tableName};
-                        REMOVE TABLE IF EXISTS ${Absent.tableName};
-                        DEFINE TABLE ${InSync.tableName} SCHEMAFULL;
-                        DEFINE FIELD name ON ${InSync.tableName} TYPE string;
-                        DEFINE FIELD age ON ${InSync.tableName} TYPE int;
-                        DEFINE FIELD tags ON ${InSync.tableName} TYPE array<string>;
-                        DEFINE TABLE ${Loose.tableName} SCHEMALESS;
-                        """.trimIndent(),
-                    ),
+            db.query(
+                surql(
+                    """
+                    REMOVE TABLE IF EXISTS ${InSync.tableName};
+                    REMOVE TABLE IF EXISTS ${Loose.tableName};
+                    REMOVE TABLE IF EXISTS ${Absent.tableName};
+                    DEFINE TABLE ${InSync.tableName} SCHEMAFULL;
+                    DEFINE FIELD name ON ${InSync.tableName} TYPE string;
+                    DEFINE FIELD age ON ${InSync.tableName} TYPE int;
+                    DEFINE FIELD tags ON ${InSync.tableName} TYPE array<string>;
+                    DEFINE TABLE ${Loose.tableName} SCHEMALESS;
+                    """.trimIndent(),
                 ),
             )
 

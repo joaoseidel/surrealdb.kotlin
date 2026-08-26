@@ -160,7 +160,7 @@ class SurrealJvmIntegrationTest {
 
                 db.`let`("tb", "person")
                 val queryResult = db.query(surql("SELECT * FROM type::table(\$tb)"))
-                assertTrue(queryResult.jsonArray.isNotEmpty())
+                assertTrue(queryResult.isNotEmpty())
                 db.unset("tb")
 
                 val sessionB = client.session()
@@ -168,16 +168,8 @@ class SurrealJvmIntegrationTest {
                 sessionB.use(Namespace("main"), Database("main"))
                 // Both sessions see the same data; compare the inner result, not the
                 // outer envelope (which includes per-call timing).
-                val countA =
-                    db
-                        .query(surql("SELECT count() FROM person GROUP ALL"))
-                        .jsonArray[0]
-                        .jsonObject["result"]
-                val countB =
-                    sessionB
-                        .query(surql("SELECT count() FROM person GROUP ALL"))
-                        .jsonArray[0]
-                        .jsonObject["result"]
+                val countA = db.query(surql("SELECT count() FROM person GROUP ALL")).single()
+                val countB = sessionB.query(surql("SELECT count() FROM person GROUP ALL")).single()
                 assertEquals(countA.toString(), countB.toString())
                 client.closeSession(sessionB)
 
@@ -210,12 +202,7 @@ class SurrealJvmIntegrationTest {
                         .content(buildJsonObject { put("name", JsonPrimitive("Alice")) })
                         .await()
                 }
-                val afterCommit =
-                    db
-                        .query(surql("SELECT * FROM tx_person"))
-                        .jsonArray[0]
-                        .jsonObject["result"]!!
-                        .jsonArray
+                val afterCommit = db.query(surql("SELECT * FROM tx_person"))
                 assertEquals(1, afterCommit.size)
 
                 val cancelled =
@@ -228,12 +215,7 @@ class SurrealJvmIntegrationTest {
                         }
                     }
                 assertTrue(cancelled.isFailure)
-                val afterCancel =
-                    db
-                        .query(surql("SELECT * FROM tx_person"))
-                        .jsonArray[0]
-                        .jsonObject["result"]!!
-                        .jsonArray
+                val afterCancel = db.query(surql("SELECT * FROM tx_person"))
                 assertEquals(1, afterCancel.size, "cancel should have rolled back bob")
 
                 val tx = db.beginTransaction()
@@ -242,12 +224,7 @@ class SurrealJvmIntegrationTest {
                     .content(buildJsonObject { put("name", JsonPrimitive("Carol")) })
                     .await()
                 tx.commit()
-                val afterExplicit =
-                    db
-                        .query(surql("SELECT * FROM tx_person"))
-                        .jsonArray[0]
-                        .jsonObject["result"]!!
-                        .jsonArray
+                val afterExplicit = db.query(surql("SELECT * FROM tx_person"))
                 assertEquals(2, afterExplicit.size)
             } finally {
                 client.close()

@@ -16,11 +16,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 private object Lines : Table("om_line") {
     val title by field<String>()
@@ -102,7 +97,10 @@ class OnlyModifierIntegrationTest :
                     onServer { db ->
                         val statement = db.select(Lines["a"])
 
-                        firstQueryResult(db.query(statement.compile())).shouldBeInstanceOf<JsonObject>()
+                        db
+                            .query(statement.compile())
+                            .single()
+                            .shouldBeInstanceOf<com.surrealdb.kotlin.core.api.data.Row>()
                         statement.awaitSingleOrNull()?.get(Lines.title) shouldBe "One"
                     }
                 }
@@ -111,7 +109,7 @@ class OnlyModifierIntegrationTest :
                     onServer { db ->
                         val statement = db.select(Lines["nobody"])
 
-                        firstQueryResult(db.query(statement.compile())) shouldBe JsonNull
+                        db.query(statement.compile()) shouldBe emptyList()
                         statement.awaitSingleOrNull() shouldBe null
                         statement.await() shouldBe emptyList()
                     }
@@ -135,7 +133,10 @@ class OnlyModifierIntegrationTest :
                                 .limit(1)
                                 .only()
 
-                        firstQueryResult(db.query(statement.compile())).shouldBeInstanceOf<JsonObject>()
+                        db
+                            .query(statement.compile())
+                            .single()
+                            .shouldBeInstanceOf<com.surrealdb.kotlin.core.api.data.Row>()
                         statement.awaitSingleOrNull()?.get(Lines.title) shouldBe "One"
                     }
                 }
@@ -144,7 +145,7 @@ class OnlyModifierIntegrationTest :
             context("a table target without only()") {
                 should("answer with a list, which is the shape the terminals read every result through") {
                     onServer { db ->
-                        firstQueryResult(db.query(db.select(Lines).compile())).shouldBeInstanceOf<JsonArray>()
+                        db.query(db.select(Lines).compile()).shouldBeInstanceOf<List<*>>()
                     }
                 }
             }

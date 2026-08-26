@@ -16,8 +16,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 private object Profiles : Table("ng_profile") {
     val name by field<String>()
@@ -62,23 +60,21 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            statementResults(
-                db.query(
-                    surql(
-                        """
-                        REMOVE TABLE IF EXISTS ${Profiles.tableName};
-                        REMOVE TABLE IF EXISTS ${LeafOnly.tableName};
-                        DEFINE TABLE ${Profiles.tableName} SCHEMAFULL;
-                        DEFINE FIELD name ON ${Profiles.tableName} TYPE option<string>;
-                        DEFINE FIELD address ON ${Profiles.tableName} TYPE object;
-                        DEFINE FIELD address.city ON ${Profiles.tableName} TYPE option<string>;
-                        DEFINE FIELD address.postal_code ON ${Profiles.tableName} TYPE option<string>;
-                        DEFINE FIELD address.geo ON ${Profiles.tableName} TYPE option<object>;
-                        DEFINE FIELD address.geo.lat ON ${Profiles.tableName} TYPE option<float>;
-                        DEFINE TABLE ${LeafOnly.tableName} SCHEMAFULL;
-                        DEFINE FIELD address.geo.lat ON ${LeafOnly.tableName} TYPE option<float>;
-                        """.trimIndent(),
-                    ),
+            db.query(
+                surql(
+                    """
+                    REMOVE TABLE IF EXISTS ${Profiles.tableName};
+                    REMOVE TABLE IF EXISTS ${LeafOnly.tableName};
+                    DEFINE TABLE ${Profiles.tableName} SCHEMAFULL;
+                    DEFINE FIELD name ON ${Profiles.tableName} TYPE option<string>;
+                    DEFINE FIELD address ON ${Profiles.tableName} TYPE object;
+                    DEFINE FIELD address.city ON ${Profiles.tableName} TYPE option<string>;
+                    DEFINE FIELD address.postal_code ON ${Profiles.tableName} TYPE option<string>;
+                    DEFINE FIELD address.geo ON ${Profiles.tableName} TYPE option<object>;
+                    DEFINE FIELD address.geo.lat ON ${Profiles.tableName} TYPE option<float>;
+                    DEFINE TABLE ${LeafOnly.tableName} SCHEMAFULL;
+                    DEFINE FIELD address.geo.lat ON ${LeafOnly.tableName} TYPE option<float>;
+                    """.trimIndent(),
                 ),
             )
 

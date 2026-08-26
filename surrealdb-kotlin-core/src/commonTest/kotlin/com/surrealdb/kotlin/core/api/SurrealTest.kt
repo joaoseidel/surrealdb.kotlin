@@ -17,7 +17,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
@@ -111,12 +110,8 @@ class SurrealTest {
                 )
 
             val result = client.session().query(BoundQuery().appendLiteral("SELECT * FROM person"))
-            val status =
-                result.jsonArray[0]
-                    .jsonObject["status"]
-                    ?.jsonPrimitive
-                    ?.content
-            assertEquals("OK", status)
+            assertEquals(1, result.size)
+            assertEquals("person:1", result[0].content["id"]?.jsonPrimitive?.content)
         }
 
     @Test

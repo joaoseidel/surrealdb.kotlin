@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.query.api.query
 
+import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
 import io.kotest.core.spec.style.ShouldSpec
@@ -7,13 +8,12 @@ import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.string.shouldEndWith
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 
 private val compileOnly =
     object : QueryContext {
         override val json: Json = Json
 
-        override suspend fun query(bound: BoundQuery): JsonElement = error("compile-only")
+        override suspend fun queryValues(bound: BoundQuery): List<Row> = error("compile-only")
     }
 
 private fun patchOnPeople() = compileOnly.patch(People, JsonArray(emptyList()))

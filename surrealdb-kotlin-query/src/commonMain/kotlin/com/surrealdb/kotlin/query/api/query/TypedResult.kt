@@ -1,7 +1,7 @@
 package com.surrealdb.kotlin.query.api.query
 
+import com.surrealdb.kotlin.core.api.data.Row
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.JsonElement
 
 /**
  * A statement together with the type its records decode into, from
@@ -19,7 +19,7 @@ public class TypedResult<T>
          * Send the statement and decode every record it answered with. A
          * statement that matched nothing answers with an empty list.
          */
-        public suspend fun await(): List<T> = resultRecords(query.result()).map(::decode)
+        public suspend fun await(): List<T> = query.values().map(::decode)
 
         /**
          * Send the statement and decode the one record it answered with, or
@@ -28,7 +28,7 @@ public class TypedResult<T>
          * Two records is a query that asked the wrong question, so this throws
          * rather than picking one. Pair it with `only()` or `limit(1)`.
          */
-        public suspend fun awaitSingleOrNull(): T? = atMostOneRecord(resultRecords(query.result()))?.let(::decode)
+        public suspend fun awaitSingleOrNull(): T? = atMostOneRecord(query.values())?.let(::decode)
 
-        private fun decode(record: JsonElement): T = query.context.json.decodeFromJsonElement(serializer, record)
+        private fun decode(record: Row): T = record.decode(serializer)
     }
