@@ -5,6 +5,9 @@
 - `signin` and `signup` answer with `AuthTokens` rather than the raw response, reading the bare-JWT
   and the `access` / `token` / `jwt` object shapes the server uses. Null where the access method
   issues no token; a refusal is still an error.
+- `orderBy` sorts a select, with `COLLATE` and `NUMERIC` where the comparison is not the default one.
+  A key that the projection left out is refused where the query is written, because SurrealDB sorts
+  only what it selected and refuses the statement outright.
 - Core and query packages now include their module prefix while retaining the existing `api` and `runtime` hierarchy.
 - Conditions now accept fields from the table declaration instead of a serializable record type, so
   field validity is checked where the query is written.

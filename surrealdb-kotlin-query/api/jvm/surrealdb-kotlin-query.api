@@ -146,6 +146,17 @@ public final class com/surrealdb/kotlin/query/api/query/MergeQuery : com/surreal
 	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/MergeQuery;
 }
 
+public final class com/surrealdb/kotlin/query/api/query/Order {
+	public final fun collate ()Lcom/surrealdb/kotlin/query/api/query/Order;
+	public final fun numeric ()Lcom/surrealdb/kotlin/query/api/query/Order;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/surrealdb/kotlin/query/api/query/OrderKt {
+	public static final fun ascending (Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/Order;
+	public static final fun descending (Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/Order;
+}
+
 public final class com/surrealdb/kotlin/query/api/query/PatchQuery : com/surrealdb/kotlin/query/api/query/Query {
 	public fun compile ()Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
 	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/PatchQuery;
@@ -267,6 +278,7 @@ public final class com/surrealdb/kotlin/query/api/query/SelectQuery : com/surrea
 	public final fun fields ([Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun limit (I)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun only ()Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun orderBy ([Lcom/surrealdb/kotlin/query/api/query/Order;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun start (I)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun timeout (D)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun value (Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;

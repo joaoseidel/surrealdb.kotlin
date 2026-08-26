@@ -15,6 +15,7 @@ public class SelectQuery<S : Table> internal constructor(
     private val what: Target,
     private val selection: Selection = Selection.All,
     private val fields: List<Projection> = emptyList(),
+    private val orders: List<Order> = emptyList(),
     private val start: Int? = null,
     private val limit: Int? = null,
     private val cond: Condition? = null,
@@ -41,6 +42,16 @@ public class SelectQuery<S : Table> internal constructor(
      */
     public fun value(projection: Projection): SelectQuery<S> =
         copy(selection = Selection.Value, fields = listOf(projection))
+
+    /**
+     * Sort the result, first key first.
+     *
+     * With [fields], every key has to be one of the projected fields: SurrealDB
+     * sorts what it selected, and refuses the statement outright rather than
+     * sorting on something the row does not carry. [compile] says so before the
+     * statement is sent.
+     */
+    public fun orderBy(vararg orders: Order): SelectQuery<S> = copy(orders = orders.toList())
 
     public fun start(start: Int): SelectQuery<S> = copy(start = start)
 
@@ -75,6 +86,8 @@ public class SelectQuery<S : Table> internal constructor(
 
     /** Compile this query without dispatching it. */
     override fun compile(): BoundQuery {
+        requireOrderKeysAreSelected()
+
         val q = BoundQuery()
         q.appendLiteral("SELECT")
         when (selection) {
@@ -97,6 +110,9 @@ public class SelectQuery<S : Table> internal constructor(
             q.appendLiteral(" WHERE ")
             q.appendCondition(it)
         }
+        if (orders.isNotEmpty()) {
+            q.appendLiteral(" ORDER BY " + orders.joinToString(", ") { it.toString() })
+        }
         start?.let {
             q.appendLiteral(" START ")
             q.bind(JsonPrimitive(it))
@@ -113,9 +129,31 @@ public class SelectQuery<S : Table> internal constructor(
         return q
     }
 
+    /**
+     * SurrealDB sorts the rows it selected, so an `ORDER BY` naming something
+     * the projection left out is a parse error and not a slower query. It has
+     * no leniency for a path either side of one that was selected: projecting
+     * `time` and ordering by `time.created_at` is refused just the same.
+     *
+     * `SELECT *` carries the whole record, and `SELECT *, …` carries it as well
+     * as the aliases beside it, so neither is checked here.
+     */
+    private fun requireOrderKeysAreSelected() {
+        if (orders.isEmpty() || selection != Selection.Fields) return
+
+        val selected = fields.map { it.path.value }.toSet()
+        orders.forEach { order ->
+            require(order.projection.path.value in selected) {
+                "'${order.projection.path.value}' is ordered on but not selected, and SurrealDB orders only what it " +
+                    "selected. Add it to fields(…), or select the whole record. Selected: ${selected.sorted()}."
+            }
+        }
+    }
+
     private fun copy(
         selection: Selection = this.selection,
         fields: List<Projection> = this.fields,
+        orders: List<Order> = this.orders,
         start: Int? = this.start,
         limit: Int? = this.limit,
         cond: Condition? = this.cond,
@@ -130,6 +168,7 @@ public class SelectQuery<S : Table> internal constructor(
             what,
             selection,
             fields,
+            orders,
             start,
             limit,
             cond,

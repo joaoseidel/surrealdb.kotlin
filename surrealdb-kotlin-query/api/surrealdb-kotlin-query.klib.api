@@ -76,6 +76,7 @@ final class <#A: com.surrealdb.kotlin.query.api.data/Table> com.surrealdb.kotlin
     final fun fields(kotlin/Array<out com.surrealdb.kotlin.core.api.data/Projection>...): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.fields|fields(kotlin.Array<out|com.surrealdb.kotlin.core.api.data.Projection>...){}[0]
     final fun limit(kotlin/Int): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.limit|limit(kotlin.Int){}[0]
     final fun only(): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.only|only(){}[0]
+    final fun orderBy(kotlin/Array<out com.surrealdb.kotlin.query.api.query/Order>...): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.orderBy|orderBy(kotlin.Array<out|com.surrealdb.kotlin.query.api.query.Order>...){}[0]
     final fun start(kotlin/Int): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.start|start(kotlin.Int){}[0]
     final fun timeout(kotlin/Double): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.timeout|timeout(kotlin.Double){}[0]
     final fun value(com.surrealdb.kotlin.core.api.data/Projection): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.value|value(com.surrealdb.kotlin.core.api.data.Projection){}[0]
@@ -149,6 +150,12 @@ final class com.surrealdb.kotlin.query.api.query/MergePayload { // com.surrealdb
 
     final fun record(com.surrealdb.kotlin.query.api.data/Field<*>, kotlinx.serialization.json/JsonElement) // com.surrealdb.kotlin.query.api.query/MergePayload.record|record(com.surrealdb.kotlin.query.api.data.Field<*>;kotlinx.serialization.json.JsonElement){}[0]
     final inline fun <#A1: reified kotlin/Any?> set(com.surrealdb.kotlin.query.api.data/Field<#A1>, #A1) // com.surrealdb.kotlin.query.api.query/MergePayload.set|set(com.surrealdb.kotlin.query.api.data.Field<0:0>;0:0){0§<kotlin.Any?>}[0]
+}
+
+final class com.surrealdb.kotlin.query.api.query/Order { // com.surrealdb.kotlin.query.api.query/Order|null[0]
+    final fun collate(): com.surrealdb.kotlin.query.api.query/Order // com.surrealdb.kotlin.query.api.query/Order.collate|collate(){}[0]
+    final fun numeric(): com.surrealdb.kotlin.query.api.query/Order // com.surrealdb.kotlin.query.api.query/Order.numeric|numeric(){}[0]
+    final fun toString(): kotlin/String // com.surrealdb.kotlin.query.api.query/Order.toString|toString(){}[0]
 }
 
 final class com.surrealdb.kotlin.query.api.query/Patches { // com.surrealdb.kotlin.query.api.query/Patches|null[0]
@@ -275,6 +282,8 @@ sealed class com.surrealdb.kotlin.query.api.query/ReturnMode { // com.surrealdb.
     }
 }
 
+final fun (com.surrealdb.kotlin.core.api.data/Projection).com.surrealdb.kotlin.query.api.query/ascending(): com.surrealdb.kotlin.query.api.query/Order // com.surrealdb.kotlin.query.api.query/ascending|ascending@com.surrealdb.kotlin.core.api.data.Projection(){}[0]
+final fun (com.surrealdb.kotlin.core.api.data/Projection).com.surrealdb.kotlin.query.api.query/descending(): com.surrealdb.kotlin.query.api.query/Order // com.surrealdb.kotlin.query.api.query/descending|descending@com.surrealdb.kotlin.core.api.data.Projection(){}[0]
 final fun (com.surrealdb.kotlin.core.api.query/QueryContext).com.surrealdb.kotlin.query.api.query/create(com.surrealdb.kotlin.core.api.data/Target): com.surrealdb.kotlin.query.api.query/CreateQuery<com.surrealdb.kotlin.query.api.data/Table> // com.surrealdb.kotlin.query.api.query/create|create@com.surrealdb.kotlin.core.api.query.QueryContext(com.surrealdb.kotlin.core.api.data.Target){}[0]
 final fun (com.surrealdb.kotlin.core.api.query/QueryContext).com.surrealdb.kotlin.query.api.query/delete(com.surrealdb.kotlin.core.api.data/Target): com.surrealdb.kotlin.query.api.query/DeleteQuery<com.surrealdb.kotlin.query.api.data/Table> // com.surrealdb.kotlin.query.api.query/delete|delete@com.surrealdb.kotlin.core.api.query.QueryContext(com.surrealdb.kotlin.core.api.data.Target){}[0]
 final fun (com.surrealdb.kotlin.core.api.query/QueryContext).com.surrealdb.kotlin.query.api.query/insert(com.surrealdb.kotlin.query.api.data/Table, kotlinx.serialization.json/JsonElement): com.surrealdb.kotlin.query.api.query/InsertQuery // com.surrealdb.kotlin.query.api.query/insert|insert@com.surrealdb.kotlin.core.api.query.QueryContext(com.surrealdb.kotlin.query.api.data.Table;kotlinx.serialization.json.JsonElement){}[0]
