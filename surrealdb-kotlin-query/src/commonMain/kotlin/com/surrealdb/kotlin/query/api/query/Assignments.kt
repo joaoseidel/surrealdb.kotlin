@@ -121,11 +121,42 @@ public class ArrayField<E>
         public operator fun minusAssign(value: E) {
             sink.record(field, "-=", encode(value))
         }
+
+        /**
+         * Hold [value] in the array, once, with SurrealQL's `array::union`.
+         *
+         * SurrealQL's `+=` appends whatever it is handed, so a reader who opens
+         * a second tab is listed twice and the first close removes only one of
+         * them. This is the set spelling of the same intent, and it is a no-op
+         * when the value is already there.
+         */
+        public fun include(value: E) {
+            sink.record(field, "=", ArrayFunction("array::union", encode(value)))
+        }
+
+        /**
+         * Hold [value] no longer, however many times the array holds it. The
+         * set counterpart of [include].
+         */
+        public fun exclude(value: E) {
+            sink.record(field, "=", ArrayFunction("array::complement", encode(value)))
+        }
     }
 
 /** An expression SurrealDB evaluates, with the values inside it already bound. */
 internal class RawExpression(
     val fragment: BoundQuery,
+)
+
+/**
+ * An assignment that reads the field it writes: `f = fn(f ?? [], [value])`.
+ *
+ * The `?? []` is what lets it write a record that has no such field yet, which
+ * is what `+=` and `-=` do on their own.
+ */
+internal class ArrayFunction(
+    val function: String,
+    val element: Any?,
 )
 
 /**
@@ -155,8 +186,15 @@ internal class SetData(
         into.appendLiteral(" SET ")
         entries.forEachIndexed { index, entry ->
             if (index > 0) into.appendLiteral(", ")
-            into.appendLiteral(entry.field.path.value)
+            val path = entry.field.path.value
+            into.appendLiteral(path)
             when (val value = entry.value) {
+                is ArrayFunction -> {
+                    into.appendLiteral(" = ${value.function}($path ?? [], [")
+                    into.appendValue(value.element)
+                    into.appendLiteral("])")
+                }
+
                 is RawExpression -> {
                     into.appendLiteral(" ${entry.op} ")
                     into.append(value.fragment)

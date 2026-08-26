@@ -169,6 +169,8 @@ final class <#A: kotlin/Any?> com.surrealdb.kotlin.query.api.data/Walk : com.sur
 final class <#A: kotlin/Any?> com.surrealdb.kotlin.query.api.query/ArrayField { // com.surrealdb.kotlin.query.api.query/ArrayField|null[0]
     constructor <init>(com.surrealdb.kotlin.query.api.query/Assignments, com.surrealdb.kotlin.query.api.data/Field<kotlin.collections/List<#A>>, kotlin/Function1<#A, kotlin/Any?>) // com.surrealdb.kotlin.query.api.query/ArrayField.<init>|<init>(com.surrealdb.kotlin.query.api.query.Assignments;com.surrealdb.kotlin.query.api.data.Field<kotlin.collections.List<1:0>>;kotlin.Function1<1:0,kotlin.Any?>){}[0]
 
+    final fun exclude(#A) // com.surrealdb.kotlin.query.api.query/ArrayField.exclude|exclude(1:0){}[0]
+    final fun include(#A) // com.surrealdb.kotlin.query.api.query/ArrayField.include|include(1:0){}[0]
     final fun minusAssign(#A) // com.surrealdb.kotlin.query.api.query/ArrayField.minusAssign|minusAssign(1:0){}[0]
     final fun plusAssign(#A) // com.surrealdb.kotlin.query.api.query/ArrayField.plusAssign|plusAssign(1:0){}[0]
 }

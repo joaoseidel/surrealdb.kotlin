@@ -26,6 +26,8 @@
   only what it selected and refuses the statement outright.
 - `count` answers how many records a target holds, under the same conditions a select takes, and
   answers zero for a target that matched nothing.
+- An array field is assignable as a set with `include` and `exclude`, so a value added twice is held
+  once. SurrealQL's `+=` appends whatever it is handed.
 - `matchesFullText` writes SurrealDB's `@@`, which reads the `FULLTEXT` index defined on the field.
   `matches` is `string::matches`, a regular expression over every record, and reaching for it on an
   indexed field is a table scan that looks like a search.

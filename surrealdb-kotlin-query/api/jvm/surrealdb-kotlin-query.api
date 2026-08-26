@@ -141,6 +141,8 @@ public final class com/surrealdb/kotlin/query/api/data/WalkKt {
 
 public final class com/surrealdb/kotlin/query/api/query/ArrayField {
 	public fun <init> (Lcom/surrealdb/kotlin/query/api/query/Assignments;Lcom/surrealdb/kotlin/query/api/data/Field;Lkotlin/jvm/functions/Function1;)V
+	public final fun exclude (Ljava/lang/Object;)V
+	public final fun include (Ljava/lang/Object;)V
 	public final fun minusAssign (Ljava/lang/Object;)V
 	public final fun plusAssign (Ljava/lang/Object;)V
 }
