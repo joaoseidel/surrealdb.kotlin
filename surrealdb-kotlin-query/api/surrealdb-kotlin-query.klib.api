@@ -80,6 +80,7 @@ final class <#A: com.surrealdb.kotlin.query.api.data/Table> com.surrealdb.kotlin
     final fun timeout(kotlin/Double): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.timeout|timeout(kotlin.Double){}[0]
     final fun value(com.surrealdb.kotlin.core.api.data/Projection): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.value|value(com.surrealdb.kotlin.core.api.data.Projection){}[0]
     final fun version(kotlin/String): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.version|version(kotlin.String){}[0]
+    final fun where(com.surrealdb.kotlin.query.api.data/Condition?): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.where|where(com.surrealdb.kotlin.query.api.data.Condition?){}[0]
     final fun where(kotlin/Function1<#A, com.surrealdb.kotlin.query.api.data/Condition>): com.surrealdb.kotlin.query.api.query/SelectQuery<#A> // com.surrealdb.kotlin.query.api.query/SelectQuery.where|where(kotlin.Function1<1:0,com.surrealdb.kotlin.query.api.data.Condition>){}[0]
 }
 

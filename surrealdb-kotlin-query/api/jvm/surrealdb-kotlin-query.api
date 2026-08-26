@@ -271,6 +271,7 @@ public final class com/surrealdb/kotlin/query/api/query/SelectQuery : com/surrea
 	public final fun timeout (D)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun value (Lcom/surrealdb/kotlin/core/api/data/Projection;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun version (Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
+	public final fun where (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 	public final fun where (Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/query/SelectQuery;
 }
 

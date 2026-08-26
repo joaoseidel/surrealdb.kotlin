@@ -48,6 +48,16 @@ public class SelectQuery<S : Table> internal constructor(
 
     public fun where(build: S.() -> Condition): SelectQuery<S> = copy(cond = schema.build())
 
+    /**
+     * Narrow by [condition], or by nothing at all when it is null.
+     *
+     * A filter assembled from optional parts has no condition to give when the
+     * caller set none, and `WHERE` with nothing after it does not parse. This
+     * takes the decision, so the caller does not have to branch around the
+     * builder.
+     */
+    public fun where(condition: Condition?): SelectQuery<S> = copy(cond = condition)
+
     public fun fetch(vararg fields: Field<*>): SelectQuery<S> = copy(fetchFields = fields.toList())
 
     public fun timeout(seconds: Double): SelectQuery<S> = copy(timeoutSeconds = seconds)
