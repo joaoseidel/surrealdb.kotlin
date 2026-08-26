@@ -23,7 +23,7 @@ object People : Table("person") {
     val address = nested(Address)
 }
 
-fun Row.toPersonList(): Person =
+fun Row.toPerson(): Person =
     Person(
         id = this[id],
         name = this[name],
@@ -35,4 +35,4 @@ fun Row.toPersonList(): Person =
             ),
     )
 
-fun List<Row>.toPersonList(): List<Person> = map { it.toPersonList() }
+fun List<Row>.toPersonList(): List<Person> = map { it.toPerson() }
