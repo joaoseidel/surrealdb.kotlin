@@ -76,6 +76,18 @@ class RecordIdCodecTest :
                 should("leave a bare pair unquoted") {
                     RecordId("person", "alice").toString() shouldBe "person:alice"
                 }
+
+                should(
+                    "leave a generated key beginning with a digit unquoted, which is how the server writes it back",
+                ) {
+                    RecordId("person", "80cq8g0cbyl9z4t7vpqh").toString() shouldBe "person:80cq8g0cbyl9z4t7vpqh"
+                }
+
+                should("quote a key that would read back as a number, which names a different record") {
+                    RecordId("person", "1").toString() shouldBe "person:`1`"
+                    RecordId("person", "1e5").toString() shouldBe "person:`1e5`"
+                    RecordId("person", "42dec").toString() shouldBe "person:`42dec`"
+                }
             }
 
             context("through kotlinx.serialization") {
