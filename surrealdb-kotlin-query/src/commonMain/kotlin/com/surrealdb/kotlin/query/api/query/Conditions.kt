@@ -8,10 +8,14 @@ import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.query.api.data.compileCondition
 
 internal fun BoundQuery.appendCondition(condition: Condition): BoundQuery =
-    compileCondition(condition).let { appendFragment(it.surql, it.bindings) }
+    compileCondition(condition).let {
+        appendFragment(it.surql, it.bindings)
+    }
 
 /** The SurrealQL this condition renders to, with its bindings. */
-public fun Condition.toSurql(): BoundQuery = BoundQuery().appendCondition(this)
+public fun Condition.toSurQL(): BoundQuery =
+    BoundQuery()
+        .appendCondition(this)
 
 /**
  * The escape hatch, for what has no Kotlin-side name: a server-side computed

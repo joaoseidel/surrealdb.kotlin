@@ -155,7 +155,7 @@ public final class com/surrealdb/kotlin/query/api/query/Assignments {
 
 public final class com/surrealdb/kotlin/query/api/query/ConditionsKt {
 	public static final fun raw (Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/jvm/functions/Function1;)Lcom/surrealdb/kotlin/query/api/data/Atom;
-	public static final fun toSurql (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
+	public static final fun toSurQL (Lcom/surrealdb/kotlin/query/api/data/Condition;)Lcom/surrealdb/kotlin/core/api/query/BoundQuery;
 }
 
 public final class com/surrealdb/kotlin/query/api/query/ContentPayload {

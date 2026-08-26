@@ -130,7 +130,7 @@ class SurqlTest :
 
             context("Condition.toSurql") {
                 should("keep the parentheses around both sides of a conjunction") {
-                    val query = with(People) { (age greater 18) and (active eq true) }.toSurql()
+                    val query = with(People) { (age greater 18) and (active eq true) }.toSurQL()
 
                     query.surql shouldContain " AND "
                     query.surql.first() shouldBe '('

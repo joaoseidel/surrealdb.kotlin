@@ -30,7 +30,7 @@ class ConditionTest :
                         )
 
                     cases.forEach { (condition, expected) ->
-                        val compiled = condition.toSurql()
+                        val compiled = condition.toSurQL()
 
                         compiled.surql shouldBe expected
                         compiled.bindings shouldHaveSize 1
@@ -38,14 +38,14 @@ class ConditionTest :
                 }
 
                 should("bind the operand rather than writing it into the SurrealQL") {
-                    val compiled = with(People) { email eq "x@y.z" }.toSurql()
+                    val compiled = with(People) { email eq "x@y.z" }.toSurQL()
 
                     compiled.surql shouldNotContain "x@y.z"
                     compiled.bindings.values.first() shouldBe JsonPrimitive("x@y.z")
                 }
 
                 should("compare two fields without binding either, because neither is a value") {
-                    val compiled = with(People) { name eq firstName }.toSurql()
+                    val compiled = with(People) { name eq firstName }.toSurQL()
 
                     compiled.surql shouldBe "(name = first_name)"
                     compiled.bindings shouldHaveSize 0
@@ -54,22 +54,22 @@ class ConditionTest :
 
             context("collection operators") {
                 should("bind a collection as one parameter") {
-                    val compiled = with(People) { age inside listOf(18, 30) }.toSurql()
+                    val compiled = with(People) { age inside listOf(18, 30) }.toSurQL()
 
                     compiled.surql shouldBe "(age IN \$_0)"
                     compiled.bindings shouldHaveSize 1
                 }
 
                 should("render the CONTAINS family against a list field") {
-                    with(People) { tags contains "kotlin" }.toSurql().surql shouldBe "(tags CONTAINS \$_0)"
-                    with(People) { tags containsAll listOf("a") }.toSurql().surql shouldBe "(tags CONTAINSALL \$_0)"
-                    with(People) { tags containsAny listOf("a") }.toSurql().surql shouldBe "(tags CONTAINSANY \$_0)"
+                    with(People) { tags contains "kotlin" }.toSurQL().surql shouldBe "(tags CONTAINS \$_0)"
+                    with(People) { tags containsAll listOf("a") }.toSurQL().surql shouldBe "(tags CONTAINSALL \$_0)"
+                    with(People) { tags containsAny listOf("a") }.toSurQL().surql shouldBe "(tags CONTAINSANY \$_0)"
                 }
             }
 
             context("string operators") {
                 should("render as a SurrealQL function call with the pattern bound") {
-                    val compiled = with(People) { name startsWith "Ada" }.toSurql()
+                    val compiled = with(People) { name startsWith "Ada" }.toSurQL()
 
                     compiled.surql shouldBe "string::starts_with(name, \$_0)"
                     compiled.bindings shouldHaveSize 1
@@ -78,59 +78,59 @@ class ConditionTest :
 
             context("presence tests") {
                 should("distinguish NONE, NULL and present, because SurrealDB does") {
-                    with(People) { email.isNone() }.toSurql().surql shouldBe "(email IS NONE)"
-                    with(People) { email.isNull() }.toSurql().surql shouldBe "(email IS NULL)"
-                    with(People) { email.exists() }.toSurql().surql shouldBe "(email IS NOT NONE)"
+                    with(People) { email.isNone() }.toSurQL().surql shouldBe "(email IS NONE)"
+                    with(People) { email.isNull() }.toSurQL().surql shouldBe "(email IS NULL)"
+                    with(People) { email.exists() }.toSurQL().surql shouldBe "(email IS NOT NONE)"
                 }
             }
 
             context("composition") {
                 should("join a conjunction with AND and keep each operand parenthesised") {
-                    val compiled = with(People) { (age greater 18) and (active eq true) }.toSurql()
+                    val compiled = with(People) { (age greater 18) and (active eq true) }.toSurQL()
 
                     compiled.surql shouldBe "((age > \$_0) AND (active = \$_1))"
                     compiled.bindings shouldHaveSize 2
                 }
 
                 should("flatten a chain of the same operator rather than nesting it") {
-                    val compiled = with(People) { (age greater 18) and (active eq true) and (name eq "Ada") }.toSurql()
+                    val compiled = with(People) { (age greater 18) and (active eq true) and (name eq "Ada") }.toSurQL()
 
                     compiled.surql shouldBe "((age > \$_0) AND (active = \$_1) AND (name = \$_2))"
                 }
 
                 should("join a disjunction with OR") {
                     with(People) { (age greater 18) or (active eq true) }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "((age > \$_0) OR (active = \$_1))"
                 }
 
                 should("negate with a leading bang") {
-                    with(People) { not(active eq true) }.toSurql().surql shouldBe "!(active = \$_0)"
+                    with(People) { not(active eq true) }.toSurQL().surql shouldBe "!(active = \$_0)"
                 }
             }
 
             context("the n-ary groups") {
                 should("render all as a parenthesised conjunction, so no binding order applies") {
                     with(People) { all(age greater 18, active eq true) }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "((age > \$_0) AND (active = \$_1))"
                 }
 
                 should("render any as a parenthesised disjunction") {
                     with(People) { any(age greater 18, active eq true) }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "((age > \$_0) OR (active = \$_1))"
                 }
 
                 should("render none as the negation of a disjunction") {
                     with(People) { none(age greater 18, active eq true) }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "!((age > \$_0) OR (active = \$_1))"
                 }
 
                 should("keep a group intact when it is chained, rather than flattening it away") {
                     with(People) { any(age greater 18, active eq true) and (name eq "Ada") }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "(((age > \$_0) OR (active = \$_1)) AND (name = \$_2))"
                 }
 
@@ -148,7 +148,7 @@ class ConditionTest :
                             raw {
                                 "geo::distance(location, ${bind("point")}) < ${bind(10)}"
                             }
-                        }.toSurql()
+                        }.toSurQL()
 
                     compiled.surql shouldBe "(geo::distance(location, \$_0) < \$_1)"
                     compiled.bindings shouldHaveSize 2
@@ -182,14 +182,14 @@ class ConditionTest :
             context("a nested field") {
                 should("render as the dotted path it resolved to") {
                     with(People) { city eq "Cambridge" }
-                        .toSurql()
+                        .toSurQL()
                         .surql shouldBe "(address.city = \$_0)"
                 }
             }
 
             context("a RecordId comparison in a where clause") {
                 should("bind both table and id as separate parameters") {
-                    val compiled = with(People) { id eq RecordId("user", "alice") }.toSurql()
+                    val compiled = with(People) { id eq RecordId("user", "alice") }.toSurQL()
 
                     compiled.surql shouldContain "type::record("
                     compiled.bindings shouldHaveSize 2
