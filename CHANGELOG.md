@@ -5,6 +5,8 @@
 - `signin` and `signup` answer with `AuthTokens` rather than the raw response, reading the bare-JWT
   and the `access` / `token` / `jwt` object shapes the server uses. Null where the access method
   issues no token; a refusal is still an error.
+- `EdgeTable` declares the `in` and `out` a relation table carries, so a filter on either end reads
+  the same whichever edge it is written against.
 - `orderBy` sorts a select, with `COLLATE` and `NUMERIC` where the comparison is not the default one.
   A key that the projection left out is refused where the query is written, because SurrealDB sorts
   only what it selected and refuses the statement outright.

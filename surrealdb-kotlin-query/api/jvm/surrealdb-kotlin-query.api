@@ -32,6 +32,12 @@ public final class com/surrealdb/kotlin/query/api/data/Disjunctible$DefaultImpls
 	public static fun getLiveQuerySurql (Lcom/surrealdb/kotlin/query/api/data/Disjunctible;)Ljava/lang/String;
 }
 
+public class com/surrealdb/kotlin/query/api/data/EdgeTable : com/surrealdb/kotlin/query/api/data/Table {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getIn ()Lcom/surrealdb/kotlin/query/api/data/Field;
+	public final fun getOut ()Lcom/surrealdb/kotlin/query/api/data/Field;
+}
+
 public final class com/surrealdb/kotlin/query/api/data/Field : com/surrealdb/kotlin/core/api/data/TypedProjection {
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getPath-z7uORzs ()Ljava/lang/String;

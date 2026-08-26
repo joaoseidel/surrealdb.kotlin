@@ -198,6 +198,15 @@ final class com.surrealdb.kotlin.query.api.query/SurqlTemplate { // com.surreald
     final fun bind(kotlin/Any?): kotlin/String // com.surrealdb.kotlin.query.api.query/SurqlTemplate.bind|bind(kotlin.Any?){}[0]
 }
 
+open class com.surrealdb.kotlin.query.api.data/EdgeTable : com.surrealdb.kotlin.query.api.data/Table { // com.surrealdb.kotlin.query.api.data/EdgeTable|null[0]
+    constructor <init>(kotlin/String) // com.surrealdb.kotlin.query.api.data/EdgeTable.<init>|<init>(kotlin.String){}[0]
+
+    final val in // com.surrealdb.kotlin.query.api.data/EdgeTable.in|{}in[0]
+        final fun <get-in>(): com.surrealdb.kotlin.query.api.data/Field<com.surrealdb.kotlin.core.api.data/RecordId> // com.surrealdb.kotlin.query.api.data/EdgeTable.in.<get-in>|<get-in>(){}[0]
+    final val out // com.surrealdb.kotlin.query.api.data/EdgeTable.out|{}out[0]
+        final fun <get-out>(): com.surrealdb.kotlin.query.api.data/Field<com.surrealdb.kotlin.core.api.data/RecordId> // com.surrealdb.kotlin.query.api.data/EdgeTable.out.<get-out>|<get-out>(){}[0]
+}
+
 open class com.surrealdb.kotlin.query.api.data/Nested : com.surrealdb.kotlin.core.api.data/Projection, com.surrealdb.kotlin.query.api.data/FieldGroup { // com.surrealdb.kotlin.query.api.data/Nested|null[0]
     constructor <init>(kotlin/String) // com.surrealdb.kotlin.query.api.data/Nested.<init>|<init>(kotlin.String){}[0]
 
