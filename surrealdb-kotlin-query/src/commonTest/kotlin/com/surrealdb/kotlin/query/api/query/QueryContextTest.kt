@@ -8,8 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 /**
  * The execution contract behind the full CRUD API. A session and a

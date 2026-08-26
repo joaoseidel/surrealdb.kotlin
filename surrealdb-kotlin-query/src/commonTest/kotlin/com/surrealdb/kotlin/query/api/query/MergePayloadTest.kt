@@ -66,8 +66,9 @@ class MergePayloadTest :
                 }
 
                 should("encode a link as the record id string the server reads back as a link") {
-                    payloadOf { it[author] = RecordId("writer", "ada") }.toString() shouldBe
-                        """{"author":"writer:ada"}"""
+                    payloadOf {
+                        it[author] = RecordId("writer", "ada")
+                    }.toString() shouldBe """{"author":"writer:ada"}"""
                 }
 
                 should("send an empty object for a block that names nothing, which the server answers untouched") {

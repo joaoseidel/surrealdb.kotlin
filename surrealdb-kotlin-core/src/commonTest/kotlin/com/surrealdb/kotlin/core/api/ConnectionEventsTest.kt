@@ -1,6 +1,5 @@
 package com.surrealdb.kotlin.core.api
 
-import com.surrealdb.kotlin.core.api.ConnectionEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

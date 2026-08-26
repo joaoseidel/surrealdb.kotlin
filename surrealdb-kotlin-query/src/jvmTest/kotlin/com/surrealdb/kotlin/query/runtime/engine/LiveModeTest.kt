@@ -1,6 +1,5 @@
 package com.surrealdb.kotlin.query.runtime.engine
 
-import com.surrealdb.kotlin.core.api.Session
 import com.surrealdb.kotlin.core.api.live.LiveMode
 import com.surrealdb.kotlin.query.api.data.Table
 import io.kotest.core.spec.style.ShouldSpec
@@ -8,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 private fun FakeSurrealServer.paramsOfLastLive(): JsonArray =

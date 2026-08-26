@@ -2,7 +2,6 @@ package com.surrealdb.kotlin.core.runtime.engine
 
 import com.surrealdb.kotlin.core.api.error.SurrealTransportException
 import com.surrealdb.kotlin.core.api.live.LiveNotification
-import com.surrealdb.kotlin.core.api.live.LiveQueryFailure
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec

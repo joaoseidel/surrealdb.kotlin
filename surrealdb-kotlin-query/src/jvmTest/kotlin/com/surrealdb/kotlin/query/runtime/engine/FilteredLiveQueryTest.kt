@@ -1,6 +1,5 @@
 package com.surrealdb.kotlin.query.runtime.engine
 
-import com.surrealdb.kotlin.core.api.Session
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.query.api.data.Table
@@ -13,7 +12,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
 
 private object Users : Table("user") {
     val age by field<Int>()

@@ -144,8 +144,10 @@ class WriteBuilderIntegrationTest :
                         db.update(Books["array"]).set { it[tags] += "lisp" }.theRecord()[Books.tags] shouldBe
                             listOf("cs", "lisp")
 
-                        db.update(Books["array"]).set { it[tags] -= "cs" }.theRecord()[Books.tags] shouldBe
-                            listOf("lisp")
+                        db
+                            .update(Books["array"])
+                            .set { it[tags] -= "cs" }
+                            .theRecord()[Books.tags] shouldBe listOf("lisp")
                     }
                 }
             }

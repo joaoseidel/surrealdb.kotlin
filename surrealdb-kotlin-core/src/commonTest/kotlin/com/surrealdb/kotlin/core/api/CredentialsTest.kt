@@ -36,13 +36,7 @@ class CredentialsTest :
 
                 should("add both ns and db for a database user") {
                     val params =
-                        Credentials
-                            .DatabaseUser(
-                                Namespace("app"),
-                                Database("prod"),
-                                "editor",
-                                "secret",
-                            ).toParams()
+                        Credentials.DatabaseUser(Namespace("app"), Database("prod"), "editor", "secret").toParams()
 
                     params.keys shouldContainExactly setOf("user", "pass", "ns", "db")
                     params.text("ns") shouldBe "app"
