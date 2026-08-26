@@ -1,7 +1,9 @@
 package com.surrealdb.kotlin.query.api.query
 
+import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.query.api.data.Table
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 
@@ -50,6 +52,15 @@ class TextSearchTest :
 
                     folded.surql shouldContain "CONTAINS"
                     indexed.surql shouldContain "@@"
+                }
+            }
+
+            context("a record inside a raw fragment") {
+                should("bind both halves, so it stays a link rather than becoming a string") {
+                    val query = surqlTemplate { "SELECT * FROM book WHERE author = ${record(RecordId("user", "ada"))}" }
+
+                    query.surql shouldBe "SELECT * FROM book WHERE author = type::record(\$_0, \$_1)"
+                    query.bindings.values.map { it.toString() } shouldBe listOf("\"user\"", "\"ada\"")
                 }
             }
         },

@@ -9,6 +9,7 @@
   the same whichever edge it is written against.
 - `containsIgnoringCase` folds case on both sides and reads an absent field as empty, which is what
   a search box wants and what `matches` and `matchesFullText` each do not do.
+- `SurqlTemplate.record` writes a record id inside a raw fragment with both halves bound.
 - `RecordId.walk(direction, edge, table)` takes the direction as a value, for a walk decided at
   runtime.
 - `select` and `count` take a graph traversal as their target, and `where { }` compares against one,

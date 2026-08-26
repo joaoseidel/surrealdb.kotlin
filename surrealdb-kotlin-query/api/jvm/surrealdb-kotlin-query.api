@@ -345,6 +345,7 @@ public final class com/surrealdb/kotlin/query/api/query/SelectQuery : com/surrea
 
 public final class com/surrealdb/kotlin/query/api/query/SurqlTemplate {
 	public final fun bind (Ljava/lang/Object;)Ljava/lang/String;
+	public final fun record (Lcom/surrealdb/kotlin/core/api/data/RecordId;)Ljava/lang/String;
 }
 
 public final class com/surrealdb/kotlin/query/api/query/SurqlTemplateKt {

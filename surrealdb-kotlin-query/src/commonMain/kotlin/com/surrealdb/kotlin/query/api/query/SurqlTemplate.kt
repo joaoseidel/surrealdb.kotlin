@@ -1,5 +1,6 @@
 package com.surrealdb.kotlin.query.api.query
 
+import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.query.api.data.SurqlDsl
 import kotlinx.serialization.json.JsonElement
@@ -28,6 +29,17 @@ public class SurqlTemplate internal constructor() {
         registered[name] = toJson(value)
         return "\$$name"
     }
+
+    /**
+     * A record id as SurrealQL, with both halves bound: `type::record($t, $i)`.
+     *
+     * A record cannot be bound whole. The JSON transport carries no record
+     * type, so a bound `book:hobbit` reaches SurrealDB as a string and
+     * `WHERE out = $book` matches nothing — a delete would then report success
+     * having removed nothing. Binding each half keeps the value the caller's
+     * and the expression a record link.
+     */
+    public fun record(id: RecordId): String = "type::record(${bind(id.table)}, ${bind(id.id)})"
 
     internal fun build(block: SurqlTemplate.() -> String): BoundQuery {
         val sql = block()

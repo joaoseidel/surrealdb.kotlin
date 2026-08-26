@@ -221,6 +221,7 @@ final class com.surrealdb.kotlin.query.api.query/RunQuery : com.surrealdb.kotlin
 
 final class com.surrealdb.kotlin.query.api.query/SurqlTemplate { // com.surrealdb.kotlin.query.api.query/SurqlTemplate|null[0]
     final fun bind(kotlin/Any?): kotlin/String // com.surrealdb.kotlin.query.api.query/SurqlTemplate.bind|bind(kotlin.Any?){}[0]
+    final fun record(com.surrealdb.kotlin.core.api.data/RecordId): kotlin/String // com.surrealdb.kotlin.query.api.query/SurqlTemplate.record|record(com.surrealdb.kotlin.core.api.data.RecordId){}[0]
 }
 
 open class com.surrealdb.kotlin.query.api.data/EdgeTable : com.surrealdb.kotlin.query.api.data/Table { // com.surrealdb.kotlin.query.api.data/EdgeTable|null[0]
