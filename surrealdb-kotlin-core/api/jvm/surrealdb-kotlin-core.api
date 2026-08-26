@@ -312,6 +312,8 @@ public final class com/surrealdb/kotlin/core/api/data/RecordId : com/surrealdb/k
 }
 
 public final class com/surrealdb/kotlin/core/api/data/RecordId$Companion {
+	public final fun parse (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/data/RecordId;
+	public final fun parseOrNull (Ljava/lang/String;)Lcom/surrealdb/kotlin/core/api/data/RecordId;
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 

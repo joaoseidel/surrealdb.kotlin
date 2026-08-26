@@ -41,6 +41,12 @@ public data class RecordId(
     public val id: String,
 ) : Target {
     override fun toString(): String = "${escapeIdent(table)}:${escapeIdent(id)}"
+
+    public companion object {
+        public fun parse(text: String): RecordId = parseRecordId(text)
+
+        public fun parseOrNull(text: String): RecordId? = runCatching { parseRecordId(text) }.getOrNull()
+    }
 }
 
 internal object RecordIdSerializer : KSerializer<RecordId> {

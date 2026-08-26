@@ -270,6 +270,8 @@ final class com.surrealdb.kotlin.core.api.data/RecordId : com.surrealdb.kotlin.c
     final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.toString|toString(){}[0]
 
     final object Companion { // com.surrealdb.kotlin.core.api.data/RecordId.Companion|null[0]
+        final fun parse(kotlin/String): com.surrealdb.kotlin.core.api.data/RecordId // com.surrealdb.kotlin.core.api.data/RecordId.Companion.parse|parse(kotlin.String){}[0]
+        final fun parseOrNull(kotlin/String): com.surrealdb.kotlin.core.api.data/RecordId? // com.surrealdb.kotlin.core.api.data/RecordId.Companion.parseOrNull|parseOrNull(kotlin.String){}[0]
         final fun serializer(): kotlinx.serialization/KSerializer<com.surrealdb.kotlin.core.api.data/RecordId> // com.surrealdb.kotlin.core.api.data/RecordId.Companion.serializer|serializer(){}[0]
     }
 }
