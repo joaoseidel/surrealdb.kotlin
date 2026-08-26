@@ -31,7 +31,7 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            db.query(surql("DEFINE TABLE ${Slots.tableName} SCHEMALESS"))
+            db.query(surql("DEFINE TABLE OVERWRITE ${Slots.tableName} SCHEMALESS"))
             db.query(surql("DELETE ${Slots.tableName}"))
             listOf("a" to 1, "m" to 2, "z" to 3).forEach { (key, value) ->
                 db.create(Slots[key]).set { it[n] = value }.await()

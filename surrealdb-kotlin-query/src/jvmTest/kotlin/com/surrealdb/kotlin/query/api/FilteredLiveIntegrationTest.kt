@@ -34,7 +34,7 @@ private fun onLiveServer(block: suspend (Surreal, Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            db.query(surql("DEFINE TABLE ${LiveUsers.tableName} SCHEMALESS"))
+            db.query(surql("DEFINE TABLE OVERWRITE ${LiveUsers.tableName} SCHEMALESS"))
             db.query(surql("DELETE ${LiveUsers.tableName}"))
 
             block(client, db)

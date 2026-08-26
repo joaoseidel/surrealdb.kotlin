@@ -49,7 +49,7 @@ private fun onServer(block: suspend (Session) -> Unit) {
         try {
             db.signin(Credentials.RootUser("root", "root"))
             db.use(Namespace("main"), Database("main"))
-            db.query(surql("DEFINE TABLE ${Books.tableName} SCHEMALESS"))
+            db.query(surql("DEFINE TABLE OVERWRITE ${Books.tableName} SCHEMALESS"))
             db.query(surql("DELETE ${Books.tableName}"))
 
             block(db)
