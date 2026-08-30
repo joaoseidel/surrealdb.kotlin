@@ -18,6 +18,8 @@ import com.surrealdb.kotlin.core.runtime.deriveWsEndpoint
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.webSocketSession
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
@@ -160,7 +162,9 @@ internal class WebSocketEngine(
                 publishEvent(ConnectionEvent.Connecting)
                 val newSession =
                     try {
-                        httpClient.webSocketSession(urlString = deriveWsEndpoint(config.url))
+                        httpClient.webSocketSession(urlString = deriveWsEndpoint(config.url)) {
+                            header(HttpHeaders.SecWebSocketProtocol, WIRE_FORMAT)
+                        }
                     } catch (cause: CancellationException) {
                         throw cause
                     } catch (cause: Throwable) {
@@ -407,5 +411,17 @@ internal class WebSocketEngine(
         live.closeAll()
         sessionToClose?.close(CloseReason(CloseReason.Codes.NORMAL, "Client closed"))
         publishEvent(ConnectionEvent.Disconnected)
+    }
+
+    private companion object {
+        /**
+         * The wire format this engine reads and writes, named on the way in.
+         *
+         * A connection that leaves it out still works today, but SurrealDB infers the format and
+         * logs that it is doing so: "automatic inference of the protocol format is deprecated in
+         * SurrealDB 2.0 and will be removed in SurrealDB 3.0". Saying which format this is costs a
+         * header and does not rely on that inference outliving the warning.
+         */
+        const val WIRE_FORMAT = "json"
     }
 }
