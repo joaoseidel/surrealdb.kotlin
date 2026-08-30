@@ -253,7 +253,7 @@ internal class ConnectionController(
     }
 
     private fun defaultHttpClient(config: Surreal.Config): HttpClient =
-        HttpClient {
+        HttpClient(defaultHttpClientEngine()) {
             install(WebSockets)
             install(HttpTimeout) {
                 requestTimeoutMillis = config.requestTimeoutMillis
