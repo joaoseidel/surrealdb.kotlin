@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Over HTTP, a variable bound with `let` now reaches every later query. The server keeps no session
+  between HTTP requests, so the `let` was accepted and forgotten; the engine now sends the session's
+  variables beside each query's own bindings, and a binding wins over a variable of the same name.
 - `signin` and `signup` answer with `AuthTokens` rather than the raw response, reading the bare-JWT
   and the `access` / `token` / `jwt` object shapes the server uses. Null where the access method
   issues no token; a refusal is still an error.

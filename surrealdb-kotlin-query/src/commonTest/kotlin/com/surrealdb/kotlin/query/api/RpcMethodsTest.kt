@@ -260,6 +260,51 @@ class RpcMethodsTest :
                         h.param(0)?.jsonPrimitive?.content shouldBe "k"
                     }
                 }
+
+                should("carry a bound variable on every later query, since HTTP forgets the let") {
+                    runTest {
+                        val h = openRpcHarness()
+                        h.db.`let`("tb", "person")
+
+                        h.db.query(surqlTemplate { "SELECT * FROM type::table(\$tb)" })
+
+                        h.lastMethod shouldBe "query"
+                        h
+                            .param(1)
+                            ?.jsonObject
+                            ?.get("tb")
+                            ?.jsonPrimitive
+                            ?.content shouldBe "person"
+                    }
+                }
+
+                should("let a query binding win over the session variable of the same name") {
+                    runTest {
+                        val h = openRpcHarness()
+                        h.db.`let`("_0", "session")
+
+                        h.db.query(surqlTemplate { "SELECT type::table(${bind("query")})" })
+
+                        h
+                            .param(1)
+                            ?.jsonObject
+                            ?.get("_0")
+                            ?.jsonPrimitive
+                            ?.content shouldBe "query"
+                    }
+                }
+
+                should("stop carrying a variable once it is unset") {
+                    runTest {
+                        val h = openRpcHarness()
+                        h.db.`let`("tb", "person")
+                        h.db.unset("tb")
+
+                        h.db.query(surqlTemplate { "SELECT 1" })
+
+                        h.paramCount() shouldBe 1
+                    }
+                }
             }
 
             context("query") {
