@@ -60,7 +60,7 @@ jobs:
           pages=$(find build/dokka/html -name '*.html' | wc -l)
           echo "rendered pages: $pages"
           test "$pages" -gt 50
-          for jar in surrealdb-kotlin-core/build/libs/*-javadoc.jar surrealdb-kotlin-query/build/libs/*-javadoc.jar surrealdb-kotlin-spectron/build/libs/*-javadoc.jar; do
+          for jar in surrealdb-kotlin-core/build/libs/*-javadoc.jar surrealdb-kotlin-query/build/libs/*-javadoc.jar surrealdb-kotlin-memory/build/libs/*-javadoc.jar; do
             entries=$(unzip -l "$jar" | tail -1 | awk '{print $2}')
             echo "$jar: $entries entries"
             test "$entries" -gt 50

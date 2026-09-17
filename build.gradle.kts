@@ -25,7 +25,7 @@ val ktlintVersion =
 dependencies {
     dokka(project(":surrealdb-kotlin-core"))
     dokka(project(":surrealdb-kotlin-query"))
-    dokka(project(":surrealdb-kotlin-spectron"))
+    dokka(project(":surrealdb-kotlin-memory"))
 }
 
 tasks.register<VerifyCoreQueryBoundary>("verifyCoreQueryBoundary") {
@@ -49,7 +49,7 @@ tasks.register("apiDump") {
     dependsOn(
         ":surrealdb-kotlin-core:updateKotlinAbi",
         ":surrealdb-kotlin-query:updateKotlinAbi",
-        ":surrealdb-kotlin-spectron:updateKotlinAbi",
+        ":surrealdb-kotlin-memory:updateKotlinAbi",
     )
 }
 
@@ -59,7 +59,7 @@ tasks.register("apiCheck") {
     dependsOn(
         ":surrealdb-kotlin-core:checkKotlinAbi",
         ":surrealdb-kotlin-query:checkKotlinAbi",
-        ":surrealdb-kotlin-spectron:checkKotlinAbi",
+        ":surrealdb-kotlin-memory:checkKotlinAbi",
     )
 }
 

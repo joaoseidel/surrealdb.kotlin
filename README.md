@@ -20,7 +20,7 @@ Applications that only need connection, session, transaction, live-query, and ra
 `com.surrealdb:kotlin-core:1.0.0` instead.
 
 Core APIs use `com.surrealdb.kotlin.core.api`. Query types use `com.surrealdb.kotlin.query.api`. Runtime and nested API packages retain their existing
-suffixes under the owning module prefix. Spectron remains under `com.surrealdb.kotlin.spectron`.
+suffixes under the owning module prefix. The Agent Memory client is under `com.surrealdb.kotlin.memory`.
 
 The artifact is not published yet. For a local build, run `./gradlew publishToMavenLocal` and add
 `mavenLocal()` to the consuming project. Kotlin Multiplatform module metadata selects the JVM, Android, or matching iOS variant.
@@ -412,10 +412,10 @@ Then run the sample:
 SURREAL_ENDPOINT=ws://127.0.0.1:8000 ./gradlew :samples:jvm-quickstart:run
 ```
 
-## Spectron
+## Agent Memory
 
-The optional `com.surrealdb:kotlin-spectron:1.0.0` artifact is an HTTP client for Spectron memory and knowledge services. It is separate from the
-SurrealDB driver and uses the same coroutine-first, Kotlin Multiplatform conventions.
+The optional `com.surrealdb:kotlin-memory:1.0.0` artifact is an HTTP client for [Agent Memory](https://surrealdb.com/agent-memory), the agent memory
+and knowledge service. It is separate from the SurrealDB driver and uses the same coroutine-first, Kotlin Multiplatform conventions.
 
 ## Verify the project
 

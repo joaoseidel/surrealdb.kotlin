@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The Spectron client is now the Agent Memory client, following upstream #9: the artifact is
+  `com.surrealdb:kotlin-memory`, the package is `com.surrealdb.kotlin.memory`, `Spectron` is
+  `AgentMemory`, the exceptions are `AgentMemory*Exception`, and each namespace class is named
+  `<Area>Namespace`. The wire header stays `X-Spectron-On-Behalf-Of`, which is what the server reads.
 - Over HTTP, a variable bound with `let` now reaches every later query. The server keeps no session
   between HTTP requests, so the `let` was accepted and forgotten; the engine now sends the session's
   variables beside each query's own bindings, and a binding wins over a variable of the same name.
