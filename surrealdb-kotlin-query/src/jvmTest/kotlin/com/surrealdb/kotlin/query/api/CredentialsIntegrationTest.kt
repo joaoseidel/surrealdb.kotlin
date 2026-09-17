@@ -14,6 +14,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 private const val NS_USER = "cr_ns"
@@ -35,6 +36,7 @@ private val FIXTURES =
     REMOVE USER IF EXISTS $NS_USER ON NAMESPACE;
     DEFINE USER $NS_USER ON NAMESPACE PASSWORD '$NS_PASS' ROLES EDITOR;
     DEFINE USER $DB_USER ON DATABASE PASSWORD '$DB_PASS' ROLES EDITOR;
+    DEFINE TABLE cr_person SCHEMALESS PERMISSIONS FOR select WHERE id = ${'$'}auth;
     DEFINE ACCESS $ACCESS ON DATABASE TYPE RECORD
         SIGNUP ( CREATE cr_person SET email = ${'$'}email, pass = crypto::argon2::generate(${'$'}pass) )
         SIGNIN ( SELECT * FROM cr_person WHERE email = ${'$'}email AND crypto::argon2::compare(pass, ${'$'}pass) )
@@ -108,6 +110,12 @@ class CredentialsIntegrationTest :
                         db.signin(Credentials.RecordUser(MAIN, MAIN_DB, ACCESS, vars))
 
                         db.accessToken().shouldNotBeNull()
+                        db
+                            .whoami()
+                            .shouldNotBeNull()
+                            .content["email"]
+                            ?.jsonPrimitive
+                            ?.content shouldBe EMAIL
                     }
                 }
             }

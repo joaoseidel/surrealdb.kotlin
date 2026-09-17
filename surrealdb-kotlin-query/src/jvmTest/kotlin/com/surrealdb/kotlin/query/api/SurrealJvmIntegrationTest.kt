@@ -41,6 +41,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
@@ -61,7 +62,7 @@ class SurrealJvmIntegrationTest {
                 db.use(Namespace("main"), Database("main"))
                 db.ping()
                 db.version()
-                assertNotNull(db.whoami())
+                assertNull(db.whoami())
 
                 db.query(surql("DEFINE TABLE OVERWRITE person SCHEMALESS"))
                 db.query(surql("DEFINE TABLE OVERWRITE likes SCHEMALESS"))

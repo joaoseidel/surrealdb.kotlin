@@ -39,7 +39,6 @@ client.use {
     val db = client.session()
     db.signin(Credentials.RootUser("root", "root"))
     db.use(Namespace("main"), Database("main"))
-    println(db.whoami())
     println(db.version())
 }
 ```
@@ -299,7 +298,9 @@ tokens?.accessToken
 
 `Credentials.RecordUser` supports record access methods and is valid for both `signup` and `signin`.
 `Credentials.Raw` is the unchecked escape for access methods this version does not model.
-`authenticate(token)` accepts an existing JWT. `whoami()` returns the current authentication record, and `invalidate()` clears it.
+`authenticate(token)` accepts an existing JWT. `whoami()` returns the record a record user signed in as, or null for a system user such as
+root, which has no record. The record must grant itself `select` (`PERMISSIONS FOR select WHERE id = $auth`), or the answer is null
+there too. `invalidate()` clears the session token.
 
 ## Dynamic raw SurrealQL
 
