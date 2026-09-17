@@ -23,5 +23,5 @@ rootProject.name = "surrealdb.kotlin"
 
 include(":surrealdb-kotlin-core")
 include(":surrealdb-kotlin-query")
-include(":surrealdb-kotlin-spectron")
+include(":surrealdb-kotlin-memory")
 include(":samples:jvm-quickstart")
