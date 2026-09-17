@@ -15,6 +15,8 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlin.concurrent.Volatile
 
 internal class HttpEngine(
@@ -35,6 +37,16 @@ internal class HttpEngine(
         if (started) return
         started = true
         publishEvent(ConnectionEvent.Connected)
+    }
+
+    override suspend fun query(
+        sql: String,
+        vars: JsonObject?,
+        session: SessionSnapshot,
+        txn: String?,
+    ): JsonElement {
+        val bound = (session.variables + vars.orEmpty()).takeIf { it.isNotEmpty() }?.let(::JsonObject)
+        return super.query(sql, bound, session, txn)
     }
 
     override suspend fun dispatch(
