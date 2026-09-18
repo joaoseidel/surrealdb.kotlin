@@ -20,7 +20,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.seconds
 
+private fun httpForm(endpoint: String): String = endpoint.replace("ws://", "http://").replace("wss://", "https://")
+
+private suspend fun seedSchema(endpoint: String) {
+    val schema = checkNotNull(object {}.javaClass.getResource("/schema.surql")).readText()
+
+    Surreal(Surreal.Config(url = httpForm(endpoint))).use { client ->
+        val db = client.session()
+        db.signin(Credentials.RootUser("root", "root"))
+        db.use(Namespace("main"), Database("main"))
+
+        println("Importing schema.surql over HTTP...")
+        db.importSurql(schema)
+    }
+}
+
 private suspend fun quickstart(endpoint: String) {
+    seedSchema(endpoint)
+
     val client = Surreal(Surreal.Config(url = endpoint))
 
     client.use { client ->
