@@ -553,6 +553,8 @@ final class com.surrealdb.kotlin.core.api/Session : com.surrealdb.kotlin.core.ap
     final suspend fun accessToken(): kotlin/String? // com.surrealdb.kotlin.core.api/Session.accessToken|accessToken(){}[0]
     final suspend fun authenticate(kotlin/String): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.authenticate|authenticate(kotlin.String){}[0]
     final suspend fun database(): kotlin/String? // com.surrealdb.kotlin.core.api/Session.database|database(){}[0]
+    final suspend fun exportSurql(): kotlin/String // com.surrealdb.kotlin.core.api/Session.exportSurql|exportSurql(){}[0]
+    final suspend fun importSurql(kotlin/String) // com.surrealdb.kotlin.core.api/Session.importSurql|importSurql(kotlin.String){}[0]
     final suspend fun invalidate(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.invalidate|invalidate(){}[0]
     final suspend fun kill(kotlin/String): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.kill|kill(kotlin.String){}[0]
     final suspend fun live(com.surrealdb.kotlin.core.api.data/LiveQueryTarget, com.surrealdb.kotlin.core.api.live/LiveMode = ...): com.surrealdb.kotlin.core.api.live/LiveQuerySubscription // com.surrealdb.kotlin.core.api/Session.live|live(com.surrealdb.kotlin.core.api.data.LiveQueryTarget;com.surrealdb.kotlin.core.api.live.LiveMode){}[0]

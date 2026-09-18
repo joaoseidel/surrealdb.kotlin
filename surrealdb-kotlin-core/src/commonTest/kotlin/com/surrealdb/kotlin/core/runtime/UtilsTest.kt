@@ -92,6 +92,21 @@ class UtilsTest {
     }
 
     @Test
+    fun `httpBaseUrl strips a trailing slash and a trailing rpc because export and import sit beside rpc`() {
+        assertEquals("http://localhost:8000", httpBaseUrl("http://localhost:8000"))
+        assertEquals("http://localhost:8000", httpBaseUrl("http://localhost:8000/"))
+        assertEquals("http://localhost:8000", httpBaseUrl("http://localhost:8000/rpc"))
+        assertEquals("http://localhost:8000", httpBaseUrl("http://localhost:8000/rpc/"))
+        assertEquals("https://example.com/db", httpBaseUrl("https://example.com/db/rpc"))
+    }
+
+    @Test
+    fun `httpBaseUrl converts ws to http and wss to https`() {
+        assertEquals("http://localhost:8000", httpBaseUrl("ws://localhost:8000/rpc"))
+        assertEquals("https://example.com", httpBaseUrl("wss://example.com"))
+    }
+
+    @Test
     fun `randomRequestId produces unique values`() {
         val ids = (1..1000).map { randomRequestId() }.toSet()
         assertEquals(1000, ids.size, "expected 1000 unique IDs, got ${ids.size}")

@@ -16,6 +16,8 @@ internal fun normalizeRpcEndpoint(url: String): String {
     return if (trimmed.endsWith("/rpc")) trimmed else "$trimmed/rpc"
 }
 
+internal fun httpBaseUrl(url: String): String = wsToHttpUrl(url).trimEnd('/').removeSuffix("/rpc")
+
 internal fun deriveWsEndpoint(url: String): String {
     val rpc =
         if (isWsUrl(url)) {

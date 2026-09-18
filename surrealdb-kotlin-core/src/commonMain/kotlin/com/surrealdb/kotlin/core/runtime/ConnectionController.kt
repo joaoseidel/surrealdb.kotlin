@@ -196,6 +196,27 @@ internal class ConnectionController(
         liveQueryId: String,
     ): JsonElement = engine.kill(liveQueryId, snapshot(sessionId))
 
+    private fun requireExportImport() {
+        if (Feature.ExportImport !in engine.features) {
+            throw SurrealFeatureNotSupportedException(
+                "Export and import need an http:// or https:// connection; this client is on ${config.url}",
+            )
+        }
+    }
+
+    suspend fun exportSurql(sessionId: String): String {
+        requireExportImport()
+        return engine.exportSurql(snapshot(sessionId))
+    }
+
+    suspend fun importSurql(
+        sessionId: String,
+        surql: String,
+    ) {
+        requireExportImport()
+        engine.importSurql(surql, snapshot(sessionId))
+    }
+
     suspend fun snapshot(sessionId: String): SessionSnapshot =
         sessionsMutex.withLock {
             val s = sessions[sessionId] ?: error("Unknown session $sessionId")
