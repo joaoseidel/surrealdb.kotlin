@@ -86,8 +86,14 @@ class LiveQueryEventTest :
                             .record shouldBe RecordId("book", "lq1")
                     }
 
-                    should("split on the first colon, so an id that contains one survives intact") {
-                        notification("CREATE", record = "book:a:b")
+                    should("read the kind of the key, so an integer key is not mistaken for its digits as text") {
+                        notification("CREATE", record = "book:1")
+                            .toEvent(title)
+                            .record shouldBe RecordId("book", 1)
+                    }
+
+                    should("read a quoted key the way the server spells it, so a colon inside it survives intact") {
+                        notification("CREATE", record = "book:`a:b`")
                             .toEvent(title)
                             .record shouldBe RecordId("book", "a:b")
                     }
@@ -109,6 +115,11 @@ class LiveQueryEventTest :
                             .shouldBeNull()
 
                         notification("CREATE", record = "book:")
+                            .toEvent(title)
+                            .record
+                            .shouldBeNull()
+
+                        notification("CREATE", record = "book:a:b")
                             .toEvent(title)
                             .record
                             .shouldBeNull()
