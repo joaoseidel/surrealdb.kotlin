@@ -51,7 +51,7 @@ class ContentTest :
                                 it[age] = 30
                             }.compile()
 
-                    compiled.surql shouldBe "CREATE ONLY type::record(\$_0, \$_1) CONTENT \$_2"
+                    compiled.surql shouldBe "CREATE ONLY type::record(\$_0, (<string> \$_1)) CONTENT \$_2"
                     compiled.bindings["_0"] shouldBe JsonPrimitive("person")
                     compiled.bindings["_1"] shouldBe JsonPrimitive("alice")
                     val data = compiled.bindings["_2"] as JsonObject

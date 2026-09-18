@@ -145,7 +145,7 @@ private class ConditionCompiler {
                 text.append("type::record(")
                 bind(JsonPrimitive(target.table))
                 text.append(", ")
-                bind(JsonPrimitive(target.id))
+                target.key.render({ text.append(it) }, ::bind)
                 text.append(')')
             }
 
@@ -161,9 +161,9 @@ private class ConditionCompiler {
                 text.append("type::record(")
                 bind(JsonPrimitive(target.table))
                 text.append(", ")
-                target.start?.let { bind(JsonPrimitive(it)) }
+                target.start?.render({ text.append(it) }, ::bind)
                 text.append(if (target.includeEnd) "..=" else "..")
-                target.end?.let { bind(JsonPrimitive(it)) }
+                target.end?.render({ text.append(it) }, ::bind)
                 text.append(')')
             }
 

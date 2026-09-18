@@ -59,7 +59,7 @@ class TextSearchTest :
                 should("bind both halves, so it stays a link rather than becoming a string") {
                     val query = surqlTemplate { "SELECT * FROM book WHERE author = ${record(RecordId("user", "ada"))}" }
 
-                    query.surql shouldBe "SELECT * FROM book WHERE author = type::record(\$_0, \$_1)"
+                    query.surql shouldBe "SELECT * FROM book WHERE author = type::record(\$_0, (<string> \$_1))"
                     query.bindings.values.map { it.toString() } shouldBe listOf("\"user\"", "\"ada\"")
                 }
             }

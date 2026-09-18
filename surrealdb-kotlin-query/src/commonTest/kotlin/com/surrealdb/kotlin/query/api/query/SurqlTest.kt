@@ -103,7 +103,7 @@ class SurqlTest :
 
                     query.appendValue(RecordId("user", "alice"))
 
-                    query.surql shouldBe "type::record(\$_0, \$_1)"
+                    query.surql shouldBe "type::record(\$_0, (<string> \$_1))"
                     query.bindings shouldContainExactly
                         mapOf(
                             "_0" to JsonPrimitive("user"),

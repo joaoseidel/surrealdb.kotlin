@@ -6,6 +6,7 @@ import com.surrealdb.kotlin.core.api.Namespace
 import com.surrealdb.kotlin.core.api.Session
 import com.surrealdb.kotlin.core.api.Surreal
 import com.surrealdb.kotlin.core.api.data.RecordIdRange
+import com.surrealdb.kotlin.core.api.data.RecordKey
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.query.api.data.get
@@ -22,7 +23,7 @@ private object Slots : Table("rt_slot") {
     val n by field<Int>()
 }
 
-private fun keysOf(rows: List<Row>): List<String> = rows.map { it[Slots.id].id }
+private fun keysOf(rows: List<Row>): List<RecordKey> = rows.map { it[Slots.id].key }
 
 private fun onServer(block: suspend (Session) -> Unit) {
     runBlocking {
@@ -54,7 +55,7 @@ class RangeTargetIntegrationTest :
                     onServer { db ->
                         val rows = db.select(range("a", "z")).await()
 
-                        keysOf(rows) shouldBe listOf("a", "m")
+                        keysOf(rows) shouldBe keys("a", "m")
                     }
                 }
 
@@ -62,15 +63,15 @@ class RangeTargetIntegrationTest :
                     onServer { db ->
                         val rows = db.select(range("a", "z", includeEnd = true)).await()
 
-                        keysOf(rows) shouldBe listOf("a", "m", "z")
+                        keysOf(rows) shouldBe keys("a", "m", "z")
                     }
                 }
 
                 should("run open at either end, and open at both") {
                     onServer { db ->
-                        keysOf(db.select(range(start = "m")).await()) shouldBe listOf("m", "z")
-                        keysOf(db.select(range(end = "m")).await()) shouldBe listOf("a")
-                        keysOf(db.select(range()).await()) shouldBe listOf("a", "m", "z")
+                        keysOf(db.select(range(start = "m")).await()) shouldBe keys("m", "z")
+                        keysOf(db.select(range(end = "m")).await()) shouldBe keys("a")
+                        keysOf(db.select(range()).await()) shouldBe keys("a", "m", "z")
                     }
                 }
             }
@@ -84,12 +85,12 @@ class RangeTargetIntegrationTest :
                                 .content(buildJsonObject { put("n", JsonPrimitive(7)) })
                                 .await()
 
-                        keysOf(updated) shouldBe listOf("a", "m")
+                        keysOf(updated) shouldBe keys("a", "m")
                         updated.map { it[Slots.n] } shouldBe listOf(7, 7)
 
                         db.delete(range("a", "z")).await()
 
-                        keysOf(db.select(Slots).await()) shouldBe listOf("z")
+                        keysOf(db.select(Slots).await()) shouldBe keys("z")
                     }
                 }
             }
@@ -100,4 +101,11 @@ private fun range(
     start: String? = null,
     end: String? = null,
     includeEnd: Boolean = false,
-) = RecordIdRange(Slots.tableName, start = start, end = end, includeEnd = includeEnd)
+) = RecordIdRange(
+    Slots.tableName,
+    start = start?.let(RecordKey::Text),
+    end = end?.let(RecordKey::Text),
+    includeEnd = includeEnd,
+)
+
+private fun keys(vararg texts: String): List<RecordKey> = texts.map(RecordKey::Text)

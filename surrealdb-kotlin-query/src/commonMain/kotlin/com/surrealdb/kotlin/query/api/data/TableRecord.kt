@@ -1,7 +1,9 @@
 package com.surrealdb.kotlin.query.api.data
 
 import com.surrealdb.kotlin.core.api.data.RecordId
+import com.surrealdb.kotlin.core.api.data.RecordKey
 import com.surrealdb.kotlin.core.api.data.Target
+import kotlin.uuid.Uuid
 
 public class TableRecord<S : Table> internal constructor(
     internal val schema: S,
@@ -15,3 +17,9 @@ public class TableRecord<S : Table> internal constructor(
 }
 
 public operator fun <S : Table> S.get(id: String): TableRecord<S> = TableRecord(this, RecordId(tableName, id))
+
+public operator fun <S : Table> S.get(id: Long): TableRecord<S> = TableRecord(this, RecordId(tableName, id))
+
+public operator fun <S : Table> S.get(id: Uuid): TableRecord<S> = TableRecord(this, RecordId(tableName, id))
+
+public operator fun <S : Table> S.get(key: RecordKey): TableRecord<S> = TableRecord(this, RecordId(tableName, key))

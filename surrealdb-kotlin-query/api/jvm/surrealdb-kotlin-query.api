@@ -109,7 +109,10 @@ public final class com/surrealdb/kotlin/query/api/data/TableRecord : com/surreal
 }
 
 public final class com/surrealdb/kotlin/query/api/data/TableRecordKt {
+	public static final fun get (Lcom/surrealdb/kotlin/query/api/data/Table;J)Lcom/surrealdb/kotlin/query/api/data/TableRecord;
+	public static final fun get (Lcom/surrealdb/kotlin/query/api/data/Table;Lcom/surrealdb/kotlin/core/api/data/RecordKey;)Lcom/surrealdb/kotlin/query/api/data/TableRecord;
 	public static final fun get (Lcom/surrealdb/kotlin/query/api/data/Table;Ljava/lang/String;)Lcom/surrealdb/kotlin/query/api/data/TableRecord;
+	public static final fun get (Lcom/surrealdb/kotlin/query/api/data/Table;Lkotlin/uuid/Uuid;)Lcom/surrealdb/kotlin/query/api/data/TableRecord;
 }
 
 public final class com/surrealdb/kotlin/query/api/data/Walk : com/surrealdb/kotlin/core/api/data/Target, com/surrealdb/kotlin/query/api/data/Expression {

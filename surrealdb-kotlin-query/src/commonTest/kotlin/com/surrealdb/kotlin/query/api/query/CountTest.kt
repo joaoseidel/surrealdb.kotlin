@@ -54,7 +54,7 @@ class CountTest :
                         RecordingContext().count(RecordId("reader", "ada").outgoing(Bookmarked, Shelved)).compile()
 
                     compiled.surql shouldContain
-                        "FROM (type::record(\$_0, \$_1))->bookmarked->book GROUP ALL"
+                        "FROM (type::record(\$_0, (<string> \$_1)))->bookmarked->book GROUP ALL"
                 }
 
                 should("never read one record, because a count is a question about a set") {
