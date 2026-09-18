@@ -24,11 +24,7 @@ internal class HttpEngine(
     httpClient: HttpClient,
     codec: Codec,
 ) : RpcEngine(config, httpClient, codec) {
-    override val features: Set<Feature> =
-        setOf(
-            Feature.ExportImport,
-            Feature.SurrealML,
-        )
+    override val features: Set<Feature> = setOf(Feature.ExportImport)
 
     @Volatile
     private var started = false
