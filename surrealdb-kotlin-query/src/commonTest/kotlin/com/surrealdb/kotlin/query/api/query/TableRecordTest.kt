@@ -1,6 +1,7 @@
 package com.surrealdb.kotlin.query.api.query
 
 import com.surrealdb.kotlin.core.api.data.RecordId
+import com.surrealdb.kotlin.core.api.data.RecordKey
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.core.api.query.QueryContext
@@ -17,6 +18,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlin.uuid.Uuid
 
 private val compileOnly =
     object : QueryContext {
@@ -47,6 +51,31 @@ class TableRecordTest :
             context("Table.get") {
                 should("name a record of that table, taking the table name from the schema") {
                     People["alice"].toString() shouldBe "person:alice"
+                }
+
+                should("take an integer key, which names a different record from the same digits as text") {
+                    People[1].toString() shouldBe "person:1"
+                    People[1].record shouldBe RecordId("person", 1)
+                    People[1] shouldNotBe People["1"]
+                }
+
+                should("take a uuid key") {
+                    val uuid = Uuid.parse("0196a3c2-1234-7abc-8def-0123456789ab")
+
+                    People[uuid].record shouldBe RecordId("person", uuid)
+                }
+
+                should("take any key, so an array or object key has a handle too") {
+                    val key =
+                        RecordKey.Array(
+                            buildJsonArray {
+                                add("a")
+                                add(1)
+                            },
+                        )
+
+                    People[key].record shouldBe RecordId("person", key)
+                    People[key].toString() shouldBe "person:['a', 1]"
                 }
 
                 should("equal another handle on the same record, so builders stay comparable") {
@@ -99,7 +128,7 @@ class TableRecordTest :
                 should("write the link, so a record can be handed to a field") {
                     val fragment = BoundQuery().appendValue(People["alice"])
 
-                    fragment.surql shouldBe "type::record(\$_0, \$_1)"
+                    fragment.surql shouldBe "type::record(\$_0, (<string> \$_1))"
                     fragment.bindings shouldBe
                         mapOf("_0" to JsonPrimitive("person"), "_1" to JsonPrimitive("alice"))
                 }
@@ -107,7 +136,8 @@ class TableRecordTest :
 
             context("an undeclared table") {
                 should("still yield a record handle, because Table(name) is a Table too") {
-                    BoundQuery().appendTarget(Table("person")["alice"]).surql shouldBe "type::record(\$_0, \$_1)"
+                    BoundQuery().appendTarget(Table("person")["alice"]).surql shouldBe
+                        "type::record(\$_0, (<string> \$_1))"
                 }
             }
 

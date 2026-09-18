@@ -111,7 +111,7 @@ class AssignmentTest :
                         .update(People["alice"])
                         .set { it[age] = 30 }
                         .compile()
-                        .surql shouldBe "UPDATE ONLY type::record(\$_0, \$_1) SET age = \$_2"
+                        .surql shouldBe "UPDATE ONLY type::record(\$_0, (<string> \$_1)) SET age = \$_2"
                 }
             }
 
@@ -159,7 +159,7 @@ class AssignmentTest :
                             .compile()
 
                     compiled.surql shouldBe
-                        "UPDATE type::table(\$_0) SET author = type::record(\$_1, \$_2)"
+                        "UPDATE type::table(\$_0) SET author = type::record(\$_1, (<string> \$_2))"
                 }
 
                 should("take a schema-carrying record through its RecordId, which reads the same") {
@@ -168,7 +168,7 @@ class AssignmentTest :
                         .set { it[author] = People["alice"].record }
                         .compile()
                         .surql shouldBe
-                        "UPDATE type::table(\$_0) SET author = type::record(\$_1, \$_2)"
+                        "UPDATE type::table(\$_0) SET author = type::record(\$_1, (<string> \$_2))"
                 }
             }
 

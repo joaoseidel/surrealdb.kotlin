@@ -85,12 +85,10 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
             }
 
             is RecordId -> {
-                // SurrealDB v3 calls this `type::record`; the older `type::thing`
-                // is gone. We bind both halves so callers can't inject.
                 appendLiteral("type::record(")
                 bind(JsonPrimitive(target.table))
                 appendLiteral(", ")
-                bind(JsonPrimitive(target.id))
+                target.key.render(::appendLiteral, ::bind)
                 appendLiteral(")")
             }
 
@@ -106,9 +104,9 @@ internal fun BoundQuery.appendTarget(target: Target): BoundQuery =
                 appendLiteral("type::record(")
                 bind(JsonPrimitive(target.table))
                 appendLiteral(", ")
-                target.start?.let { bind(JsonPrimitive(it)) }
+                target.start?.render(::appendLiteral, ::bind)
                 appendLiteral(if (target.includeEnd) "..=" else "..")
-                target.end?.let { bind(JsonPrimitive(it)) }
+                target.end?.render(::appendLiteral, ::bind)
                 appendLiteral(")")
             }
 

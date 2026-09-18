@@ -3,6 +3,7 @@ package com.surrealdb.kotlin.query.api.query
 import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.core.api.query.BoundQuery
 import com.surrealdb.kotlin.query.api.data.SurqlDsl
+import com.surrealdb.kotlin.query.api.data.render
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -39,7 +40,12 @@ public class SurqlTemplate internal constructor() {
      * having removed nothing. Binding each half keeps the value the caller's
      * and the expression a record link.
      */
-    public fun record(id: RecordId): String = "type::record(${bind(id.table)}, ${bind(id.id)})"
+    public fun record(id: RecordId): String {
+        val table = bind(id.table)
+        val key = StringBuilder()
+        id.key.render({ key.append(it) }, { key.append(bind(it)) })
+        return "type::record($table, $key)"
+    }
 
     internal fun build(block: SurqlTemplate.() -> String): BoundQuery {
         val sql = block()

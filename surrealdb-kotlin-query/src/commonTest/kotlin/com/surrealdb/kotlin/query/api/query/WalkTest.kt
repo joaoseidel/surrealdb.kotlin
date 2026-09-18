@@ -46,7 +46,7 @@ class WalkTest :
                             .select(RecordId("book", "hobbit").outgoing(HasChapter, Chapters))
                             .compile()
 
-                    compiled.surql shouldContain "FROM (type::record(\$_0, \$_1))->has_chapter->chapter"
+                    compiled.surql shouldContain "FROM (type::record(\$_0, (<string> \$_1)))->has_chapter->chapter"
                     compiled.bindings.values.map { it.toString() } shouldBe listOf("\"book\"", "\"hobbit\"")
                 }
 
@@ -75,7 +75,7 @@ class WalkTest :
                 should("walk the other way round") {
                     val compiled = RecordingContext().select(Volumes["hobbit"].incoming(Authored, Readers)).compile()
 
-                    compiled.surql shouldContain "FROM (type::record(\$_0, \$_1))<-authored<-reader"
+                    compiled.surql shouldContain "FROM (type::record(\$_0, (<string> \$_1)))<-authored<-reader"
                 }
 
                 should("carry on from where the last step arrived") {
@@ -102,7 +102,8 @@ class WalkTest :
                             .where { incoming(Authored, Readers) contains RecordId("reader", "ada") }
                             .compile()
 
-                    compiled.surql shouldContain "WHERE (<-authored<-reader CONTAINS type::record(\$_1, \$_2))"
+                    compiled.surql shouldContain
+                        "WHERE (<-authored<-reader CONTAINS type::record(\$_1, (<string> \$_2)))"
                 }
 
                 should("compare against several of them, each bound") {
@@ -115,7 +116,7 @@ class WalkTest :
                             }.compile()
 
                     compiled.surql shouldContain
-                        "CONTAINSANY [type::record(\$_1, \$_2), type::record(\$_3, \$_4)]"
+                        "CONTAINSANY [type::record(\$_1, (<string> \$_2)), type::record(\$_3, (<string> \$_4))]"
                 }
 
                 should("project under the name of the field that reads it back") {
@@ -141,7 +142,7 @@ class WalkTest :
                             .compile()
 
                     compiled.surql shouldContain
-                        "WHERE ((in = type::record(\$_1, \$_2)) AND (out = type::record(\$_3, \$_4)))"
+                        "WHERE ((in = type::record(\$_1, (<string> \$_2))) AND (out = type::record(\$_3, (<string> \$_4))))"
                 }
             }
 

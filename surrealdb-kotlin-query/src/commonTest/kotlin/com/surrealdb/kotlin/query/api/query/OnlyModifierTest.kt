@@ -2,6 +2,7 @@ package com.surrealdb.kotlin.query.api.query
 
 import com.surrealdb.kotlin.core.api.data.RecordId
 import com.surrealdb.kotlin.core.api.data.RecordIdRange
+import com.surrealdb.kotlin.core.api.data.RecordKey
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.data.Target
 import com.surrealdb.kotlin.core.api.query.BoundQuery
@@ -28,7 +29,11 @@ private val db =
 private val oneRecord: List<Target> = listOf(RecordId("person", "alice"), People["alice"])
 
 private val manyRecords: List<Target> =
-    listOf(Table("person"), People, RecordIdRange("person", start = "alice", end = "zara"))
+    listOf(
+        Table("person"),
+        People,
+        RecordIdRange("person", start = RecordKey.Text("alice"), end = RecordKey.Text("zara")),
+    )
 
 private val inferring: List<Pair<String, (Target) -> Query>> =
     listOf(

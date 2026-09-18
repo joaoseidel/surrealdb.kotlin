@@ -10,6 +10,7 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlin.uuid.Uuid
 
 private object Sightings : Table("sighting") {
     val id = recordId()
@@ -46,6 +47,13 @@ class RowTest :
 
                 should("come back as a record id for the id, which is the field every record has") {
                     row("""{"id":"sighting:alice"}""")[Sightings.id] shouldBe RecordId("sighting", "alice")
+                }
+
+                should("keep the kind of the key, so user:1 is the integer record and not the string one") {
+                    row("""{"id":"sighting:1"}""")[Sightings.id] shouldBe RecordId("sighting", 1)
+                    row("""{"id":"sighting:`1`"}""")[Sightings.id] shouldBe RecordId("sighting", "1")
+                    row("""{"id":"sighting:u'0196a3c2-1234-7abc-8def-0123456789ab'"}""")[Sightings.id] shouldBe
+                        RecordId("sighting", Uuid.parse("0196a3c2-1234-7abc-8def-0123456789ab"))
                 }
 
                 should("resolve a dotted path, because SurrealDB rebuilds the nesting rather than flattening it") {
