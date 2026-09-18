@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `exportSurql()` and `importSurql(text)` on a session, over HTTP. The first answers the namespace and
+  database as the SurrealQL `GET /export` writes; the second sends text to `POST /import`. SurrealDB runs
+  an import only when its first statement is `OPTION IMPORT;`, which every export already carries, and
+  answers with the statements it rejected while the rest still run; the driver throws the first of them,
+  typed by its kind, with all of them in `data`. Over WebSocket both throw
+  `SurrealFeatureNotSupportedException` before anything is sent. `Feature.ExportImport` is advertised by
+  the HTTP engine only and `Feature.SurrealML` by neither, since nothing implements it. The quickstart
+  imports its own `schema.surql`; the `surreal import` command the README gave fails on 3.2.4 because
+  the file lacked `OPTION IMPORT;`.
 - A record id carries a typed key. `RecordKey.Text`, `Integer`, `Uuid`, `Array` and `Object` are the
   five kinds SurrealDB has, `RecordId(table, key)` takes one, and `People[1]` names the integer record
   while `People["1"]` names the string one, as they are two records. `RecordId.parse` and every decoded
