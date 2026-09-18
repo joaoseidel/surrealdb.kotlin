@@ -394,6 +394,29 @@ db.transaction {
 
 Use `beginTransaction()` only when the caller must own the manual `commit()` or `cancel()` lifecycle. Transactions require WebSocket transport.
 
+## Export and import
+
+`exportSurql()` answers the session's namespace and database as the SurrealQL text SurrealDB writes for `GET /export`, and `importSurql(text)`
+sends text to `POST /import`. Both need an `http://` or `https://` client; over WebSocket they throw `SurrealFeatureNotSupportedException`
+before anything is sent, and `Feature.ExportImport` is present in `client.features` only on HTTP.
+
+```kotlin
+val backup = db.exportSurql()
+
+db.use(Namespace("main"), Database("restored"))
+db.importSurql(backup)
+```
+
+SurrealDB runs an import only when its first statement is `OPTION IMPORT;`, which every export already carries. The option switches off events,
+field processing and result output for that run, so a SCHEMAFULL type is not checked on the way in. Text without the line is refused, and the
+server's message arrives as a `SurrealRpcException` with code 400. Statements are not a transaction: one that fails at runtime is reported and
+the rest still run, one that cannot parse stops the rest. The first failed statement is thrown typed by its kind, a duplicate record as
+`SurrealAlreadyExistsException` for example, and every failed statement is in the exception's `data`.
+
+Both members hold the whole text in memory and in one request; raise `Surreal.Config.requestTimeoutMillis` for a database that takes longer
+than 30 seconds to move. On a WebSocket client an export can still be run as a query, `db.query(BoundQuery().appendLiteral(backup))`, which
+executes the same statements without the import mode.
+
 ## Transport and language constraints
 
 - `Duration` and `Decimal` values are unsupported over the current JSON transport. JSON has no native representation that preserves either SurrealDB
