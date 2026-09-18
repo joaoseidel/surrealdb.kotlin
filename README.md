@@ -119,6 +119,26 @@ val people: List<Person> =
 
 `await()` and `awaitSingleOrNull()` read records as `Row`. Placing `decodeAs<T>()` before the terminal decodes the same response as the caller's type.
 
+## Record ids
+
+SurrealDB keeps `user:1` and `` user:`1` `` as two records: the first has the integer key `1`, the second the string key `"1"`. A `RecordId`
+carries the kind in its `RecordKey`, so the driver names the one it means:
+
+```kotlin
+People["ada"]            // string key, RecordKey.Text
+People[1]                // integer key, RecordKey.Integer
+People[Uuid.random()]    // uuid key, RecordKey.Uuid
+People[RecordKey.Array(buildJsonArray { add("2026"); add(7) })]
+People[RecordKey.Object(buildJsonObject { put("region", JsonPrimitive("eu")) })]
+
+RecordId("person", "1") != RecordId("person", 1)
+```
+
+`RecordId.parse` reads every spelling the server prints (`person:1`, `person:u'0196…'`, `person:['a', 1]`, `person:{ a: 1 }`), a decoded `id`
+field keeps the kind, and `toString` writes it back as SurrealQL. A text key is bound through `<string>`, because the server reads a bound string
+that contains a colon as a whole record id and keeps only its key: without the cast `RecordId("user", "a:b")` names `user:b`. There is no float,
+boolean or null key; SurrealDB stores any of those as a string key.
+
 ## Project fields
 
 `fields` selects declared fields or a whole nested group. The returned `Row` uses the same declarations:
@@ -380,6 +400,9 @@ Use `beginTransaction()` only when the caller must own the manual `commit()` or 
   type, so binding them would silently change their meaning.
 - A bound string that looks like a record id can be reinterpreted or truncated by SurrealDB while it parses JSON query parameters. This applies to
   every clause that carries a bound value. CBOR is the future transport fix and is not part of this work.
+- Inside an array or object record key the same applies to each element: SurrealDB turns a string element shaped like a uuid into a uuid and one
+  shaped like `table:key` into a record, and no cast over JSON prevents that for a mixed array. `RecordId.toString` spells those two elements the
+  way the server does, so a key written as a link and one bound as a target still name the same record.
 - There is no blocking facade for Java callers. Java code must bridge the suspend API with its own coroutine or asynchronous adapter.
 - WebSocket replay after reconnect can duplicate a side effect if the server processed the request but the response was lost.
 - Embedded mode is not included.

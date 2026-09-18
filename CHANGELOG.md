@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- A record id carries a typed key. `RecordKey.Text`, `Integer`, `Uuid`, `Array` and `Object` are the
+  five kinds SurrealDB has, `RecordId(table, key)` takes one, and `People[1]` names the integer record
+  while `People["1"]` names the string one, as they are two records. `RecordId.parse` and every decoded
+  `id` read each spelling the server prints (`user:1`, `user:u'…'`, `user:['a', 1]`, `user:{ a: 1 }`),
+  and `toString` writes it back. A text key is now bound through `<string>`: SurrealDB reads a bound
+  string that contains a colon as a whole record id and keeps only its key, so `RecordId("user", "a:b")`
+  used to name `user:b` and `RecordId("user", "other:1")` the integer record `user:1`. `RecordId.id` is
+  gone, read `key`; `RecordIdRange` bounds are keys. Inside an array or object key the server still
+  coerces a uuid-shaped or `table:key`-shaped string element, which the driver mirrors when it prints
+  the key, because JSON has no way to say otherwise.
 - The Spectron client is now the Agent Memory client, following upstream #9: the artifact is
   `com.surrealdb:kotlin-memory`, the package is `com.surrealdb.kotlin.memory`, `Spectron` is
   `AgentMemory`, the exceptions are `AgentMemory*Exception`, and each namespace class is named
