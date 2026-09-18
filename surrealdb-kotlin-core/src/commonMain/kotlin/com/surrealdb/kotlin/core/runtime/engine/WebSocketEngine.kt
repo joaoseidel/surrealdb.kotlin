@@ -54,8 +54,6 @@ internal class WebSocketEngine(
             Feature.Sessions,
             Feature.Transactions,
             Feature.RefreshTokens,
-            Feature.ExportImport,
-            Feature.SurrealML,
         )
 
     private val reconnect = ReconnectContext(config.reconnect)
