@@ -416,20 +416,8 @@ query, and live-query spellings as a separate consumer module. CI compiles it wi
 ./gradlew :samples:jvm-quickstart:compileKotlin
 ```
 
-The sample includes a checked-in [`schema.surql`](samples/jvm-quickstart/schema.surql). With SurrealDB listening locally, import the schema before the
-first run:
-
-```bash
-surreal import \
-    --endpoint http://127.0.0.1:8000 \
-    --username root \
-    --password root \
-    --namespace main \
-    --database main \
-    samples/jvm-quickstart/schema.surql
-```
-
-Then run the sample:
+The sample imports its checked-in [`schema.surql`](samples/jvm-quickstart/src/main/resources/schema.surql) itself, through `importSurql` on an
+HTTP client, before the WebSocket part runs. With SurrealDB listening locally:
 
 ```bash
 SURREAL_ENDPOINT=ws://127.0.0.1:8000 ./gradlew :samples:jvm-quickstart:run
