@@ -144,6 +144,73 @@ sealed interface <#A: out kotlin/Any?> com.surrealdb.kotlin.core.api.live/LiveQu
     }
 }
 
+sealed interface com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey|null[0]
+    final class Array : com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey.Array|null[0]
+        constructor <init>(kotlinx.serialization.json/JsonArray) // com.surrealdb.kotlin.core.api.data/RecordKey.Array.<init>|<init>(kotlinx.serialization.json.JsonArray){}[0]
+
+        final val value // com.surrealdb.kotlin.core.api.data/RecordKey.Array.value|{}value[0]
+            final fun <get-value>(): kotlinx.serialization.json/JsonArray // com.surrealdb.kotlin.core.api.data/RecordKey.Array.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlinx.serialization.json/JsonArray // com.surrealdb.kotlin.core.api.data/RecordKey.Array.component1|component1(){}[0]
+        final fun copy(kotlinx.serialization.json/JsonArray = ...): com.surrealdb.kotlin.core.api.data/RecordKey.Array // com.surrealdb.kotlin.core.api.data/RecordKey.Array.copy|copy(kotlinx.serialization.json.JsonArray){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordKey.Array.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordKey.Array.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Array.toString|toString(){}[0]
+    }
+
+    final class Integer : com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey.Integer|null[0]
+        constructor <init>(kotlin/Long) // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.<init>|<init>(kotlin.Long){}[0]
+
+        final val value // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.value|{}value[0]
+            final fun <get-value>(): kotlin/Long // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Long // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.component1|component1(){}[0]
+        final fun copy(kotlin/Long = ...): com.surrealdb.kotlin.core.api.data/RecordKey.Integer // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.copy|copy(kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Integer.toString|toString(){}[0]
+    }
+
+    final class Object : com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey.Object|null[0]
+        constructor <init>(kotlinx.serialization.json/JsonObject) // com.surrealdb.kotlin.core.api.data/RecordKey.Object.<init>|<init>(kotlinx.serialization.json.JsonObject){}[0]
+
+        final val value // com.surrealdb.kotlin.core.api.data/RecordKey.Object.value|{}value[0]
+            final fun <get-value>(): kotlinx.serialization.json/JsonObject // com.surrealdb.kotlin.core.api.data/RecordKey.Object.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlinx.serialization.json/JsonObject // com.surrealdb.kotlin.core.api.data/RecordKey.Object.component1|component1(){}[0]
+        final fun copy(kotlinx.serialization.json/JsonObject = ...): com.surrealdb.kotlin.core.api.data/RecordKey.Object // com.surrealdb.kotlin.core.api.data/RecordKey.Object.copy|copy(kotlinx.serialization.json.JsonObject){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordKey.Object.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordKey.Object.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Object.toString|toString(){}[0]
+    }
+
+    final class Text : com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey.Text|null[0]
+        constructor <init>(kotlin/String) // com.surrealdb.kotlin.core.api.data/RecordKey.Text.<init>|<init>(kotlin.String){}[0]
+
+        final val value // com.surrealdb.kotlin.core.api.data/RecordKey.Text.value|{}value[0]
+            final fun <get-value>(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Text.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Text.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.surrealdb.kotlin.core.api.data/RecordKey.Text // com.surrealdb.kotlin.core.api.data/RecordKey.Text.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordKey.Text.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordKey.Text.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Text.toString|toString(){}[0]
+    }
+
+    final class Uuid : com.surrealdb.kotlin.core.api.data/RecordKey { // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid|null[0]
+        constructor <init>(kotlin.uuid/Uuid) // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.<init>|<init>(kotlin.uuid.Uuid){}[0]
+
+        final val value // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.value|{}value[0]
+            final fun <get-value>(): kotlin.uuid/Uuid // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin.uuid/Uuid // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.component1|component1(){}[0]
+        final fun copy(kotlin.uuid/Uuid = ...): com.surrealdb.kotlin.core.api.data/RecordKey.Uuid // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.copy|copy(kotlin.uuid.Uuid){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordKey.Uuid.toString|toString(){}[0]
+    }
+}
+
 sealed interface com.surrealdb.kotlin.core.api/Credentials { // com.surrealdb.kotlin.core.api/Credentials|null[0]
     sealed interface ForSignIn : com.surrealdb.kotlin.core.api/Credentials // com.surrealdb.kotlin.core.api/Credentials.ForSignIn|null[0]
 
@@ -256,16 +323,19 @@ sealed interface com.surrealdb.kotlin.core.api/Credentials { // com.surrealdb.ko
 }
 
 final class com.surrealdb.kotlin.core.api.data/RecordId : com.surrealdb.kotlin.core.api.data/Target { // com.surrealdb.kotlin.core.api.data/RecordId|null[0]
+    constructor <init>(kotlin/String, com.surrealdb.kotlin.core.api.data/RecordKey) // com.surrealdb.kotlin.core.api.data/RecordId.<init>|<init>(kotlin.String;com.surrealdb.kotlin.core.api.data.RecordKey){}[0]
+    constructor <init>(kotlin/String, kotlin.uuid/Uuid) // com.surrealdb.kotlin.core.api.data/RecordId.<init>|<init>(kotlin.String;kotlin.uuid.Uuid){}[0]
+    constructor <init>(kotlin/String, kotlin/Long) // com.surrealdb.kotlin.core.api.data/RecordId.<init>|<init>(kotlin.String;kotlin.Long){}[0]
     constructor <init>(kotlin/String, kotlin/String) // com.surrealdb.kotlin.core.api.data/RecordId.<init>|<init>(kotlin.String;kotlin.String){}[0]
 
-    final val id // com.surrealdb.kotlin.core.api.data/RecordId.id|{}id[0]
-        final fun <get-id>(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.id.<get-id>|<get-id>(){}[0]
+    final val key // com.surrealdb.kotlin.core.api.data/RecordId.key|{}key[0]
+        final fun <get-key>(): com.surrealdb.kotlin.core.api.data/RecordKey // com.surrealdb.kotlin.core.api.data/RecordId.key.<get-key>|<get-key>(){}[0]
     final val table // com.surrealdb.kotlin.core.api.data/RecordId.table|{}table[0]
         final fun <get-table>(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.table.<get-table>|<get-table>(){}[0]
 
     final fun component1(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.component1|component1(){}[0]
-    final fun component2(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.component2|component2(){}[0]
-    final fun copy(kotlin/String = ..., kotlin/String = ...): com.surrealdb.kotlin.core.api.data/RecordId // com.surrealdb.kotlin.core.api.data/RecordId.copy|copy(kotlin.String;kotlin.String){}[0]
+    final fun component2(): com.surrealdb.kotlin.core.api.data/RecordKey // com.surrealdb.kotlin.core.api.data/RecordId.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., com.surrealdb.kotlin.core.api.data/RecordKey = ...): com.surrealdb.kotlin.core.api.data/RecordId // com.surrealdb.kotlin.core.api.data/RecordId.copy|copy(kotlin.String;com.surrealdb.kotlin.core.api.data.RecordKey){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordId.toString|toString(){}[0]
@@ -278,22 +348,22 @@ final class com.surrealdb.kotlin.core.api.data/RecordId : com.surrealdb.kotlin.c
 }
 
 final class com.surrealdb.kotlin.core.api.data/RecordIdRange : com.surrealdb.kotlin.core.api.data/Target { // com.surrealdb.kotlin.core.api.data/RecordIdRange|null[0]
-    constructor <init>(kotlin/String, kotlin/String? = ..., kotlin/String? = ..., kotlin/Boolean = ...) // com.surrealdb.kotlin.core.api.data/RecordIdRange.<init>|<init>(kotlin.String;kotlin.String?;kotlin.String?;kotlin.Boolean){}[0]
+    constructor <init>(kotlin/String, com.surrealdb.kotlin.core.api.data/RecordKey? = ..., com.surrealdb.kotlin.core.api.data/RecordKey? = ..., kotlin/Boolean = ...) // com.surrealdb.kotlin.core.api.data/RecordIdRange.<init>|<init>(kotlin.String;com.surrealdb.kotlin.core.api.data.RecordKey?;com.surrealdb.kotlin.core.api.data.RecordKey?;kotlin.Boolean){}[0]
 
     final val end // com.surrealdb.kotlin.core.api.data/RecordIdRange.end|{}end[0]
-        final fun <get-end>(): kotlin/String? // com.surrealdb.kotlin.core.api.data/RecordIdRange.end.<get-end>|<get-end>(){}[0]
+        final fun <get-end>(): com.surrealdb.kotlin.core.api.data/RecordKey? // com.surrealdb.kotlin.core.api.data/RecordIdRange.end.<get-end>|<get-end>(){}[0]
     final val includeEnd // com.surrealdb.kotlin.core.api.data/RecordIdRange.includeEnd|{}includeEnd[0]
         final fun <get-includeEnd>(): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordIdRange.includeEnd.<get-includeEnd>|<get-includeEnd>(){}[0]
     final val start // com.surrealdb.kotlin.core.api.data/RecordIdRange.start|{}start[0]
-        final fun <get-start>(): kotlin/String? // com.surrealdb.kotlin.core.api.data/RecordIdRange.start.<get-start>|<get-start>(){}[0]
+        final fun <get-start>(): com.surrealdb.kotlin.core.api.data/RecordKey? // com.surrealdb.kotlin.core.api.data/RecordIdRange.start.<get-start>|<get-start>(){}[0]
     final val table // com.surrealdb.kotlin.core.api.data/RecordIdRange.table|{}table[0]
         final fun <get-table>(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordIdRange.table.<get-table>|<get-table>(){}[0]
 
     final fun component1(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordIdRange.component1|component1(){}[0]
-    final fun component2(): kotlin/String? // com.surrealdb.kotlin.core.api.data/RecordIdRange.component2|component2(){}[0]
-    final fun component3(): kotlin/String? // com.surrealdb.kotlin.core.api.data/RecordIdRange.component3|component3(){}[0]
+    final fun component2(): com.surrealdb.kotlin.core.api.data/RecordKey? // com.surrealdb.kotlin.core.api.data/RecordIdRange.component2|component2(){}[0]
+    final fun component3(): com.surrealdb.kotlin.core.api.data/RecordKey? // com.surrealdb.kotlin.core.api.data/RecordIdRange.component3|component3(){}[0]
     final fun component4(): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordIdRange.component4|component4(){}[0]
-    final fun copy(kotlin/String = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.surrealdb.kotlin.core.api.data/RecordIdRange // com.surrealdb.kotlin.core.api.data/RecordIdRange.copy|copy(kotlin.String;kotlin.String?;kotlin.String?;kotlin.Boolean){}[0]
+    final fun copy(kotlin/String = ..., com.surrealdb.kotlin.core.api.data/RecordKey? = ..., com.surrealdb.kotlin.core.api.data/RecordKey? = ..., kotlin/Boolean = ...): com.surrealdb.kotlin.core.api.data/RecordIdRange // com.surrealdb.kotlin.core.api.data/RecordIdRange.copy|copy(kotlin.String;com.surrealdb.kotlin.core.api.data.RecordKey?;com.surrealdb.kotlin.core.api.data.RecordKey?;kotlin.Boolean){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.surrealdb.kotlin.core.api.data/RecordIdRange.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.surrealdb.kotlin.core.api.data/RecordIdRange.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.surrealdb.kotlin.core.api.data/RecordIdRange.toString|toString(){}[0]
