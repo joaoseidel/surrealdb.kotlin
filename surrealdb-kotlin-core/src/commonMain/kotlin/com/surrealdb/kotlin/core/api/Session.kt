@@ -4,6 +4,7 @@ import com.surrealdb.kotlin.core.api.data.LiveQueryFilter
 import com.surrealdb.kotlin.core.api.data.LiveQueryTarget
 import com.surrealdb.kotlin.core.api.data.Row
 import com.surrealdb.kotlin.core.api.error.SurrealFeatureNotSupportedException
+import com.surrealdb.kotlin.core.api.error.SurrealRpcException
 import com.surrealdb.kotlin.core.api.live.LiveMode
 import com.surrealdb.kotlin.core.api.live.LiveQueryEvent
 import com.surrealdb.kotlin.core.api.live.LiveQuerySubscription
@@ -169,6 +170,28 @@ public class Session internal constructor(
         controller.update(sessionId) { variables.remove(key) }
         return result
     }
+
+    /**
+     * The namespace and database this session is using, as the SurrealQL text
+     * SurrealDB writes for `GET /export`: an `OPTION IMPORT;` first, then each
+     * table's definitions and an `INSERT` of its records. Feed it back through
+     * [importSurql]. HTTP only; over WebSocket it throws
+     * [SurrealFeatureNotSupportedException] before anything is sent. A database
+     * the server does not have exports as an empty string.
+     */
+    public suspend fun exportSurql(): String = withAutoAuthRetry { controller.exportSurql(sessionId) }
+
+    /**
+     * Run [surql] through `POST /import` against this session's namespace and
+     * database. SurrealDB accepts an import only when its first statement is
+     * `OPTION IMPORT;`, which switches off events, field processing and result
+     * output for the run; text without it is refused with the server's message.
+     * Statements run one by one and are not a transaction: a statement that fails
+     * at runtime is reported and the rest still run, one that cannot parse stops
+     * the rest. Throws the first failed statement typed by its kind, with every
+     * failed statement in [SurrealRpcException.data]. HTTP only, as [exportSurql].
+     */
+    public suspend fun importSurql(surql: String): Unit = withAutoAuthRetry { controller.importSurql(sessionId, surql) }
 
     /** Dispatch a pre-built [BoundQuery] via the `query` RPC. */
     override suspend fun queryValues(bound: BoundQuery): List<Row> = queryRows(json, queryJson(bound))

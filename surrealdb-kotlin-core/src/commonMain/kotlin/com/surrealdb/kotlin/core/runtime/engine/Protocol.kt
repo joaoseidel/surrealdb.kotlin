@@ -84,4 +84,11 @@ internal interface Protocol {
         liveQueryId: String,
         session: SessionSnapshot,
     ): JsonElement
+
+    suspend fun exportSurql(session: SessionSnapshot): String
+
+    suspend fun importSurql(
+        surql: String,
+        session: SessionSnapshot,
+    )
 }

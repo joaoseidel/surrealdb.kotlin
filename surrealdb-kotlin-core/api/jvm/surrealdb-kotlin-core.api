@@ -208,7 +208,9 @@ public final class com/surrealdb/kotlin/core/api/Session : com/surrealdb/kotlin/
 	public final fun accessToken (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun authenticate (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun database (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun exportSurql (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun importSurql (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun kill (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun live (Lcom/surrealdb/kotlin/core/api/data/LiveQueryTarget;Lcom/surrealdb/kotlin/core/api/live/LiveMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

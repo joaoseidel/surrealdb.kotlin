@@ -206,4 +206,16 @@ internal abstract class RpcEngine(
         liveQueryId: String,
         session: SessionSnapshot,
     ): JsonElement = unwrap(dispatch(newRequest("kill", listOf(JsonPrimitive(liveQueryId))), session))
+
+    override suspend fun exportSurql(session: SessionSnapshot): String = throw exportImportNotSupported()
+
+    override suspend fun importSurql(
+        surql: String,
+        session: SessionSnapshot,
+    ): Unit = throw exportImportNotSupported()
+
+    private fun exportImportNotSupported() =
+        SurrealFeatureNotSupportedException(
+            "Export and import are not supported by ${this::class.simpleName}; use an http:// or https:// URL",
+        )
 }
