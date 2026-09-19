@@ -102,9 +102,9 @@ internal class ConnectionController(
 
     fun supports(feature: Feature): Boolean = feature in engine.features
 
-    suspend fun health(sessionId: String): JsonElement = engine.health(snapshot(sessionId))
+    suspend fun health(sessionId: String): Unit = engine.health(snapshot(sessionId))
 
-    suspend fun version(sessionId: String): JsonElement = engine.version(snapshot(sessionId))
+    suspend fun version(sessionId: String): String = engine.version(snapshot(sessionId))
 
     suspend fun use(
         sessionId: String,

@@ -88,11 +88,19 @@ internal abstract class RpcEngine(
         session: SessionSnapshot,
     ): RpcResponse
 
-    override suspend fun health(session: SessionSnapshot): JsonElement =
+    override suspend fun health(session: SessionSnapshot) {
         unwrap(dispatch(newRequest("ping", emptyList()), session))
+    }
 
-    override suspend fun version(session: SessionSnapshot): JsonElement =
-        unwrap(dispatch(newRequest("version", emptyList()), session))
+    override suspend fun version(session: SessionSnapshot): String {
+        val result = unwrap(dispatch(newRequest("version", emptyList()), session))
+        val primitive = result as? JsonPrimitive
+        return if (primitive != null && primitive.isString) {
+            primitive.content
+        } else {
+            throw SurrealProtocolException("version did not return a string (got $result)")
+        }
+    }
 
     override suspend fun use(
         namespace: String,

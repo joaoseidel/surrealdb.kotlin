@@ -46,9 +46,17 @@ public class Session internal constructor(
     /** Current access token for this session, or null if not authenticated. */
     public suspend fun accessToken(): String? = controller.snapshot(sessionId).token
 
-    public suspend fun ping(): JsonElement = withAutoAuthRetry { controller.health(sessionId) }
+    /**
+     * Answer true once the server has answered the `ping` RPC. It never answers
+     * false: a transport, authentication or RPC failure throws instead.
+     */
+    public suspend fun ping(): Boolean {
+        withAutoAuthRetry { controller.health(sessionId) }
+        return true
+    }
 
-    public suspend fun version(): JsonElement = withAutoAuthRetry { controller.version(sessionId) }
+    /** The server's build string, `surrealdb-3.2.4+…`. Needs no token, namespace or database. */
+    public suspend fun version(): String = withAutoAuthRetry { controller.version(sessionId) }
 
     /** A name that is not there is not an error. See [Namespace]. */
     public suspend fun use(

@@ -560,7 +560,7 @@ final class com.surrealdb.kotlin.core.api/Session : com.surrealdb.kotlin.core.ap
     final suspend fun live(com.surrealdb.kotlin.core.api.data/LiveQueryTarget, com.surrealdb.kotlin.core.api.live/LiveMode = ...): com.surrealdb.kotlin.core.api.live/LiveQuerySubscription // com.surrealdb.kotlin.core.api/Session.live|live(com.surrealdb.kotlin.core.api.data.LiveQueryTarget;com.surrealdb.kotlin.core.api.live.LiveMode){}[0]
     final suspend fun live(kotlin/String, com.surrealdb.kotlin.core.api.live/LiveMode = ...): com.surrealdb.kotlin.core.api.live/LiveQuerySubscription // com.surrealdb.kotlin.core.api/Session.live|live(kotlin.String;com.surrealdb.kotlin.core.api.live.LiveMode){}[0]
     final suspend fun namespace(): kotlin/String? // com.surrealdb.kotlin.core.api/Session.namespace|namespace(){}[0]
-    final suspend fun ping(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.ping|ping(){}[0]
+    final suspend fun ping(): kotlin/Boolean // com.surrealdb.kotlin.core.api/Session.ping|ping(){}[0]
     final suspend fun queryValues(com.surrealdb.kotlin.core.api.query/BoundQuery): kotlin.collections/List<com.surrealdb.kotlin.core.api.data/Row> // com.surrealdb.kotlin.core.api/Session.queryValues|queryValues(com.surrealdb.kotlin.core.api.query.BoundQuery){}[0]
     final suspend fun reset(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.reset|reset(){}[0]
     final suspend fun setVariable(kotlin/String, kotlinx.serialization.json/JsonElement): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.setVariable|setVariable(kotlin.String;kotlinx.serialization.json.JsonElement){}[0]
@@ -568,7 +568,7 @@ final class com.surrealdb.kotlin.core.api/Session : com.surrealdb.kotlin.core.ap
     final suspend fun signup(com.surrealdb.kotlin.core.api/Credentials.ForSignUp): com.surrealdb.kotlin.core.api/AuthTokens? // com.surrealdb.kotlin.core.api/Session.signup|signup(com.surrealdb.kotlin.core.api.Credentials.ForSignUp){}[0]
     final suspend fun unset(kotlin/String): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.unset|unset(kotlin.String){}[0]
     final suspend fun use(com.surrealdb.kotlin.core.api/Namespace, com.surrealdb.kotlin.core.api/Database): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.use|use(com.surrealdb.kotlin.core.api.Namespace;com.surrealdb.kotlin.core.api.Database){}[0]
-    final suspend fun version(): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.version|version(){}[0]
+    final suspend fun version(): kotlin/String // com.surrealdb.kotlin.core.api/Session.version|version(){}[0]
     final suspend fun whoami(): com.surrealdb.kotlin.core.api.data/Row? // com.surrealdb.kotlin.core.api/Session.whoami|whoami(){}[0]
     final suspend inline fun <#A1: reified kotlin/Any?> let(kotlin/String, #A1): kotlinx.serialization.json/JsonElement // com.surrealdb.kotlin.core.api/Session.let|let(kotlin.String;0:0){0§<kotlin.Any?>}[0]
 }

@@ -60,8 +60,8 @@ class SurrealJvmIntegrationTest {
 
                 db.signin(Credentials.RootUser("root", "root"))
                 db.use(Namespace("main"), Database("main"))
-                db.ping()
-                db.version()
+                assertTrue(db.ping())
+                assertTrue(db.version().startsWith("surrealdb-"))
                 assertNull(db.whoami())
 
                 db.query(surql("DEFINE TABLE OVERWRITE person SCHEMALESS"))
