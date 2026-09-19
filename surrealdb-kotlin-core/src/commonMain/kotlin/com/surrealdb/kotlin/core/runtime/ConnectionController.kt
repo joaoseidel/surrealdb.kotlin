@@ -108,8 +108,8 @@ internal class ConnectionController(
 
     suspend fun use(
         sessionId: String,
-        namespace: String,
-        database: String,
+        namespace: String?,
+        database: String?,
     ): JsonElement = engine.use(namespace, database, snapshot(sessionId))
 
     suspend fun signup(
@@ -227,6 +227,14 @@ internal class ConnectionController(
                 variables = s.variables.toMap(),
             )
         }
+
+    /**
+     * The namespace and database the session's token was issued for, or null
+     * when the session holds no token. Either half is null when the token does
+     * not carry it.
+     */
+    suspend fun tokenNamespaceAndDatabase(sessionId: String): Pair<String?, String?>? =
+        snapshot(sessionId).token?.let(::jwtNamespaceAndDatabase)
 
     suspend fun update(
         sessionId: String,

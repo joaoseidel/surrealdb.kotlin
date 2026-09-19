@@ -89,5 +89,34 @@ class JwtTest :
                     }
                 }
             }
+
+            context("jwtNamespaceAndDatabase") {
+                should("read the NS and DB claims SurrealDB writes, in upper case") {
+                    jwtNamespaceAndDatabase(
+                        jwt("""{"NS":"probe17","DB":"probe17","AC":"acct","ID":"person:1"}"""),
+                    ) shouldBe
+                        ("probe17" to "probe17")
+                }
+
+                should("read lower-case ns and db, which a token minted for an access method of type JWT may carry") {
+                    jwtNamespaceAndDatabase(jwt("""{"ns":"lower","db":"case"}""")) shouldBe ("lower" to "case")
+                }
+
+                should("answer a namespace and no database for a namespace user's token") {
+                    jwtNamespaceAndDatabase(jwt("""{"NS":"probe17","ID":"p17_ns"}""")) shouldBe ("probe17" to null)
+                }
+
+                should("answer neither for a root token, which carries only ID") {
+                    jwtNamespaceAndDatabase(jwt("""{"ID":"root"}""")) shouldBe (null to null)
+                }
+
+                should("answer neither for something that is not a JWT, rather than throw") {
+                    jwtNamespaceAndDatabase("not-a-jwt") shouldBe (null to null)
+                }
+
+                should("ignore a claim that is not a string, so a malformed token cannot select a namespace") {
+                    jwtNamespaceAndDatabase(jwt("""{"NS":{"nested":true},"DB":7}""")) shouldBe (null to null)
+                }
+            }
         },
     )

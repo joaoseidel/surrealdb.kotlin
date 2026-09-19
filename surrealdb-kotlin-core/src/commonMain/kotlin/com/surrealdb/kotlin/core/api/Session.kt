@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -62,11 +64,71 @@ public class Session internal constructor(
     public suspend fun use(
         namespace: Namespace,
         database: Database,
+    ): JsonElement = select(namespace.value, database.value)
+
+    /**
+     * Select [namespace] and leave no database selected, which is what SurrealDB
+     * does for `use [ns, null]`: a database belongs to a namespace, so choosing
+     * one drops the other. Read the pair back with [Session.namespace] and
+     * [Session.database]. As root, a namespace that does not exist is defined.
+     */
+    public suspend fun use(namespace: Namespace) {
+        select(namespace.value, null)
+    }
+
+    /**
+     * Select [database] inside the namespace this session already has, sending
+     * `use [namespace, db]`. Throws [IllegalStateException] before anything is
+     * sent when no namespace is selected: SurrealDB clears the namespace before it
+     * refuses `use [null, db]`, and the driver would have no record of that.
+     */
+    public suspend fun use(database: Database) {
+        val namespace =
+            checkNotNull(namespace()) {
+                "use(Database) needs a namespace on this session; call use(Namespace), use(Namespace, Database) or useDefaults() first"
+            }
+        select(namespace, database.value)
+    }
+
+    /**
+     * Select the namespace and database this session's token was issued for, when
+     * nothing is selected yet. A pair chosen with [use] stays. A token without a
+     * namespace claim (root) selects the server's `DEFINE CONFIG DEFAULT` pair, read
+     * from `INFO FOR ROOT`, and nothing when the server has none. Read the outcome
+     * with [Session.namespace] and [Session.database]. Throws [IllegalStateException]
+     * when the session holds no token.
+     */
+    public suspend fun useDefaults() {
+        if (namespace() != null) return
+        val claims =
+            checkNotNull(controller.tokenNamespaceAndDatabase(sessionId)) {
+                "useDefaults() reads the namespace and database from this session's token; sign in or authenticate first"
+            }
+        val (namespace, database) = claims.takeIf { it.first != null } ?: serverDefaults()
+        if (namespace == null) return
+        select(namespace, database)
+    }
+
+    private suspend fun serverDefaults(): Pair<String?, String?> {
+        val defaults =
+            query(BoundQuery().appendLiteral("INFO FOR ROOT"))
+                .firstOrNull()
+                ?.content
+                ?.get("defaults") as? JsonObject
+                ?: return null to null
+
+        fun name(key: String): String? = (defaults[key] as? JsonPrimitive)?.contentOrNull
+        return name("namespace") to name("database")
+    }
+
+    private suspend fun select(
+        namespace: String?,
+        database: String?,
     ): JsonElement {
-        val result = withAutoAuthRetry { controller.use(sessionId, namespace.value, database.value) }
+        val result = withAutoAuthRetry { controller.use(sessionId, namespace, database) }
         controller.update(sessionId) {
-            this.namespace = namespace.value
-            this.database = database.value
+            this.namespace = namespace
+            this.database = database
         }
         return result
     }
