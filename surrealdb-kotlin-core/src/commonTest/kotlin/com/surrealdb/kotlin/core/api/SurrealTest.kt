@@ -44,7 +44,7 @@ class SurrealTest {
                 }
 
             val client = testClient(engine = engine)
-            val result = client.session().ping().jsonObject
+            val result = client.session().unset("x").jsonObject
 
             assertEquals(true, result["ok"]?.jsonPrimitive?.content?.toBooleanStrict())
         }

@@ -6,6 +6,7 @@ import com.surrealdb.kotlin.core.api.Namespace
 import com.surrealdb.kotlin.core.api.Session
 import com.surrealdb.kotlin.core.api.Surreal
 import com.surrealdb.kotlin.core.api.data.RecordId
+import com.surrealdb.kotlin.core.api.error.SurrealProtocolException
 import com.surrealdb.kotlin.query.api.data.Table
 import com.surrealdb.kotlin.query.api.query.People
 import com.surrealdb.kotlin.query.api.query.ReturnMode
@@ -21,6 +22,7 @@ import com.surrealdb.kotlin.query.api.query.select
 import com.surrealdb.kotlin.query.api.query.surqlTemplate
 import com.surrealdb.kotlin.query.api.query.update
 import com.surrealdb.kotlin.query.api.query.upsert
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -121,14 +123,32 @@ class RpcMethodsTest :
                     }
                 }
 
-                should("send version with no params") {
+                should("send version with no params and answer the server's build string") {
                     runTest {
                         val h = openRpcHarness()
+                        h.stubResult = """{"id":"1","result":"surrealdb-3.2.4+20260803.93ab219"}"""
 
-                        h.db.version()
+                        h.db.version() shouldBe "surrealdb-3.2.4+20260803.93ab219"
 
                         h.lastMethod shouldBe "version"
                         h.paramCount() shouldBe 0
+                    }
+                }
+
+                should("refuse a version answer that is not a string, so a caller never reads null as a version") {
+                    runTest {
+                        val h = openRpcHarness()
+                        h.stubResult = """{"id":"1","result":null}"""
+
+                        shouldThrow<SurrealProtocolException> { h.db.version() }
+                    }
+                }
+
+                should("answer true to ping once the server answered, since the RPC carries nothing else") {
+                    runTest {
+                        val h = openRpcHarness()
+
+                        h.db.ping() shouldBe true
                     }
                 }
 
@@ -530,7 +550,7 @@ class RpcMethodsTest :
                         val h = openRpcHarness()
                         h.stubResult = """{"id":"1","result":null}"""
 
-                        h.db.ping().shouldBeInstanceOf<JsonNull>()
+                        h.db.unset("x").shouldBeInstanceOf<JsonNull>()
                     }
                 }
 
@@ -539,7 +559,7 @@ class RpcMethodsTest :
                         val h = openRpcHarness()
                         h.stubResult = """{"id":"1","result":[{"a":1},{"b":2}]}"""
 
-                        h.db.ping().jsonArray shouldHaveSize 2
+                        h.db.unset("x").jsonArray shouldHaveSize 2
                     }
                 }
 
@@ -549,7 +569,7 @@ class RpcMethodsTest :
                         h.stubResult = """{"result":{"ok":true}}"""
 
                         h.db
-                            .ping()
+                            .unset("x")
                             .jsonObject["ok"]
                             ?.jsonPrimitive
                             ?.content shouldBe "true"

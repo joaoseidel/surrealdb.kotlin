@@ -15,9 +15,9 @@ import kotlinx.serialization.json.JsonObject
  * `RpcEngine` translates them into JSON-RPC payloads.
  */
 internal interface Protocol {
-    suspend fun health(session: SessionSnapshot): JsonElement
+    suspend fun health(session: SessionSnapshot)
 
-    suspend fun version(session: SessionSnapshot): JsonElement
+    suspend fun version(session: SessionSnapshot): String
 
     suspend fun use(
         namespace: String,
