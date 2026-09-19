@@ -19,9 +19,14 @@ internal interface Protocol {
 
     suspend fun version(session: SessionSnapshot): String
 
+    /**
+     * Sends `use [namespace, database]`. SurrealDB reads a JSON null as "clear
+     * this half" and has no JSON spelling for "leave it alone", so a caller
+     * passes both halves as the session should hold them afterwards.
+     */
     suspend fun use(
-        namespace: String,
-        database: String,
+        namespace: String?,
+        database: String?,
         session: SessionSnapshot,
     ): JsonElement
 

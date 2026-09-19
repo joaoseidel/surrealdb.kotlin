@@ -228,7 +228,10 @@ public final class com/surrealdb/kotlin/core/api/Session : com/surrealdb/kotlin/
 	public final fun signin (Lcom/surrealdb/kotlin/core/api/Credentials$ForSignIn;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun signup (Lcom/surrealdb/kotlin/core/api/Credentials$ForSignUp;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun unset (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun use-9iPoucg (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun use-JW8AlMw (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun use-Qu6nRq4 (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun useDefaults (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun version (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun whoami (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

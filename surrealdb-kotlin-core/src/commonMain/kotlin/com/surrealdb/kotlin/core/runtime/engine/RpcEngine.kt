@@ -103,16 +103,17 @@ internal abstract class RpcEngine(
     }
 
     override suspend fun use(
-        namespace: String,
-        database: String,
+        namespace: String?,
+        database: String?,
         session: SessionSnapshot,
-    ): JsonElement =
-        unwrap(
-            dispatch(
-                newRequest("use", listOf(JsonPrimitive(namespace), JsonPrimitive(database))),
-                session,
-            ),
-        )
+    ): JsonElement = unwrap(dispatch(useRequest(namespace, database), session))
+
+    protected fun useRequest(
+        namespace: String?,
+        database: String?,
+    ): RpcRequest = newRequest("use", listOf(namespace.toJsonOrNull(), database.toJsonOrNull()))
+
+    private fun String?.toJsonOrNull(): JsonElement = if (this == null) JsonNull else JsonPrimitive(this)
 
     override suspend fun signup(
         params: JsonObject,
