@@ -322,6 +322,31 @@ tokens?.accessToken
 root, which has no record. The record must grant itself `select` (`PERMISSIONS FOR select WHERE id = $auth`), or the answer is null
 there too. `invalidate()` clears the session token.
 
+### Selecting a namespace and a database
+
+`use(Namespace("main"), Database("main"))` selects both. `use(Namespace("main"))` selects the namespace and leaves no database
+selected, since a database belongs to a namespace; `use(Database("other"))` keeps the namespace the session has and throws
+`IllegalStateException` before anything is sent when it has none. `namespace()` and `database()` answer what the session holds
+after each call.
+
+```kotlin
+val db = client.session()
+db.authenticate(token)
+db.useDefaults()
+println(db.namespace() to db.database())
+```
+
+`useDefaults()` selects the namespace and database the session's token was issued for, which is what a record user or a database
+user wants after `authenticate(token)`, and leaves a pair already chosen with `use` alone. A root token carries neither, so it takes
+the server's `DEFINE CONFIG DEFAULT` pair, `main`/`main` on a fresh SurrealDB 3.x, or nothing when the server has none.
+
+SurrealDB reads a JSON `null` in the `use` RPC as "clear this half" and has no JSON spelling for "leave it alone", so the driver
+sends both halves from what the session holds. That is why a database needs a namespace on the session first: the server clears
+the namespace before it refuses `[null, db]`, and the driver would have no record of it.
+
+`version()` answers the server's build string (`surrealdb-3.2.4+…`) and `ping()` answers `true` once the server has answered;
+neither needs a token or a selection, and a failure throws rather than answering `false`.
+
 ## Dynamic raw SurrealQL
 
 Use typed builders whenever a table, field, relation, or other identifier varies. SurrealDB cannot bind identifiers as parameters, so the builders

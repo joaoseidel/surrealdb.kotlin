@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `use(Namespace)`, `use(Database)` and `useDefaults()` on a session, beside `use(Namespace, Database)`. SurrealDB reads a
+  JSON `null` in the `use` RPC as "clear this half", and JSON has no way to say "leave it alone", so the driver sends both
+  halves from what the session holds: `use(Namespace)` selects the namespace and clears the database, `use(Database)` keeps
+  the namespace and throws before sending when there is none, because the server clears the namespace before it refuses
+  `[null, db]`. `useDefaults()` selects the pair the session's token was issued for when nothing is selected yet, or the
+  server's `DEFINE CONFIG DEFAULT` pair for a token without one, and leaves a chosen pair alone. `namespace()` and
+  `database()` follow each call; over WebSocket a one-sided selection is re-sent after a reconnect, and the applied pair is
+  forgotten after every `authenticate` so two sessions with the same pair and different tokens no longer share the first
+  token's selection. `version()` answers the server's build string and `ping()` answers `true` or throws, where both
+  answered `JsonElement`.
 - `exportSurql()` and `importSurql(text)` on a session, over HTTP. The first answers the namespace and
   database as the SurrealQL `GET /export` writes; the second sends text to `POST /import`. SurrealDB runs
   an import only when its first statement is `OPTION IMPORT;`, which every export already carries, and
