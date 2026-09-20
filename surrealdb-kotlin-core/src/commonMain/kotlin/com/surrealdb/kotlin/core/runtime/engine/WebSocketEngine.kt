@@ -353,19 +353,12 @@ internal class WebSocketEngine(
                     r.error?.let { throw mapRpcError(it) }
                 }
                 appliedToken = snap.token
+                appliedNamespace = null
+                appliedDatabase = null
             }
             if (snap.namespace != appliedNamespace || snap.database != appliedDatabase) {
-                if (snap.namespace != null && snap.database != null) {
-                    val r =
-                        sendBuffered(
-                            newRequest(
-                                "use",
-                                listOf(
-                                    JsonPrimitive(snap.namespace),
-                                    JsonPrimitive(snap.database),
-                                ),
-                            ),
-                        )
+                if (snap.namespace != null) {
+                    val r = sendBuffered(useRequest(snap.namespace, snap.database))
                     r.error?.let { throw mapRpcError(it) }
                 }
                 appliedNamespace = snap.namespace

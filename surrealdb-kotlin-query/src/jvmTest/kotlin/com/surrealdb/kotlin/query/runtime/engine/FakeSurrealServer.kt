@@ -223,6 +223,7 @@ internal class FakeSurrealServer(
                 "live" -> startLiveQuery(method, firstParam)
                 "query" -> runStatement(firstParam, params.getOrNull(1) as? JsonObject)
                 "begin" -> Outcome.Ok(JsonPrimitive("txn-${ids.incrementAndGet()}"))
+                "use" -> Outcome.Ok(selectedPair(params))
                 else -> Outcome.Ok(JsonNull)
             }
 
@@ -248,6 +249,12 @@ internal class FakeSurrealServer(
 
         return json.encodeToString(JsonElement.serializer(), response)
     }
+
+    private fun selectedPair(params: JsonArray): JsonObject =
+        buildJsonObject {
+            put("namespace", params.getOrNull(0) ?: JsonNull)
+            put("database", params.getOrNull(1) ?: JsonNull)
+        }
 
     private fun startLiveQuery(
         method: String,
